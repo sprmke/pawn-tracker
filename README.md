@@ -5,7 +5,9 @@ A comprehensive web application for tracking pawn business loans and investor tr
 ## Features
 
 ### Module 1: Pawn Tracker
+
 - **Create and manage loans** with detailed information:
+
   - Loan name/label
   - Type (Lot Title, OR/CR, Agent)
   - Principal amount
@@ -16,6 +18,7 @@ A comprehensive web application for tracking pawn business loans and investor tr
   - Notes and additional details
 
 - **Multi-investor allocation**:
+
   - Select multiple investors per loan
   - Individual amount allocation per investor
   - Custom interest rates per investor
@@ -27,18 +30,22 @@ A comprehensive web application for tracking pawn business loans and investor tr
   - Visual breakdown before submission
 
 ### Module 2: Investor In & Outs
+
 - **Investor dashboard** showing:
+
   - Total capital invested
   - Total interest earned
   - Current balance with status indicators
   - Active and total loans
 
 - **Investor detail page** with two tabs:
+
   - **Tab 1: Loans & Gains**
+
     - All loans joined by the investor
     - Capital, interest rate, and earnings per loan
     - Total gains calculation
-  
+
   - **Tab 2: Transactions & Balance**
     - Complete transaction history
     - Running balance after each transaction
@@ -46,6 +53,7 @@ A comprehensive web application for tracking pawn business loans and investor tr
     - Color-coded balance status (Green: Can invest, Yellow: Low funds, Red: No funds)
 
 ### Dashboard
+
 - Overview statistics:
   - Total principal amount
   - Total interest earned
@@ -68,45 +76,52 @@ A comprehensive web application for tracking pawn business loans and investor tr
 
 ### Prerequisites
 
-- Node.js 18+ installed
+- Bun installed ([bun.sh](https://bun.sh))
 - A Neon PostgreSQL database (free tier available at [neon.tech](https://neon.tech))
 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd pawn-tracker
 ```
 
 2. Install dependencies:
+
 ```bash
-npm install --cache /tmp/npm-cache
+bun install
 ```
 
 3. Set up environment variables:
+
 ```bash
 cp .env.example .env.local
 ```
 
 Edit `.env.local` and add your Neon database URL:
+
 ```env
 DATABASE_URL=your_neon_database_url_here
 ```
 
 4. Push the database schema:
+
 ```bash
-npm run db:push
+bun run db:push
 ```
 
 5. Seed the database with default investors:
+
 ```bash
-npm run db:seed
+bun run db:seed
 ```
 
 6. Run the development server:
+
 ```bash
-npm run dev
+bun run dev
 ```
 
 7. Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -123,6 +138,7 @@ The application uses the following main tables:
 ## Default Investors
 
 The application comes with these seeded investors:
+
 - Michael Manlulu (michael.manlulu@test.com)
 - Arianna Perez (arianna.perez@test.com)
 - Precious Natividad (precious.natividad@test.com)
@@ -134,14 +150,14 @@ The application comes with these seeded investors:
 
 ## Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run db:generate` - Generate database migrations
-- `npm run db:migrate` - Run database migrations
-- `npm run db:push` - Push schema changes to database
-- `npm run db:studio` - Open Drizzle Studio (database GUI)
-- `npm run db:seed` - Seed database with default investors
+- `bun run dev` - Start development server
+- `bun run build` - Build for production
+- `bun run start` - Start production server
+- `bun run db:generate` - Generate database migrations
+- `bun run db:migrate` - Run database migrations
+- `bun run db:push` - Push schema changes to database
+- `bun run db:studio` - Open Drizzle Studio (database GUI)
+- `bun run db:seed` - Seed database with default investors
 
 ## Project Structure
 
@@ -170,7 +186,9 @@ pawn-tracker/
 ## Key Features Explained
 
 ### Multi-Investor Loan Creation
+
 The loan form allows you to:
+
 1. Select multiple investors from a dropdown
 2. Allocate specific amounts to each investor
 3. Set custom interest rates per investor
@@ -178,14 +196,18 @@ The loan form allows you to:
 5. Preview calculations before creating the loan
 
 ### Balance Tracking
+
 The transaction system tracks:
+
 - All money IN/OUT for each investor
 - Running balance after each transaction
 - Visual indicators for investment capacity
 - Complete audit trail with dates and notes
 
 ### Responsive Design
+
 The application is fully responsive and works on:
+
 - Desktop computers
 - Tablets
 - Mobile phones
@@ -200,6 +222,7 @@ The application is fully responsive and works on:
 4. Deploy!
 
 Vercel will automatically:
+
 - Build your Next.js application
 - Set up automatic deployments on push
 - Provide a production URL

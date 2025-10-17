@@ -29,13 +29,14 @@ Run these commands in order:
 
 ```bash
 # Push the database schema to Neon
-npm run db:push
+bun run db:push
 
 # Seed the database with default investors
-npm run db:seed
+bun run db:seed
 ```
 
 You should see output confirming:
+
 - Tables created successfully
 - 8 investors inserted
 
@@ -44,9 +45,11 @@ You should see output confirming:
 You can verify your database setup by:
 
 1. Using Drizzle Studio (recommended):
+
    ```bash
-   npm run db:studio
+   bun run db:studio
    ```
+
    This opens a web-based database viewer at `https://local.drizzle.studio`
 
 2. Or checking in the Neon dashboard:
@@ -57,10 +60,11 @@ You can verify your database setup by:
 ## Step 5: Start the Application
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) and you should see:
+
 - Dashboard with statistics (initially all zeros)
 - Navigation menu with Dashboard, Loans, Add Loan, and Investors
 - 8 investors in the Investors page
@@ -68,28 +72,28 @@ Open [http://localhost:3000](http://localhost:3000) and you should see:
 ## Common Issues and Solutions
 
 ### Issue: "Cannot connect to database"
+
 **Solution**: Check that:
+
 - Your `.env.local` file has the correct `DATABASE_URL`
 - The database URL includes `?sslmode=require` at the end
 - You have internet connectivity
 - Your Neon project is active (not suspended)
 
 ### Issue: "No investors found"
-**Solution**: Run the seed script:
-```bash
-npm run db:seed
-```
 
-### Issue: npm cache errors during installation
-**Solution**: Use the temporary cache:
+**Solution**: Run the seed script:
+
 ```bash
-npm install --cache /tmp/npm-cache
+bun run db:seed
 ```
 
 ### Issue: Turbopack errors
+
 **Solution**: If you encounter Turbopack issues, you can disable it:
+
 ```bash
-npm run dev -- --no-turbopack
+bun run dev -- --no-turbopack
 ```
 
 Or edit `package.json` and remove `--turbopack` from the dev script.
@@ -97,14 +101,18 @@ Or edit `package.json` and remove `--turbopack` from the dev script.
 ## Understanding the Database Schema
 
 ### Investors Table
+
 Stores basic investor information:
+
 - `id`: Unique identifier
 - `name`: Investor's full name
 - `email`: Contact email
 - `created_at`, `updated_at`: Timestamps
 
 ### Loans Table
+
 Stores loan details:
+
 - `id`: Unique identifier
 - `loan_name`: Title/label of the loan
 - `type`: Lot Title, OR/CR, or Agent
@@ -117,7 +125,9 @@ Stores loan details:
 - `notes`: Additional information
 
 ### Loan Investors Table (Junction)
+
 Links loans with investors and their allocations:
+
 - `id`: Unique identifier
 - `loan_id`: Reference to loan
 - `investor_id`: Reference to investor
@@ -126,7 +136,9 @@ Links loans with investors and their allocations:
 - `sent_date`: When money was sent
 
 ### Transactions Table
+
 Tracks investor money in/out:
+
 - `id`: Unique identifier
 - `investor_id`: Reference to investor
 - `date`: Transaction date
@@ -140,6 +152,7 @@ Tracks investor money in/out:
 ## Next Steps
 
 1. **Create your first loan**:
+
    - Go to "Add Loan" in the navigation
    - Fill out the loan details
    - Add at least one investor
@@ -147,6 +160,7 @@ Tracks investor money in/out:
    - Submit
 
 2. **Track investor transactions**:
+
    - Use the API endpoint `/api/transactions` to add transactions
    - Or build a transaction form (future enhancement)
 
@@ -160,32 +174,38 @@ Tracks investor money in/out:
 The application provides these API endpoints:
 
 ### Investors
+
 - `GET /api/investors` - List all investors
 - `POST /api/investors` - Create new investor
 
 ### Loans
+
 - `GET /api/loans` - List all loans with investors
 - `POST /api/loans` - Create new loan
 
 ### Transactions
+
 - `GET /api/transactions?investorId=X` - List transactions (optionally filter by investor)
 - `POST /api/transactions` - Create new transaction
 
 ## Database Management
 
 ### View data in Drizzle Studio
+
 ```bash
-npm run db:studio
+bun run db:studio
 ```
 
 ### Generate migrations (if you modify schema)
+
 ```bash
-npm run db:generate
+bun run db:generate
 ```
 
 ### Push schema changes
+
 ```bash
-npm run db:push
+bun run db:push
 ```
 
 ## Production Deployment
@@ -193,6 +213,7 @@ npm run db:push
 ### Deploy to Vercel
 
 1. Push your code to GitHub:
+
    ```bash
    git add .
    git commit -m "Initial commit"
@@ -208,6 +229,7 @@ npm run db:push
 6. Click "Deploy"
 
 After deployment:
+
 - Run the seed command in Vercel (if needed):
   - Go to your project settings
   - Find the "Deployments" tab
@@ -216,23 +238,28 @@ After deployment:
 ## Maintenance
 
 ### Backup your database
+
 Neon provides automatic backups, but you can also:
+
 1. Use Drizzle Studio to export data
 2. Use Neon's branching feature to create a copy
 3. Export via SQL dumps from the Neon dashboard
 
 ### Monitor usage
+
 - Check your Neon dashboard for storage and compute usage
 - Free tier includes: 0.5 GB storage, 300 compute hours
 
 ### Update dependencies
+
 ```bash
-npm update
+bun update
 ```
 
 ## Support
 
 If you encounter issues:
+
 1. Check the console for error messages
 2. Verify your database connection
 3. Review the main README.md
@@ -241,4 +268,3 @@ If you encounter issues:
 ---
 
 Happy tracking! 🎯
-
