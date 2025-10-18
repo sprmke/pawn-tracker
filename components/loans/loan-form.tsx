@@ -1,27 +1,33 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { X, Plus, Eye } from "lucide-react";
-import type { Investor } from "@/lib/types";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { X, Plus, Eye } from 'lucide-react';
+import type { Investor } from '@/lib/types';
 
 const loanSchema = z.object({
-  loanName: z.string().min(1, "Loan name is required"),
-  type: z.enum(["Lot Title", "OR/CR", "Agent"]),
-  status: z.enum(["Active", "Done", "Overdue"]).default("Active"),
-  principalAmount: z.string().min(1, "Principal amount is required"),
-  defaultInterestRate: z.string().default("10"),
-  dueDate: z.string().min(1, "Due date is required"),
+  loanName: z.string().min(1, 'Loan name is required'),
+  type: z.enum(['Lot Title', 'OR/CR', 'Agent']),
+  status: z
+    .enum(['Partially Funded', 'Fully Funded', 'Overdue', 'Completed'])
+    .default('Partially Funded'),
+  dueDate: z.string().min(1, 'Due date is required'),
   isMonthlyInterest: z.boolean().default(false),
   freeLotSqm: z.string().optional(),
   notes: z.string().optional(),
@@ -40,7 +46,9 @@ interface LoanFormProps {
 
 export function LoanForm({ investors }: LoanFormProps) {
   const router = useRouter();
-  const [selectedInvestors, setSelectedInvestors] = useState<InvestorAllocation[]>([]);
+  const [selectedInvestors, setSelectedInvestors] = useState<
+    InvestorAllocation[]
+  >([]);
   const [showPreview, setShowPreview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -53,39 +61,42 @@ export function LoanForm({ investors }: LoanFormProps) {
   } = useForm({
     resolver: zodResolver(loanSchema),
     defaultValues: {
-      type: "Lot Title" as const,
-      status: "Active" as const,
-      defaultInterestRate: "10",
+      type: 'Lot Title' as const,
+      status: 'Partially Funded' as const,
       isMonthlyInterest: false,
     },
   });
 
-  const watchType = watch("type");
-  const watchStatus = watch("status");
-  const watchDefaultInterestRate = watch("defaultInterestRate");
+  const watchType = watch('type');
+  const watchStatus = watch('status');
 
   const addInvestor = (investorId: string) => {
     const investor = investors.find((inv) => inv.id.toString() === investorId);
-    if (investor && !selectedInvestors.find((si) => si.investor.id === investor.id)) {
+    if (
+      investor &&
+      !selectedInvestors.find((si) => si.investor.id === investor.id)
+    ) {
       setSelectedInvestors([
         ...selectedInvestors,
         {
           investor,
-          amount: "",
-          interestRate: watchDefaultInterestRate || "10",
-          sentDate: new Date().toISOString().split("T")[0],
+          amount: '',
+          interestRate: '10',
+          sentDate: new Date().toISOString().split('T')[0],
         },
       ]);
     }
   };
 
   const removeInvestor = (investorId: number) => {
-    setSelectedInvestors(selectedInvestors.filter((si) => si.investor.id !== investorId));
+    setSelectedInvestors(
+      selectedInvestors.filter((si) => si.investor.id !== investorId)
+    );
   };
 
   const updateInvestorAllocation = (
     investorId: number,
-    field: keyof Omit<InvestorAllocation, "investor">,
+    field: keyof Omit<InvestorAllocation, 'investor'>,
     value: string
   ) => {
     setSelectedInvestors(
@@ -122,20 +133,22 @@ export function LoanForm({ investors }: LoanFormProps) {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-PH", {
-      style: "currency",
-      currency: "PHP",
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
     }).format(amount);
   };
 
   const onSubmit = async (data: z.infer<typeof loanSchema>) => {
     if (selectedInvestors.length === 0) {
-      alert("Please add at least one investor");
+      alert('Please add at least one investor');
       return;
     }
 
-    if (selectedInvestors.some((si) => !si.amount || parseFloat(si.amount) <= 0)) {
-      alert("Please enter valid amounts for all investors");
+    if (
+      selectedInvestors.some((si) => !si.amount || parseFloat(si.amount) <= 0)
+    ) {
+      alert('Please enter valid amounts for all investors');
       return;
     }
 
@@ -146,8 +159,6 @@ export function LoanForm({ investors }: LoanFormProps) {
         loanName: data.loanName,
         type: data.type,
         status: data.status,
-        principalAmount: data.principalAmount,
-        defaultInterestRate: data.defaultInterestRate,
         dueDate: new Date(data.dueDate),
         isMonthlyInterest: data.isMonthlyInterest,
         freeLotSqm: data.freeLotSqm ? parseInt(data.freeLotSqm) : null,
@@ -161,19 +172,19 @@ export function LoanForm({ investors }: LoanFormProps) {
         sentDate: new Date(si.sentDate),
       }));
 
-      const response = await fetch("/api/loans", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/loans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ loanData, investorData }),
       });
 
-      if (!response.ok) throw new Error("Failed to create loan");
+      if (!response.ok) throw new Error('Failed to create loan');
 
-      router.push("/loans");
+      router.push('/loans');
       router.refresh();
     } catch (error) {
-      console.error("Error creating loan:", error);
-      alert("Failed to create loan. Please try again.");
+      console.error('Error creating loan:', error);
+      alert('Failed to create loan. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -198,11 +209,13 @@ export function LoanForm({ investors }: LoanFormProps) {
               <Label htmlFor="loanName">Loan Name / Label *</Label>
               <Input
                 id="loanName"
-                {...register("loanName")}
+                {...register('loanName')}
                 placeholder="e.g., Title 1 - Mexico"
               />
               {errors.loanName && (
-                <p className="text-sm text-red-600">{errors.loanName.message}</p>
+                <p className="text-sm text-red-600">
+                  {errors.loanName.message}
+                </p>
               )}
             </div>
 
@@ -210,7 +223,7 @@ export function LoanForm({ investors }: LoanFormProps) {
               <Label htmlFor="type">Type *</Label>
               <Select
                 value={watchType}
-                onValueChange={(value) => setValue("type", value as any)}
+                onValueChange={(value) => setValue('type', value as any)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -224,37 +237,8 @@ export function LoanForm({ investors }: LoanFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="principalAmount">Principal Amount *</Label>
-              <Input
-                id="principalAmount"
-                type="number"
-                step="0.01"
-                {...register("principalAmount")}
-                placeholder="0.00"
-              />
-              {errors.principalAmount && (
-                <p className="text-sm text-red-600">{errors.principalAmount.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="defaultInterestRate">Default Interest Rate (%)</Label>
-              <Input
-                id="defaultInterestRate"
-                type="number"
-                step="0.01"
-                {...register("defaultInterestRate")}
-                placeholder="10"
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="dueDate">Due Date *</Label>
-              <Input
-                id="dueDate"
-                type="date"
-                {...register("dueDate")}
-              />
+              <Input id="dueDate" type="date" {...register('dueDate')} />
               {errors.dueDate && (
                 <p className="text-sm text-red-600">{errors.dueDate.message}</p>
               )}
@@ -264,15 +248,18 @@ export function LoanForm({ investors }: LoanFormProps) {
               <Label htmlFor="status">Status</Label>
               <Select
                 value={watchStatus}
-                onValueChange={(value) => setValue("status", value as any)}
+                onValueChange={(value) => setValue('status', value as any)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Done">Done</SelectItem>
+                  <SelectItem value="Partially Funded">
+                    Partially Funded
+                  </SelectItem>
+                  <SelectItem value="Fully Funded">Fully Funded</SelectItem>
                   <SelectItem value="Overdue">Overdue</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -282,7 +269,7 @@ export function LoanForm({ investors }: LoanFormProps) {
               <Input
                 id="freeLotSqm"
                 type="number"
-                {...register("freeLotSqm")}
+                {...register('freeLotSqm')}
                 placeholder="Optional"
               />
             </div>
@@ -292,7 +279,7 @@ export function LoanForm({ investors }: LoanFormProps) {
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              {...register("notes")}
+              {...register('notes')}
               placeholder="Additional notes..."
               rows={3}
             />
@@ -353,7 +340,7 @@ export function LoanForm({ investors }: LoanFormProps) {
                             onChange={(e) =>
                               updateInvestorAllocation(
                                 si.investor.id,
-                                "amount",
+                                'amount',
                                 e.target.value
                               )
                             }
@@ -370,7 +357,7 @@ export function LoanForm({ investors }: LoanFormProps) {
                             onChange={(e) =>
                               updateInvestorAllocation(
                                 si.investor.id,
-                                "interestRate",
+                                'interestRate',
                                 e.target.value
                               )
                             }
@@ -386,7 +373,7 @@ export function LoanForm({ investors }: LoanFormProps) {
                             onChange={(e) =>
                               updateInvestorAllocation(
                                 si.investor.id,
-                                "sentDate",
+                                'sentDate',
                                 e.target.value
                               )
                             }
@@ -411,7 +398,7 @@ export function LoanForm({ investors }: LoanFormProps) {
             className="w-full"
           >
             <Eye className="mr-2 h-4 w-4" />
-            {showPreview ? "Hide" : "Show"} Preview
+            {showPreview ? 'Hide' : 'Show'} Preview
           </Button>
 
           {showPreview && (
@@ -433,15 +420,21 @@ export function LoanForm({ investors }: LoanFormProps) {
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">Capital</p>
-                          <p className="font-medium">{formatCurrency(p.capital)}</p>
+                          <p className="font-medium">
+                            {formatCurrency(p.capital)}
+                          </p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Interest</p>
-                          <p className="font-medium">{formatCurrency(p.interest)}</p>
+                          <p className="font-medium">
+                            {formatCurrency(p.interest)}
+                          </p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Total</p>
-                          <p className="font-medium">{formatCurrency(p.total)}</p>
+                          <p className="font-medium">
+                            {formatCurrency(p.total)}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -453,19 +446,25 @@ export function LoanForm({ investors }: LoanFormProps) {
                     <h4 className="font-semibold mb-4">Summary</h4>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">Total Principal</p>
+                        <p className="text-sm text-muted-foreground">
+                          Total Principal
+                        </p>
                         <p className="text-xl font-bold">
                           {formatCurrency(summary.totalCapital)}
                         </p>
                       </div>
                       <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">Total Interest</p>
+                        <p className="text-sm text-muted-foreground">
+                          Total Interest
+                        </p>
                         <p className="text-xl font-bold">
                           {formatCurrency(summary.totalInterest)}
                         </p>
                       </div>
                       <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">Total Amount</p>
+                        <p className="text-sm text-muted-foreground">
+                          Total Amount
+                        </p>
                         <p className="text-xl font-bold">
                           {formatCurrency(summary.totalAmount)}
                         </p>
@@ -489,10 +488,9 @@ export function LoanForm({ investors }: LoanFormProps) {
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? "Creating..." : "Create Loan"}
+          {isSubmitting ? 'Creating...' : 'Create Loan'}
         </Button>
       </div>
     </form>
   );
 }
-

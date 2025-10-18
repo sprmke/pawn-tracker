@@ -20,21 +20,31 @@ async function getDashboardData() {
     });
 
     // Calculate statistics
-    const totalPrincipal = allLoans.reduce(
-      (sum, loan) => sum + parseFloat(loan.principalAmount),
-      0
-    );
+    const totalPrincipal = allLoans.reduce((sum, loan) => {
+      const loanTotal = loan.loanInvestors.reduce(
+        (loanSum, li) => loanSum + parseFloat(li.amount),
+        0
+      );
+      return sum + loanTotal;
+    }, 0);
 
-    const activeLoans = allLoans.filter(loan => loan.status === 'Active').length;
-    const overdueLoans = allLoans.filter(loan => loan.status === 'Overdue').length;
-    
+    const activeLoans = allLoans.filter(
+      (loan) =>
+        loan.status === 'Fully Funded' || loan.status === 'Partially Funded'
+    ).length;
+    const overdueLoans = allLoans.filter(
+      (loan) => loan.status === 'Overdue'
+    ).length;
+
     // Calculate total interest earned
-    const doneLoans = allLoans.filter(loan => loan.status === 'Done');
-    const totalInterestEarned = doneLoans.reduce((sum, loan) => {
+    const completedLoans = allLoans.filter(
+      (loan) => loan.status === 'Completed'
+    );
+    const totalInterestEarned = completedLoans.reduce((sum, loan) => {
       const loanInterest = loan.loanInvestors.reduce((loanSum, li) => {
         const amount = parseFloat(li.amount);
         const rate = parseFloat(li.interestRate) / 100;
-        return loanSum + (amount * rate);
+        return loanSum + amount * rate;
       }, 0);
       return sum + loanInterest;
     }, 0);
@@ -77,9 +87,7 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Overview of your pawn business
-        </p>
+        <p className="text-muted-foreground">Overview of your pawn business</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -119,9 +127,7 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Loans
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Active Loans</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -134,18 +140,14 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Overdue Loans
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Overdue Loans</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
               {data.overdueLoans}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Needs attention
-            </p>
+            <p className="text-xs text-muted-foreground">Needs attention</p>
           </CardContent>
         </Card>
       </div>
@@ -158,7 +160,13 @@ export default async function DashboardPage() {
           <div className="space-y-4">
             {data.recentLoans.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                No loans yet. <Link href="/loans/new" className="text-primary hover:underline">Create your first loan</Link>
+                No loans yet.{' '}
+                <Link
+                  href="/loans/new"
+                  className="text-primary hover:underline"
+                >
+                  Create your first loan
+                </Link>
               </p>
             ) : (
               data.recentLoans.map((loan) => (
@@ -172,16 +180,25 @@ export default async function DashboardPage() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span>{loan.type}</span>
                       <span>•</span>
-                      <span>{formatCurrency(parseFloat(loan.principalAmount))}</span>
+                      <span>
+                        {formatCurrency(
+                          loan.loanInvestors.reduce(
+                            (sum, li) => sum + parseFloat(li.amount),
+                            0
+                          )
+                        )}
+                      </span>
                       <span>•</span>
                       <span>{loan.loanInvestors.length} investor(s)</span>
                     </div>
                   </div>
                   <Badge
                     variant={
-                      loan.status === 'Active'
+                      loan.status === 'Fully Funded'
                         ? 'default'
-                        : loan.status === 'Done'
+                        : loan.status === 'Partially Funded'
+                        ? 'secondary'
+                        : loan.status === 'Completed'
                         ? 'success'
                         : 'destructive'
                     }
