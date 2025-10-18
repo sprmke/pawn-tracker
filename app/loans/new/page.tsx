@@ -18,8 +18,10 @@ export default async function NewLoanPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Create New Loan</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          Create New Loan
+        </h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Add a new loan and assign investors
         </p>
       </div>
@@ -28,4 +30,3 @@ export default async function NewLoanPage() {
     </div>
   );
 }
-
