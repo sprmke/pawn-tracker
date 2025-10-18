@@ -38,8 +38,6 @@ export async function POST(request: Request) {
       loanName: loanData.loanName,
       type: loanData.type,
       status: loanData.status,
-      principalAmount: String(loanData.principalAmount),
-      defaultInterestRate: String(loanData.defaultInterestRate),
       dueDate: new Date(loanData.dueDate),
       isMonthlyInterest: Boolean(loanData.isMonthlyInterest),
       freeLotSqm: loanData.freeLotSqm ? Number(loanData.freeLotSqm) : null,
