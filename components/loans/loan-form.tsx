@@ -19,7 +19,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { X, Plus, Eye } from 'lucide-react';
-import type { Investor } from '@/lib/types';
+import type { Investor, LoanWithInvestors } from '@/lib/types';
 
 const loanSchema = z.object({
   loanName: z.string().min(1, 'Loan name is required'),
@@ -42,15 +42,35 @@ interface InvestorAllocation {
 
 interface LoanFormProps {
   investors: Investor[];
+  existingLoan?: LoanWithInvestors;
+  onSuccess?: () => void;
 }
 
-export function LoanForm({ investors }: LoanFormProps) {
+export function LoanForm({
+  investors,
+  existingLoan,
+  onSuccess,
+}: LoanFormProps) {
   const router = useRouter();
+  const isEditMode = !!existingLoan;
+
+  // Initialize selected investors from existing loan if in edit mode
   const [selectedInvestors, setSelectedInvestors] = useState<
     InvestorAllocation[]
-  >([]);
+  >(() => {
+    if (existingLoan) {
+      return existingLoan.loanInvestors.map((li) => ({
+        investor: li.investor,
+        amount: li.amount,
+        interestRate: li.interestRate,
+        sentDate: new Date(li.sentDate).toISOString().split('T')[0],
+      }));
+    }
+    return [];
+  });
   const [showPreview, setShowPreview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [investorSelectValue, setInvestorSelectValue] = useState<string>('');
 
   const {
     register,
@@ -60,11 +80,21 @@ export function LoanForm({ investors }: LoanFormProps) {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(loanSchema),
-    defaultValues: {
-      type: 'Lot Title' as const,
-      status: 'Partially Funded' as const,
-      isMonthlyInterest: false,
-    },
+    defaultValues: existingLoan
+      ? {
+          loanName: existingLoan.loanName,
+          type: existingLoan.type,
+          status: existingLoan.status,
+          dueDate: new Date(existingLoan.dueDate).toISOString().split('T')[0],
+          isMonthlyInterest: existingLoan.isMonthlyInterest,
+          freeLotSqm: existingLoan.freeLotSqm?.toString() || '',
+          notes: existingLoan.notes || '',
+        }
+      : {
+          type: 'Lot Title' as const,
+          status: 'Partially Funded' as const,
+          isMonthlyInterest: false,
+        },
   });
 
   const watchType = watch('type');
@@ -86,6 +116,8 @@ export function LoanForm({ investors }: LoanFormProps) {
         },
       ]);
     }
+    // Reset the select value to empty so it shows placeholder again
+    setInvestorSelectValue('');
   };
 
   const removeInvestor = (investorId: number) => {
@@ -172,19 +204,32 @@ export function LoanForm({ investors }: LoanFormProps) {
         sentDate: new Date(si.sentDate),
       }));
 
-      const response = await fetch('/api/loans', {
-        method: 'POST',
+      const url = isEditMode ? `/api/loans/${existingLoan.id}` : '/api/loans';
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ loanData, investorData }),
       });
 
-      if (!response.ok) throw new Error('Failed to create loan');
+      if (!response.ok)
+        throw new Error(`Failed to ${isEditMode ? 'update' : 'create'} loan`);
 
-      router.push('/loans');
-      router.refresh();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/loans');
+        router.refresh();
+      }
     } catch (error) {
-      console.error('Error creating loan:', error);
-      alert('Failed to create loan. Please try again.');
+      console.error(
+        `Error ${isEditMode ? 'updating' : 'creating'} loan:`,
+        error
+      );
+      alert(
+        `Failed to ${isEditMode ? 'update' : 'create'} loan. Please try again.`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -201,10 +246,10 @@ export function LoanForm({ investors }: LoanFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Loan Details</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Loan Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="loanName">Loan Name / Label *</Label>
               <Input
@@ -289,12 +334,12 @@ export function LoanForm({ investors }: LoanFormProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Investors</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Investors</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Add Investor</Label>
-            <Select onValueChange={addInvestor}>
+            <Select value={investorSelectValue} onValueChange={addInvestor}>
               <SelectTrigger>
                 <SelectValue placeholder="Select an investor..." />
               </SelectTrigger>
@@ -318,19 +363,22 @@ export function LoanForm({ investors }: LoanFormProps) {
                 <Card key={si.investor.id}>
                   <CardContent className="pt-6">
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">{si.investor.name}</h4>
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="font-semibold text-sm sm:text-base truncate">
+                          {si.investor.name}
+                        </h4>
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
                           onClick={() => removeInvestor(si.investor.id)}
+                          className="flex-shrink-0"
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
 
-                      <div className="grid gap-4 md:grid-cols-3">
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div className="space-y-2">
                           <Label>Amount *</Label>
                           <Input
@@ -404,7 +452,9 @@ export function LoanForm({ investors }: LoanFormProps) {
           {showPreview && (
             <Card>
               <CardHeader>
-                <CardTitle>Loan Preview</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">
+                  Loan Preview
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
@@ -413,11 +463,13 @@ export function LoanForm({ investors }: LoanFormProps) {
                       key={p.investor.id}
                       className="p-4 border rounded-lg space-y-2"
                     >
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">{p.investor.name}</h4>
-                        <Badge>{p.sentDate}</Badge>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <h4 className="font-semibold text-sm sm:text-base">
+                          {p.investor.name}
+                        </h4>
+                        <Badge className="w-fit">{p.sentDate}</Badge>
                       </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                         <div>
                           <p className="text-muted-foreground">Capital</p>
                           <p className="font-medium">
@@ -443,29 +495,31 @@ export function LoanForm({ investors }: LoanFormProps) {
 
                 {summary && (
                   <div className="border-t pt-4">
-                    <h4 className="font-semibold mb-4">Summary</h4>
-                    <div className="grid grid-cols-3 gap-4">
+                    <h4 className="font-semibold mb-4 text-sm sm:text-base">
+                      Summary
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           Total Principal
                         </p>
-                        <p className="text-xl font-bold">
+                        <p className="text-lg sm:text-xl font-bold break-words">
                           {formatCurrency(summary.totalCapital)}
                         </p>
                       </div>
                       <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           Total Interest
                         </p>
-                        <p className="text-xl font-bold">
+                        <p className="text-lg sm:text-xl font-bold break-words">
                           {formatCurrency(summary.totalInterest)}
                         </p>
                       </div>
                       <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           Total Amount
                         </p>
-                        <p className="text-xl font-bold">
+                        <p className="text-lg sm:text-xl font-bold break-words">
                           {formatCurrency(summary.totalAmount)}
                         </p>
                       </div>
@@ -478,17 +532,23 @@ export function LoanForm({ investors }: LoanFormProps) {
         </>
       )}
 
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <Button
           type="button"
           variant="outline"
           onClick={() => router.back()}
-          className="flex-1"
+          className="flex-1 w-full"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? 'Creating...' : 'Create Loan'}
+        <Button type="submit" disabled={isSubmitting} className="flex-1 w-full">
+          {isSubmitting
+            ? isEditMode
+              ? 'Updating...'
+              : 'Creating...'
+            : isEditMode
+            ? 'Update Loan'
+            : 'Create Loan'}
         </Button>
       </div>
     </form>
