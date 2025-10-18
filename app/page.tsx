@@ -84,13 +84,17 @@ export default async function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your pawn business</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          Dashboard
+        </h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Overview of your pawn business
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -173,11 +177,11 @@ export default async function DashboardPage() {
                 <Link
                   key={loan.id}
                   href={`/loans/${loan.id}`}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-3"
                 >
-                  <div className="space-y-1">
+                  <div className="space-y-1 flex-1">
                     <p className="font-medium">{loan.loanName}</p>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                       <span>{loan.type}</span>
                       <span>•</span>
                       <span>
