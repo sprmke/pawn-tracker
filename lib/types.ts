@@ -1,6 +1,15 @@
 export type LoanType = 'Lot Title' | 'OR/CR' | 'Agent';
-export type LoanStatus = 'Active' | 'Done' | 'Overdue';
-export type TransactionType = 'Pawn' | 'Salary' | 'Credit Card' | 'Debt' | 'Others';
+export type LoanStatus =
+  | 'Partially Funded'
+  | 'Fully Funded'
+  | 'Overdue'
+  | 'Completed';
+export type TransactionType =
+  | 'Pawn'
+  | 'Salary'
+  | 'Credit Card'
+  | 'Debt'
+  | 'Others';
 export type TransactionDirection = 'In' | 'Out';
 
 export interface Investor {
@@ -16,8 +25,6 @@ export interface Loan {
   loanName: string;
   type: LoanType;
   status: LoanStatus;
-  principalAmount: string;
-  defaultInterestRate: string;
   dueDate: Date;
   isMonthlyInterest: boolean;
   freeLotSqm?: number;
@@ -73,4 +80,3 @@ export interface LoanSummary {
   totalInterest: number;
   totalAmount: number;
 }
-
