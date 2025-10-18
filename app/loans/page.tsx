@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -28,6 +27,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import { LoanWithInvestors } from '@/lib/types';
+import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 
 type SortField =
   | 'loanName'
@@ -42,6 +42,7 @@ export default function LoansPage() {
   const router = useRouter();
   const [loans, setLoans] = useState<LoanWithInvestors[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [sortField, setSortField] = useState<SortField>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -175,7 +176,7 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Loans
@@ -184,12 +185,32 @@ export default function LoansPage() {
             Manage all your pawn loans
           </p>
         </div>
-        <Link href="/loans/new">
-          <Button className="w-full sm:w-auto">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Loan
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border rounded-lg p-1">
+            <Button
+              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+              className="h-8 px-3"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className="h-8 px-3"
+            >
+              <TableIcon className="h-4 w-4" />
+            </Button>
+          </div>
+          <Link href="/loans/new">
+            <Button className="w-full sm:w-auto">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Loan
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {loans.length === 0 ? (
@@ -205,19 +226,8 @@ export default function LoansPage() {
           </CardContent>
         </Card>
       ) : (
-        <Tabs defaultValue="cards" className="w-full">
-          <TabsList className="grid w-full max-w-[400px] grid-cols-2">
-            <TabsTrigger value="cards" className="flex items-center gap-2">
-              <LayoutGrid className="h-4 w-4" />
-              Cards
-            </TabsTrigger>
-            <TabsTrigger value="table" className="flex items-center gap-2">
-              <TableIcon className="h-4 w-4" />
-              Table
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="cards" className="mt-6">
+        <>
+          {viewMode === 'cards' && (
             <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {loans.map((loan) => (
                 <Link href={`/loans/${loan.id}`} key={loan.id}>
@@ -229,92 +239,238 @@ export default function LoansPage() {
                             {loan.loanName}
                           </CardTitle>
                           <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge
+                              variant={getLoanTypeBadge(loan.type).variant}
+                              className={`text-xs ${
+                                getLoanTypeBadge(loan.type).className || ''
+                              }`}
+                            >
                               {loan.type}
                             </Badge>
                           </div>
                         </div>
                         <Badge
-                          variant={
-                            loan.status === 'Fully Funded'
-                              ? 'default'
-                              : loan.status === 'Partially Funded'
-                              ? 'secondary'
-                              : loan.status === 'Completed'
-                              ? 'default'
-                              : 'destructive'
-                          }
+                          variant={getLoanStatusBadge(loan.status).variant}
+                          className={getLoanStatusBadge(loan.status).className}
                         >
                           {loan.status}
                         </Badge>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <DollarSign className="h-3 w-3 flex-shrink-0" />
-                            <p className="text-xs">Total Principal</p>
-                          </div>
-                          <p className="text-base sm:text-lg font-semibold break-words">
+                      {/* Summary Section */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Total Principal
+                          </p>
+                          <p className="text-sm font-bold break-words">
                             {formatCurrency(getTotalPrincipal(loan).toString())}
                           </p>
                         </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Users className="h-3 w-3 flex-shrink-0" />
-                            <p className="text-xs">Investors</p>
-                          </div>
-                          <p className="text-base sm:text-lg font-semibold">
-                            {loan.loanInvestors.length}
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Avg. Rate
+                          </p>
+                          <p className="text-sm font-bold">
+                            {(() => {
+                              const totalPrincipal = getTotalPrincipal(loan);
+                              const totalInterest = loan.loanInvestors.reduce(
+                                (sum, li) => {
+                                  const capital = parseFloat(li.amount);
+                                  const rate =
+                                    parseFloat(li.interestRate) / 100;
+                                  return sum + capital * rate;
+                                },
+                                0
+                              );
+                              const avgRate =
+                                totalPrincipal > 0
+                                  ? (totalInterest / totalPrincipal) * 100
+                                  : 0;
+                              return `${avgRate.toFixed(2)}%`;
+                            })()}
                           </p>
                         </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-2 border-t">
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <Calendar className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                          <span className="text-muted-foreground">Due:</span>
-                          <span className="font-medium">
-                            {formatDate(loan.dueDate)}
-                          </span>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Total Interest
+                          </p>
+                          <p className="text-sm font-bold break-words">
+                            {formatCurrency(
+                              loan.loanInvestors
+                                .reduce((sum, li) => {
+                                  const capital = parseFloat(li.amount);
+                                  const rate =
+                                    parseFloat(li.interestRate) / 100;
+                                  return sum + capital * rate;
+                                }, 0)
+                                .toString()
+                            )}
+                          </p>
                         </div>
-                        {loan.freeLotSqm && (
-                          <div className="flex items-center gap-1.5 text-sm">
-                            <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                            <span className="font-medium">
-                              {loan.freeLotSqm} sqm
-                            </span>
-                          </div>
-                        )}
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Total Amount
+                          </p>
+                          <p className="text-sm font-bold break-words">
+                            {(() => {
+                              const totalPrincipal = getTotalPrincipal(loan);
+                              const totalInterest = loan.loanInvestors.reduce(
+                                (sum, li) => {
+                                  const capital = parseFloat(li.amount);
+                                  const rate =
+                                    parseFloat(li.interestRate) / 100;
+                                  return sum + capital * rate;
+                                },
+                                0
+                              );
+                              return formatCurrency(
+                                (totalPrincipal + totalInterest).toString()
+                              );
+                            })()}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Due Date
+                          </p>
+                          <p className="text-sm font-bold">
+                            {new Date(loan.dueDate).toLocaleDateString(
+                              'en-US',
+                              {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              }
+                            )}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Free Lot
+                          </p>
+                          <p className="text-sm font-bold">
+                            {loan.freeLotSqm ? `${loan.freeLotSqm} sqm` : '-'}
+                          </p>
+                        </div>
                       </div>
 
                       {loan.loanInvestors.length > 0 && (
                         <div className="pt-2 border-t">
-                          <p className="text-xs text-muted-foreground mb-2">
+                          <p className="text-xs text-muted-foreground mb-3">
                             Investors:
                           </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {loan.loanInvestors.map((li) => (
-                              <Badge
-                                key={li.id}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {li.investor.name}: {formatCurrency(li.amount)}{' '}
-                                @ {li.interestRate}%
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                          <div className="space-y-3">
+                            {(() => {
+                              // Group by investor
+                              const investorMap = new Map<
+                                number,
+                                Array<(typeof loan.loanInvestors)[0]>
+                              >();
+                              loan.loanInvestors.forEach((li) => {
+                                const existing =
+                                  investorMap.get(li.investor.id) || [];
+                                existing.push(li);
+                                investorMap.set(li.investor.id, existing);
+                              });
 
-                      {loan.notes && (
-                        <div className="pt-2 border-t">
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Notes:
-                          </p>
-                          <p className="text-sm line-clamp-2">{loan.notes}</p>
+                              return Array.from(investorMap.values()).map(
+                                (transactions) => {
+                                  const investor = transactions[0].investor;
+
+                                  // Calculate totals
+                                  const totalPrincipal = transactions.reduce(
+                                    (sum, t) => sum + parseFloat(t.amount),
+                                    0
+                                  );
+                                  const totalInterest = transactions.reduce(
+                                    (sum, t) => {
+                                      const capital = parseFloat(t.amount);
+                                      const rate =
+                                        parseFloat(t.interestRate) / 100;
+                                      return sum + capital * rate;
+                                    },
+                                    0
+                                  );
+                                  const avgRate =
+                                    totalPrincipal > 0
+                                      ? (totalInterest / totalPrincipal) * 100
+                                      : 0;
+                                  const total = totalPrincipal + totalInterest;
+
+                                  // Get comma-separated dates
+                                  const dates = transactions
+                                    .map((t) =>
+                                      new Date(t.sentDate).toLocaleDateString(
+                                        'en-US',
+                                        {
+                                          month: 'short',
+                                          day: 'numeric',
+                                        }
+                                      )
+                                    )
+                                    .join(', ');
+
+                                  return (
+                                    <div
+                                      key={investor.id}
+                                      className="space-y-1.5"
+                                    >
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="text-xs font-semibold">
+                                          {investor.name}
+                                        </span>
+                                        <span className="text-[10px] text-muted-foreground">
+                                          {dates}
+                                        </span>
+                                      </div>
+                                      <div className="pl-3 py-2 bg-muted/30 rounded text-[11px]">
+                                        <div className="grid grid-cols-4 gap-2">
+                                          <div>
+                                            <span className="text-muted-foreground block text-[10px]">
+                                              Principal
+                                            </span>
+                                            <span className="font-medium text-foreground">
+                                              {formatCurrency(
+                                                totalPrincipal.toString()
+                                              )}
+                                            </span>
+                                          </div>
+                                          <div>
+                                            <span className="text-muted-foreground block text-[10px]">
+                                              Avg. Rate
+                                            </span>
+                                            <span className="text-foreground">
+                                              {avgRate.toFixed(2)}%
+                                            </span>
+                                          </div>
+                                          <div>
+                                            <span className="text-muted-foreground block text-[10px]">
+                                              Interest
+                                            </span>
+                                            <span className="text-foreground">
+                                              {formatCurrency(
+                                                totalInterest.toString()
+                                              )}
+                                            </span>
+                                          </div>
+                                          <div>
+                                            <span className="text-muted-foreground block text-[10px]">
+                                              Total
+                                            </span>
+                                            <span className="font-semibold text-foreground">
+                                              {formatCurrency(total.toString())}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                              );
+                            })()}
+                          </div>
                         </div>
                       )}
                     </CardContent>
@@ -322,9 +478,9 @@ export default function LoansPage() {
                 </Link>
               ))}
             </div>
-          </TabsContent>
+          )}
 
-          <TabsContent value="table" className="mt-6">
+          {viewMode === 'table' && (
             <Card>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -365,18 +521,18 @@ export default function LoansPage() {
                             {loan.loanName}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{loan.type}</Badge>
+                            <Badge
+                              variant={getLoanTypeBadge(loan.type).variant}
+                              className={getLoanTypeBadge(loan.type).className}
+                            >
+                              {loan.type}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={
-                                loan.status === 'Fully Funded'
-                                  ? 'default'
-                                  : loan.status === 'Partially Funded'
-                                  ? 'secondary'
-                                  : loan.status === 'Completed'
-                                  ? 'default'
-                                  : 'destructive'
+                              variant={getLoanStatusBadge(loan.status).variant}
+                              className={
+                                getLoanStatusBadge(loan.status).className
                               }
                             >
                               {loan.status}
@@ -462,8 +618,8 @@ export default function LoansPage() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          )}
+        </>
       )}
     </div>
   );
