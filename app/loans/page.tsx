@@ -48,9 +48,7 @@ export default async function LoansPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Loans</h1>
-          <p className="text-muted-foreground">
-            Manage all your pawn loans
-          </p>
+          <p className="text-muted-foreground">Manage all your pawn loans</p>
         </div>
         <Link href="/loans/new">
           <Button>
@@ -88,9 +86,11 @@ export default async function LoansPage() {
                   </div>
                   <Badge
                     variant={
-                      loan.status === 'Active'
+                      loan.status === 'Fully Funded'
                         ? 'default'
-                        : loan.status === 'Done'
+                        : loan.status === 'Partially Funded'
+                        ? 'secondary'
+                        : loan.status === 'Completed'
                         ? 'success'
                         : 'destructive'
                     }
@@ -101,17 +101,17 @@ export default async function LoansPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Principal</p>
-                      <p className="text-lg font-semibold">
-                        {formatCurrency(loan.principalAmount)}
+                      <p className="text-sm text-muted-foreground">
+                        Total Principal
                       </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Interest Rate</p>
                       <p className="text-lg font-semibold">
-                        {loan.defaultInterestRate}%
+                        {formatCurrency(
+                          loan.loanInvestors
+                            .reduce((sum, li) => sum + parseFloat(li.amount), 0)
+                            .toString()
+                        )}
                       </p>
                     </div>
                     <div>
@@ -122,7 +122,9 @@ export default async function LoansPage() {
                     </div>
                     {loan.freeLotSqm && (
                       <div>
-                        <p className="text-sm text-muted-foreground">Free Lot</p>
+                        <p className="text-sm text-muted-foreground">
+                          Free Lot
+                        </p>
                         <p className="text-lg font-semibold">
                           {loan.freeLotSqm} sqm
                         </p>
@@ -132,11 +134,14 @@ export default async function LoansPage() {
 
                   {loan.loanInvestors.length > 0 && (
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">Investors:</p>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Investors:
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         {loan.loanInvestors.map((li) => (
                           <Badge key={li.id} variant="secondary">
-                            {li.investor.name}: {formatCurrency(li.amount)} @ {li.interestRate}%
+                            {li.investor.name}: {formatCurrency(li.amount)} @{' '}
+                            {li.interestRate}%
                           </Badge>
                         ))}
                       </div>
@@ -145,7 +150,9 @@ export default async function LoansPage() {
 
                   {loan.notes && (
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Notes:</p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        Notes:
+                      </p>
                       <p className="text-sm">{loan.notes}</p>
                     </div>
                   )}
@@ -158,4 +165,3 @@ export default async function LoansPage() {
     </div>
   );
 }
-
