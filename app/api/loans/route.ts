@@ -39,7 +39,6 @@ export async function POST(request: Request) {
       type: loanData.type,
       status: loanData.status,
       dueDate: new Date(loanData.dueDate),
-      isMonthlyInterest: Boolean(loanData.isMonthlyInterest),
       freeLotSqm: loanData.freeLotSqm ? Number(loanData.freeLotSqm) : null,
       notes: loanData.notes || null,
     };
