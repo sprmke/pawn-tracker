@@ -4,7 +4,16 @@ import { investors } from '@/db/schema';
 
 export async function GET() {
   try {
-    const allInvestors = await db.select().from(investors);
+    const allInvestors = await db.query.investors.findMany({
+      with: {
+        loanInvestors: {
+          with: {
+            loan: true,
+          },
+        },
+        transactions: true,
+      },
+    });
     return NextResponse.json(allInvestors);
   } catch (error) {
     console.error('Error fetching investors:', error);
@@ -28,4 +37,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
