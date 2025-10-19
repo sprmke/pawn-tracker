@@ -23,7 +23,18 @@ import {
   ChevronLeft,
   ChevronRight,
   UserPlus,
+  Search,
+  X,
+  Filter,
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { InvestorWithLoans } from '@/lib/types';
 
 type SortField =
@@ -41,6 +52,9 @@ interface InvestorStats {
   activeLoans: number;
   currentBalance: number;
   totalLoans: number;
+  completedLoans: number;
+  overdueLoans: number;
+  totalGain: number;
 }
 
 export default function InvestorsPage() {
@@ -51,6 +65,19 @@ export default function InvestorsPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter states
+  const [loanStatusFilter, setLoanStatusFilter] = useState<string>('all');
+  const [minBalance, setMinBalance] = useState<string>('');
+  const [maxBalance, setMaxBalance] = useState<string>('');
+  const [minCapital, setMinCapital] = useState<string>('');
+  const [maxCapital, setMaxCapital] = useState<string>('');
+  const [minInterest, setMinInterest] = useState<string>('');
+  const [maxInterest, setMaxInterest] = useState<string>('');
+  const [minGain, setMinGain] = useState<string>('');
+  const [maxGain, setMaxGain] = useState<string>('');
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
 
   useEffect(() => {
     fetchInvestors();
@@ -93,6 +120,14 @@ export default function InvestorsPage() {
         li.loan.status === 'Partially Funded'
     ).length;
 
+    const completedLoans = investor.loanInvestors.filter(
+      (li) => li.loan.status === 'Completed'
+    ).length;
+
+    const overdueLoans = investor.loanInvestors.filter(
+      (li) => li.loan.status === 'Overdue'
+    ).length;
+
     // Get latest balance from transactions
     const latestTransaction =
       investor.transactions.length > 0
@@ -105,12 +140,17 @@ export default function InvestorsPage() {
       ? parseFloat(latestTransaction.balance)
       : 0;
 
+    const totalGain = totalCapital + totalInterest;
+
     return {
       totalCapital,
       totalInterest,
       activeLoans,
       currentBalance,
       totalLoans: investor.loanInvestors.length,
+      completedLoans,
+      overdueLoans,
+      totalGain,
     };
   };
 
@@ -132,7 +172,99 @@ export default function InvestorsPage() {
     setCurrentPage(1); // Reset to first page when sorting
   };
 
-  const sortedInvestors = [...investors].sort((a, b) => {
+  const clearFilters = () => {
+    setSearchQuery('');
+    setLoanStatusFilter('all');
+    setMinBalance('');
+    setMaxBalance('');
+    setMinCapital('');
+    setMaxCapital('');
+    setMinInterest('');
+    setMaxInterest('');
+    setMinGain('');
+    setMaxGain('');
+    setCurrentPage(1);
+  };
+
+  const hasActiveAmountFilters =
+    minBalance !== '' ||
+    maxBalance !== '' ||
+    minCapital !== '' ||
+    maxCapital !== '' ||
+    minInterest !== '' ||
+    maxInterest !== '' ||
+    minGain !== '' ||
+    maxGain !== '';
+
+  const hasActiveFilters =
+    searchQuery !== '' || loanStatusFilter !== 'all' || hasActiveAmountFilters;
+
+  // Filter investors based on search and filters
+  const filteredInvestors = investors.filter((investor) => {
+    const stats = getInvestorStats(investor);
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesName = investor.name.toLowerCase().includes(query);
+      const matchesEmail = investor.email.toLowerCase().includes(query);
+      if (!matchesName && !matchesEmail) return false;
+    }
+
+    // Loan status filter
+    if (loanStatusFilter !== 'all') {
+      switch (loanStatusFilter) {
+        case 'active':
+          if (stats.activeLoans === 0) return false;
+          break;
+        case 'completed':
+          if (stats.completedLoans === 0) return false;
+          break;
+        case 'overdue':
+          if (stats.overdueLoans === 0) return false;
+          break;
+        case 'no-loans':
+          if (stats.totalLoans > 0) return false;
+          break;
+      }
+    }
+
+    // Balance range filter
+    if (minBalance !== '' && stats.currentBalance < parseFloat(minBalance)) {
+      return false;
+    }
+    if (maxBalance !== '' && stats.currentBalance > parseFloat(maxBalance)) {
+      return false;
+    }
+
+    // Capital range filter
+    if (minCapital !== '' && stats.totalCapital < parseFloat(minCapital)) {
+      return false;
+    }
+    if (maxCapital !== '' && stats.totalCapital > parseFloat(maxCapital)) {
+      return false;
+    }
+
+    // Interest range filter
+    if (minInterest !== '' && stats.totalInterest < parseFloat(minInterest)) {
+      return false;
+    }
+    if (maxInterest !== '' && stats.totalInterest > parseFloat(maxInterest)) {
+      return false;
+    }
+
+    // Gain range filter
+    if (minGain !== '' && stats.totalGain < parseFloat(minGain)) {
+      return false;
+    }
+    if (maxGain !== '' && stats.totalGain > parseFloat(maxGain)) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const sortedInvestors = [...filteredInvestors].sort((a, b) => {
     const aStats = getInvestorStats(a);
     const bStats = getInvestorStats(b);
     let aValue: any;
@@ -251,6 +383,225 @@ export default function InvestorsPage() {
         </div>
       </div>
 
+      {/* Search and Filter Section */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
+          {/* Search and Loan Status Row */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search investors by name or email..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Loan Status Filter */}
+            <Select
+              value={loanStatusFilter}
+              onValueChange={(value) => {
+                setLoanStatusFilter(value);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Loan Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Loan Status</SelectItem>
+                <SelectItem value="active">Has Active Loans</SelectItem>
+                <SelectItem value="completed">Has Completed Loans</SelectItem>
+                <SelectItem value="overdue">Has Overdue Loans</SelectItem>
+                <SelectItem value="no-loans">No Loans</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* More Filters Button */}
+            <Button
+              variant={showMoreFilters ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => setShowMoreFilters(!showMoreFilters)}
+              className="whitespace-nowrap relative"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              {showMoreFilters ? 'Less' : 'More'} Filters
+              {hasActiveAmountFilters && (
+                <span className="ml-2 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
+              )}
+            </Button>
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+                className="whitespace-nowrap"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Clear All
+              </Button>
+            )}
+          </div>
+
+          {/* Amount Range Filters - Collapsible */}
+          {showMoreFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 border rounded-lg bg-muted/30 animate-in slide-in-from-top-2 duration-200">
+              {/* Current Balance Range */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold flex items-center gap-1">
+                  <DollarSign className="h-3.5 w-3.5" />
+                  Current Balance
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min (₱)"
+                    value={minBalance}
+                    onChange={(e) => {
+                      setMinBalance(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-9 text-sm"
+                  />
+                  <span className="text-muted-foreground">-</span>
+                  <Input
+                    type="number"
+                    placeholder="Max (₱)"
+                    value={maxBalance}
+                    onChange={(e) => {
+                      setMaxBalance(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Total Capital Range */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold flex items-center gap-1">
+                  <DollarSign className="h-3.5 w-3.5" />
+                  Total Capital
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min (₱)"
+                    value={minCapital}
+                    onChange={(e) => {
+                      setMinCapital(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-9 text-sm"
+                  />
+                  <span className="text-muted-foreground">-</span>
+                  <Input
+                    type="number"
+                    placeholder="Max (₱)"
+                    value={maxCapital}
+                    onChange={(e) => {
+                      setMaxCapital(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Total Interest Range */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold flex items-center gap-1">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Total Interest
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min (₱)"
+                    value={minInterest}
+                    onChange={(e) => {
+                      setMinInterest(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-9 text-sm"
+                  />
+                  <span className="text-muted-foreground">-</span>
+                  <Input
+                    type="number"
+                    placeholder="Max (₱)"
+                    value={maxInterest}
+                    onChange={(e) => {
+                      setMaxInterest(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Total Gain Range */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold flex items-center gap-1">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Total Gain
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min (₱)"
+                    value={minGain}
+                    onChange={(e) => {
+                      setMinGain(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-9 text-sm"
+                  />
+                  <span className="text-muted-foreground">-</span>
+                  <Input
+                    type="number"
+                    placeholder="Max (₱)"
+                    value={maxGain}
+                    onChange={(e) => {
+                      setMaxGain(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Results Count */}
+        {hasActiveFilters && (
+          <div className="text-sm text-muted-foreground">
+            Showing {filteredInvestors.length} of {investors.length} investors
+          </div>
+        )}
+      </div>
+
       {investors.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -263,11 +614,23 @@ export default function InvestorsPage() {
             </Link>
           </CardContent>
         </Card>
+      ) : filteredInvestors.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-muted-foreground mb-4">
+              No investors match your filters
+            </p>
+            <Button variant="outline" onClick={clearFilters}>
+              <X className="mr-2 h-4 w-4" />
+              Clear filters
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <>
           {viewMode === 'cards' && (
-            <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {investors.map((investor) => {
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
+              {sortedInvestors.map((investor) => {
                 const stats = getInvestorStats(investor);
                 const balanceStatus = getBalanceStatus(stats.currentBalance);
 
