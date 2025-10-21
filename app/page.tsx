@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, TrendingUp, FileText, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { getLoanStatusBadge } from '@/lib/badge-config';
 
 async function getDashboardData() {
   try {
@@ -197,15 +198,8 @@ export default async function DashboardPage() {
                     </div>
                   </div>
                   <Badge
-                    variant={
-                      loan.status === 'Fully Funded'
-                        ? 'default'
-                        : loan.status === 'Partially Funded'
-                        ? 'secondary'
-                        : loan.status === 'Completed'
-                        ? 'success'
-                        : 'destructive'
-                    }
+                    variant={getLoanStatusBadge(loan.status).variant}
+                    className={getLoanStatusBadge(loan.status).className}
                   >
                     {loan.status}
                   </Badge>
