@@ -94,36 +94,31 @@ export function InvestorTransactionsDisplay({
           0
         );
 
-        // Calculate interest based on investor's mode (not per transaction)
-        const totalInterest = transactions.reduce((sum, t) => {
-          const capital = parseFloat(t.amount);
+        // Calculate interest based on investor's mode
+        let totalInterest = 0;
 
-          // Check if investor has multiple interest periods
-          if (
-            item.hasMultipleInterest &&
-            item.interestPeriods &&
-            item.interestPeriods.length > 0
-          ) {
-            // Calculate total interest from all periods for this transaction
-            const periodInterest = item.interestPeriods.reduce(
-              (pSum, period) => {
-                const interest = calculateInterest(
-                  capital,
-                  period.interestRate,
-                  period.interestType
-                );
-                return pSum + interest;
-              },
-              0
+        if (
+          item.hasMultipleInterest &&
+          item.interestPeriods &&
+          item.interestPeriods.length > 0
+        ) {
+          // For multiple interest: apply periods to TOTAL capital (not per transaction)
+          totalInterest = item.interestPeriods.reduce((sum, period) => {
+            const interest = calculateInterest(
+              totalCapital,
+              period.interestRate,
+              period.interestType
             );
-            return sum + periodInterest;
-          } else {
-            // Single interest calculation
+            return sum + interest;
+          }, 0);
+        } else {
+          // For single interest: sum up each transaction's interest
+          totalInterest = transactions.reduce((sum, t) => {
             return (
               sum + calculateInterest(t.amount, t.interestRate, t.interestType)
             );
-          }
-        }, 0);
+          }, 0);
+        }
 
         const grandTotal = totalCapital + totalInterest;
         const averageRate =
@@ -142,15 +137,20 @@ export function InvestorTransactionsDisplay({
                   </p>
                 )}
               </div>
-              {transactions.length > 1 && (
-                <Badge variant="secondary" className="text-xs w-fit">
-                  {transactions.length} Transactions
-                </Badge>
-              )}
             </div>
 
             {/* Individual Transactions */}
             <div className="space-y-2">
+              {transactions.length > 1 && (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-foreground">
+                    Transactions
+                  </p>
+                  <Badge variant="secondary" className="text-xs w-fit">
+                    {transactions.length} Transactions
+                  </Badge>
+                </div>
+              )}
               {transactions.map((transaction, index) => {
                 const capital = parseFloat(transaction.amount);
                 const rateValue = parseFloat(transaction.interestRate);
@@ -203,61 +203,72 @@ export function InvestorTransactionsDisplay({
                       isDateInFuture ? 'bg-yellow-50' : 'bg-muted/30'
                     }`}
                   >
-                    {transactions.length > 1 && (
-                      <div className="flex items-center mb-2 space-x-2">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          Transaction {index + 1}
-                        </span>
-                        {isDateInFuture && (
-                          <Badge
-                            variant="warning"
-                            className="text-[10px] h-3.5 px-1 py-0 leading-none"
-                          >
-                            To be paid
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                    {transactions.length === 1 && isDateInFuture && (
-                      <div className="flex items-center mb-2">
+                    <div className="flex items-center mb-2 space-x-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Transaction {index + 1}
+                      </span>
+                      {isDateInFuture && (
                         <Badge
                           variant="warning"
                           className="text-[10px] h-3.5 px-1 py-0 leading-none"
                         >
                           To be paid
                         </Badge>
+                      )}
+                    </div>
+                    {item.hasMultipleInterest ? (
+                      // For multiple interest: show only Principal and Sent Date
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">
+                            {transactions.length > 1 ? 'Principal' : 'Capital'}
+                          </p>
+                          <p className="font-medium">
+                            {formatCurrency(capital)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Sent Date</p>
+                          <p className="font-medium">
+                            {formatDate(transaction.sentDate)}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      // For single interest: show all fields
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">
+                            {transactions.length > 1 ? 'Principal' : 'Capital'}
+                          </p>
+                          <p className="font-medium">
+                            {formatCurrency(capital)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Rate</p>
+                          <p className="font-medium">{rate.toFixed(2)}%</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Interest</p>
+                          <p className="font-medium">
+                            {formatCurrency(interest)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Total</p>
+                          <p className="font-semibold">
+                            {formatCurrency(total)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Sent Date</p>
+                          <p className="font-medium">
+                            {formatDate(transaction.sentDate)}
+                          </p>
+                        </div>
                       </div>
                     )}
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">
-                          {transactions.length > 1 ? 'Principal' : 'Capital'}
-                        </p>
-                        <p className="font-medium">{formatCurrency(capital)}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">
-                          {item.hasMultipleInterest ? 'Avg. Rate' : 'Rate'}
-                        </p>
-                        <p className="font-medium">{rate.toFixed(2)}%</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Interest</p>
-                        <p className="font-medium">
-                          {formatCurrency(interest)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Total</p>
-                        <p className="font-semibold">{formatCurrency(total)}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Sent Date</p>
-                        <p className="font-medium">
-                          {formatDate(transaction.sentDate)}
-                        </p>
-                      </div>
-                    </div>
 
                     {isDateInFuture &&
                       loanId &&
@@ -287,44 +298,64 @@ export function InvestorTransactionsDisplay({
             {item.hasMultipleInterest &&
               item.interestPeriods &&
               item.interestPeriods.length > 0 && (
-                <div className="mt-3 pt-3 border-t space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    Interest Periods (Applied to All Transactions):
+                <div className="mt-3 pt-3 border-t space-y-3">
+                  <p className="text-sm font-semibold text-foreground">
+                    Interest Breakdown
                   </p>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {item.interestPeriods.map((period, pIndex) => {
-                      // Use the first transaction's capital for display purposes
-                      const capital = parseFloat(transactions[0].amount);
+                      // Use total capital (sum of all transactions) for interest calculation
                       const periodInterest = calculateInterest(
-                        capital,
+                        totalCapital,
                         period.interestRate,
                         period.interestType
                       );
+
+                      // Calculate the rate percentage based on the interest type
                       const periodRate =
                         period.interestType === 'fixed'
-                          ? capital > 0
-                            ? (parseFloat(period.interestRate) / capital) * 100
+                          ? totalCapital > 0
+                            ? (periodInterest / totalCapital) * 100
                             : 0
                           : parseFloat(period.interestRate);
 
                       return (
                         <div
                           key={period.id || `period-${pIndex}`}
-                          className="flex items-center justify-between text-xs bg-muted/50 p-2 rounded"
+                          className="p-3 bg-muted/50 rounded-lg"
                         >
-                          <span className="text-muted-foreground">
-                            {pIndex === item.interestPeriods!.length - 1
-                              ? 'Loan Due Date'
-                              : `Period ${pIndex + 1}`}{' '}
-                            - {formatDate(period.dueDate)}
-                          </span>
-                          <div className="flex items-center gap-3">
-                            <span className="font-medium">
-                              {periodRate.toFixed(2)}%
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {pIndex === item.interestPeriods!.length - 1
+                                ? `Period ${pIndex + 1} (Loan Due Date)`
+                                : `Period ${pIndex + 1}`}
                             </span>
-                            <span className="font-semibold">
-                              {formatCurrency(periodInterest)}
-                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div>
+                              <p className="text-muted-foreground text-xs">
+                                Due Date
+                              </p>
+                              <p className="font-medium">
+                                {formatDate(period.dueDate)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground text-xs">
+                                Rate
+                              </p>
+                              <p className="font-medium">
+                                {periodRate.toFixed(2)}%
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground text-xs">
+                                Interest
+                              </p>
+                              <p className="font-semibold">
+                                {formatCurrency(periodInterest)}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       );
