@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Investor } from '@/lib/types';
+import { FormHeader } from '@/components/common';
 
 const investorSchema = z.object({
   name: z
@@ -23,15 +24,18 @@ const investorSchema = z.object({
 interface InvestorFormProps {
   existingInvestor?: Investor;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 export function InvestorForm({
   existingInvestor,
   onSuccess,
+  onCancel,
 }: InvestorFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!existingInvestor;
+  const formRef = useRef<HTMLFormElement>(null);
 
   const {
     register,
@@ -98,8 +102,42 @@ export function InvestorForm({
     }
   };
 
+  const handleFormSubmit = () => {
+    formRef.current?.requestSubmit();
+  };
+
+  const handleCancelClick = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      router.back();
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <FormHeader
+        title={isEditMode ? existingInvestor.name : 'Create Investor'}
+        description={
+          isEditMode
+            ? 'Update investor information'
+            : 'Add a new investor to the system'
+        }
+        onCancel={handleCancelClick}
+        onSubmit={handleFormSubmit}
+        isSubmitting={isSubmitting}
+        isEditMode={isEditMode}
+        submitLabel={
+          isSubmitting
+            ? isEditMode
+              ? 'Updating...'
+              : 'Creating...'
+            : isEditMode
+            ? 'Update Investor'
+            : 'Create Investor'
+        }
+      />
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">
@@ -165,7 +203,7 @@ export function InvestorForm({
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.back()}
+          onClick={handleCancelClick}
           className="flex-1 w-full"
           disabled={isSubmitting}
         >
