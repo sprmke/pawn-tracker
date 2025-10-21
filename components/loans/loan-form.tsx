@@ -26,11 +26,7 @@ import { InvestorFormModal } from '@/components/investors/investor-form-modal';
 const loanSchema = z.object({
   loanName: z.string().min(1, 'Loan name is required'),
   type: z.enum(['Lot Title', 'OR/CR', 'Agent']),
-  status: z
-    .enum(['Partially Funded', 'Fully Funded', 'Overdue', 'Completed'])
-    .default('Fully Funded'),
   dueDate: z.string().min(1, 'Due date is required'),
-  isMonthlyInterest: z.boolean().default(false),
   freeLotSqm: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -119,21 +115,65 @@ export function LoanForm({
       ? {
           loanName: existingLoan.loanName,
           type: existingLoan.type,
-          status: existingLoan.status,
           dueDate: new Date(existingLoan.dueDate).toISOString().split('T')[0],
-          isMonthlyInterest: existingLoan.isMonthlyInterest,
           freeLotSqm: existingLoan.freeLotSqm?.toString() || '',
           notes: existingLoan.notes || '',
         }
       : {
           type: 'Lot Title' as const,
-          status: 'Fully Funded' as const,
-          isMonthlyInterest: false,
         },
   });
 
   const watchType = watch('type');
-  const watchStatus = watch('status');
+  const watchDueDate = watch('dueDate');
+
+  // Helper function to calculate loan status automatically
+  const calculateLoanStatus = ():
+    | 'Fully Funded'
+    | 'Partially Funded'
+    | 'Overdue' => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check if any transaction has a future sent date
+    const hasFutureSentDate = selectedInvestors.some((si) =>
+      si.transactions.some((t) => {
+        if (!t.sentDate) return false;
+        const sentDate = new Date(t.sentDate);
+        sentDate.setHours(0, 0, 0, 0);
+        return sentDate > today;
+      })
+    );
+
+    // Check if loan is overdue
+    if (watchDueDate) {
+      const dueDate = new Date(watchDueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      if (today >= dueDate) {
+        return 'Overdue';
+      }
+    }
+
+    // If there's a future sent date, mark as Partially Funded
+    if (hasFutureSentDate) {
+      return 'Partially Funded';
+    }
+
+    // Default is Fully Funded
+    return 'Fully Funded';
+  };
+
+  // Check if there's a future sent date for displaying warning
+  const hasFutureSentDate = selectedInvestors.some((si) =>
+    si.transactions.some((t) => {
+      if (!t.sentDate) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const sentDate = new Date(t.sentDate);
+      sentDate.setHours(0, 0, 0, 0);
+      return sentDate > today;
+    })
+  );
 
   const addInvestor = (investorId: string) => {
     // Check if user wants to create new investor
@@ -324,12 +364,30 @@ export function LoanForm({
     const uniqueInvestors = selectedInvestors.length;
     console.log({ selectedInvestors, uniqueInvestors });
 
+    // Calculate loan status
+    const status = calculateLoanStatus();
+
+    // Calculate funded amount (only count transactions with sent date <= today)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const fundedCapital = preview.reduce((sum, p) => {
+      const sentDate = new Date(p.sentDate);
+      sentDate.setHours(0, 0, 0, 0);
+      return sentDate <= today ? sum + p.capital : sum;
+    }, 0);
+
+    const balance = totalCapital - fundedCapital;
+
     return {
       totalCapital,
       totalInterest,
       totalAmount,
       averageRate,
       uniqueInvestors,
+      status,
+      fundedCapital,
+      balance,
     };
   };
 
@@ -359,12 +417,14 @@ export function LoanForm({
     setIsSubmitting(true);
 
     try {
+      // Calculate the loan status automatically
+      const calculatedStatus = calculateLoanStatus();
+
       const loanData = {
         loanName: data.loanName,
         type: data.type,
-        status: data.status,
+        status: calculatedStatus,
         dueDate: new Date(data.dueDate),
-        isMonthlyInterest: data.isMonthlyInterest,
         freeLotSqm: data.freeLotSqm ? parseInt(data.freeLotSqm) : null,
         notes: data.notes || null,
       };
@@ -484,35 +544,17 @@ export function LoanForm({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={watchStatus}
-                onValueChange={(value) => setValue('status', value as any)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Fully Funded">Fully Funded</SelectItem>
-                  <SelectItem value="Partially Funded">
-                    Partially Funded
-                  </SelectItem>
-                  <SelectItem value="Overdue">Overdue</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="freeLotSqm">Free Lot (sqm)</Label>
-              <Input
-                id="freeLotSqm"
-                type="number"
-                {...register('freeLotSqm')}
-                placeholder="Optional"
-              />
-            </div>
+            {watchType === 'Lot Title' && (
+              <div className="space-y-2">
+                <Label htmlFor="freeLotSqm">Free Lot (sqm)</Label>
+                <Input
+                  id="freeLotSqm"
+                  type="number"
+                  {...register('freeLotSqm')}
+                  placeholder="Optional"
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -584,128 +626,163 @@ export function LoanForm({
 
                       {/* Transactions */}
                       <div className="space-y-3">
-                        {si.transactions.map((transaction, index) => (
-                          <div
-                            key={transaction.id}
-                            className="p-3 border rounded-lg space-y-3 bg-muted/30"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-muted-foreground">
-                                Transaction {index + 1}
-                              </span>
-                              {si.transactions.length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    removeTransaction(
-                                      si.investor.id,
-                                      transaction.id
-                                    )
-                                  }
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              )}
-                            </div>
+                        {si.transactions.map((transaction, index) => {
+                          // Check if this transaction's sent date is in the future
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const sentDate = new Date(transaction.sentDate);
+                          sentDate.setHours(0, 0, 0, 0);
+                          const isFutureSentDate = sentDate > today;
 
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              <div className="space-y-2">
-                                <Label className="text-xs">Amount *</Label>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={transaction.amount}
-                                  onChange={(e) =>
-                                    updateTransaction(
-                                      si.investor.id,
-                                      transaction.id,
-                                      'amount',
-                                      e.target.value
-                                    )
-                                  }
-                                  placeholder="0.00"
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label className="text-xs">Sent Date</Label>
-                                <Input
-                                  type="date"
-                                  value={transaction.sentDate}
-                                  onChange={(e) =>
-                                    updateTransaction(
-                                      si.investor.id,
-                                      transaction.id,
-                                      'sentDate',
-                                      e.target.value
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label className="text-xs">Interest</Label>
-                              <Tabs
-                                value={transaction.interestType}
-                                onValueChange={(value) =>
-                                  updateTransaction(
-                                    si.investor.id,
-                                    transaction.id,
-                                    'interestType',
-                                    value as 'rate' | 'amount'
-                                  )
-                                }
-                              >
-                                <TabsList className="grid w-full grid-cols-2 h-8">
-                                  <TabsTrigger value="rate" className="text-xs">
-                                    Rate (%)
-                                  </TabsTrigger>
-                                  <TabsTrigger
-                                    value="amount"
-                                    className="text-xs"
-                                  >
-                                    Fixed (₱)
-                                  </TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="rate" className="mt-2">
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={transaction.interestRate}
-                                    onChange={(e) =>
-                                      updateTransaction(
+                          return (
+                            <div
+                              key={transaction.id}
+                              className={`p-3 border rounded-lg space-y-3 ${
+                                isFutureSentDate
+                                  ? 'bg-yellow-50'
+                                  : 'bg-muted/30'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-muted-foreground">
+                                    Transaction {index + 1}
+                                  </span>
+                                  {isFutureSentDate && (
+                                    <Badge
+                                      variant="warning"
+                                      className="text-[10px] h-3.5 px-1 py-0 leading-none"
+                                    >
+                                      To be paid
+                                    </Badge>
+                                  )}
+                                </div>
+                                {si.transactions.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      removeTransaction(
                                         si.investor.id,
-                                        transaction.id,
-                                        'interestRate',
-                                        e.target.value
+                                        transaction.id
                                       )
                                     }
-                                    placeholder="10"
-                                  />
-                                </TabsContent>
-                                <TabsContent value="amount" className="mt-2">
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                  <Label className="text-xs">Amount *</Label>
                                   <Input
                                     type="number"
                                     step="0.01"
-                                    value={transaction.interestAmount}
+                                    value={transaction.amount}
                                     onChange={(e) =>
                                       updateTransaction(
                                         si.investor.id,
                                         transaction.id,
-                                        'interestAmount',
+                                        'amount',
                                         e.target.value
                                       )
                                     }
                                     placeholder="0.00"
                                   />
-                                </TabsContent>
-                              </Tabs>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label className="text-xs">Sent Date</Label>
+                                  <Input
+                                    type="date"
+                                    value={transaction.sentDate}
+                                    onChange={(e) =>
+                                      updateTransaction(
+                                        si.investor.id,
+                                        transaction.id,
+                                        'sentDate',
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label className="text-xs">Interest</Label>
+                                <Tabs
+                                  value={transaction.interestType}
+                                  onValueChange={(value) =>
+                                    updateTransaction(
+                                      si.investor.id,
+                                      transaction.id,
+                                      'interestType',
+                                      value as 'rate' | 'amount'
+                                    )
+                                  }
+                                >
+                                  <TabsList className="grid w-full grid-cols-2 h-8">
+                                    <TabsTrigger
+                                      value="rate"
+                                      className="text-xs"
+                                    >
+                                      Rate (%)
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                      value="amount"
+                                      className="text-xs"
+                                    >
+                                      Fixed (₱)
+                                    </TabsTrigger>
+                                  </TabsList>
+                                  <TabsContent value="rate" className="mt-2">
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={transaction.interestRate}
+                                      onChange={(e) =>
+                                        updateTransaction(
+                                          si.investor.id,
+                                          transaction.id,
+                                          'interestRate',
+                                          e.target.value
+                                        )
+                                      }
+                                      placeholder="10"
+                                    />
+                                  </TabsContent>
+                                  <TabsContent value="amount" className="mt-2">
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={transaction.interestAmount}
+                                      onChange={(e) =>
+                                        updateTransaction(
+                                          si.investor.id,
+                                          transaction.id,
+                                          'interestAmount',
+                                          e.target.value
+                                        )
+                                      }
+                                      placeholder="0.00"
+                                    />
+                                  </TabsContent>
+                                </Tabs>
+                              </div>
+
+                              {isFutureSentDate && (
+                                <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                                  <strong>Note:</strong> This transaction has a
+                                  future sent date. This loan will be marked as{' '}
+                                  <strong>Partially Funded</strong> until all
+                                  funds are received.
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
 
                         <Button
                           type="button"
@@ -781,7 +858,7 @@ export function LoanForm({
                         return (
                           <div
                             key={investor.id}
-                            className="p-4 border rounded-lg space-y-3"
+                            className="p-4 border rounded-lg space-y-1"
                           >
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                               <h4 className="font-semibold text-sm sm:text-base">
@@ -799,62 +876,94 @@ export function LoanForm({
 
                             {/* Individual Transactions */}
                             <div className="space-y-2">
-                              {transactions.map((p, index) => (
-                                <div
-                                  key={`${p.investor.id}-${index}`}
-                                  className="p-3 bg-muted/30 rounded-lg space-y-2"
-                                >
-                                  {transactions.length > 1 && (
-                                    <div className="mb-2">
-                                      <span className="text-sm font-medium text-muted-foreground">
-                                        Transaction {index + 1}
-                                      </span>
-                                    </div>
-                                  )}
-                                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
-                                    <div>
-                                      <p className="text-muted-foreground">
-                                        Capital
-                                      </p>
-                                      <p className="font-medium">
-                                        {formatCurrency(p.capital)}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-muted-foreground">
-                                        Rate
-                                      </p>
-                                      <p className="font-medium">
-                                        {p.interestRate.toFixed(2)}%
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-muted-foreground">
-                                        Interest
-                                      </p>
-                                      <p className="font-medium">
-                                        {formatCurrency(p.interest)}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-muted-foreground">
-                                        Total
-                                      </p>
-                                      <p className="font-semibold">
-                                        {formatCurrency(p.total)}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-muted-foreground">
-                                        Sent Date
-                                      </p>
-                                      <p className="font-medium">
-                                        {p.sentDate}
-                                      </p>
+                              {transactions.map((p, index) => {
+                                // Check if sent date is in the future
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const sentDate = new Date(p.sentDate);
+                                sentDate.setHours(0, 0, 0, 0);
+                                const isFutureSentDate = sentDate > today;
+
+                                return (
+                                  <div
+                                    key={`${p.investor.id}-${index}`}
+                                    className={`p-3 rounded-lg space-y-2 ${
+                                      isFutureSentDate
+                                        ? 'bg-yellow-50'
+                                        : 'bg-muted/30'
+                                    }`}
+                                  >
+                                    {transactions.length > 1 && (
+                                      <div className="flex items-center mb-2 space-x-2">
+                                        <span className="text-sm font-semibold text-muted-foreground">
+                                          Transaction {index + 1}
+                                        </span>
+                                        {isFutureSentDate && (
+                                          <Badge
+                                            variant="warning"
+                                            className="text-[10px] h-3.5 px-1 py-0 leading-none"
+                                          >
+                                            To be paid
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    )}
+                                    {transactions.length === 1 &&
+                                      isFutureSentDate && (
+                                        <div className="flex items-center mb-2">
+                                          <Badge
+                                            variant="warning"
+                                            className="text-[10px] h-3.5 px-1 py-0 leading-none"
+                                          >
+                                            To be paid
+                                          </Badge>
+                                        </div>
+                                      )}
+                                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
+                                      <div>
+                                        <p className="text-muted-foreground">
+                                          Capital
+                                        </p>
+                                        <p className="font-medium">
+                                          {formatCurrency(p.capital)}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-muted-foreground">
+                                          Rate
+                                        </p>
+                                        <p className="font-medium">
+                                          {p.interestRate.toFixed(2)}%
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-muted-foreground">
+                                          Interest
+                                        </p>
+                                        <p className="font-medium">
+                                          {formatCurrency(p.interest)}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-muted-foreground">
+                                          Total
+                                        </p>
+                                        <p className="font-semibold">
+                                          {formatCurrency(p.total)}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-muted-foreground">
+                                          Sent Date
+                                        </p>
+                                        <p className="font-medium">
+                                          {p.sentDate}
+                                        </p>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
 
                             {/* Grand Total for this investor */}
@@ -909,7 +1018,7 @@ export function LoanForm({
                     <h4 className="font-semibold mb-4 text-sm sm:text-base">
                       Summary
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="p-4 bg-muted rounded-lg">
                         <p className="text-xs sm:text-sm text-muted-foreground">
                           Total Principal
@@ -942,6 +1051,37 @@ export function LoanForm({
                           {formatCurrency(summary.totalAmount)}
                         </p>
                       </div>
+                      <div className="p-4 bg-muted rounded-lg">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          Status
+                        </p>
+                        <div className="text-lg sm:text-xl font-bold break-words">
+                          <Badge
+                            variant={
+                              summary.status === 'Fully Funded'
+                                ? 'success'
+                                : summary.status === 'Partially Funded'
+                                ? 'warning'
+                                : summary.status === 'Overdue'
+                                ? 'destructive'
+                                : 'default'
+                            }
+                          >
+                            {summary.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      {summary.status === 'Partially Funded' &&
+                        summary.balance > 0 && (
+                          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-xs sm:text-sm text-yellow-800 font-semibold">
+                              Pending Balance
+                            </p>
+                            <p className="text-lg sm:text-xl font-bold break-words text-yellow-900">
+                              {formatCurrency(summary.balance)}
+                            </p>
+                          </div>
+                        )}
                       <div className="p-4 bg-muted rounded-lg">
                         <p className="text-xs sm:text-sm text-muted-foreground">
                           Investors
