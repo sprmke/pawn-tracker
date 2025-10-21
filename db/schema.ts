@@ -40,6 +40,7 @@ export const investors = pgTable('investors', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
+  contactNumber: text('contact_number'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -49,9 +50,8 @@ export const loans = pgTable('loans', {
   id: serial('id').primaryKey(),
   loanName: text('loan_name').notNull(),
   type: loanTypeEnum('type').notNull(),
-  status: loanStatusEnum('status').notNull().default('Partially Funded'),
+  status: loanStatusEnum('status').notNull().default('Fully Funded'),
   dueDate: timestamp('due_date').notNull(),
-  isMonthlyInterest: boolean('is_monthly_interest').default(false),
   freeLotSqm: integer('free_lot_sqm'),
   notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
