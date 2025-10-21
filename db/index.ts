@@ -1,5 +1,5 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
 import * as schema from './schema';
 import { config } from 'dotenv';
 
@@ -16,6 +16,6 @@ if (!connectionString) {
   );
 }
 
-// Use Neon's serverless pool for pooled connections
-const pool = new Pool({ connectionString });
-export const db = drizzle(pool, { schema });
+// Use Neon's HTTP driver for better compatibility with Next.js
+const sql = neon(connectionString);
+export const db = drizzle(sql, { schema });
