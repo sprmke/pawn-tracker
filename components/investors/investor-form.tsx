@@ -17,6 +17,7 @@ const investorSchema = z.object({
     .min(1, 'Name is required')
     .min(2, 'Name must be at least 2 characters'),
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  contactNumber: z.string().optional(),
 });
 
 interface InvestorFormProps {
@@ -42,10 +43,12 @@ export function InvestorForm({
       ? {
           name: existingInvestor.name,
           email: existingInvestor.email,
+          contactNumber: existingInvestor.contactNumber || '',
         }
       : {
           name: '',
           email: '',
+          contactNumber: '',
         },
   });
 
@@ -128,6 +131,22 @@ export function InvestorForm({
             />
             {errors.email && (
               <p className="text-sm text-red-600">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contactNumber">Contact Number</Label>
+            <Input
+              id="contactNumber"
+              type="tel"
+              {...register('contactNumber')}
+              placeholder="e.g., +63 912 345 6789"
+              disabled={isSubmitting}
+            />
+            {errors.contactNumber && (
+              <p className="text-sm text-red-600">
+                {errors.contactNumber.message}
+              </p>
             )}
           </div>
 
