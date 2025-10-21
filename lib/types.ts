@@ -16,6 +16,7 @@ export interface Investor {
   id: number;
   name: string;
   email: string;
+  contactNumber?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,7 +27,6 @@ export interface Loan {
   type: LoanType;
   status: LoanStatus;
   dueDate: Date;
-  isMonthlyInterest: boolean;
   freeLotSqm?: number;
   notes?: string;
   createdAt: Date;
