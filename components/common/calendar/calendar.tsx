@@ -40,6 +40,13 @@ export function Calendar({ events, config, showLegend = true }: CalendarProps) {
         showLegend={showLegend}
       />
 
+      {/* Mobile Scroll Hint */}
+      {(viewMode === 'week' || viewMode === 'month') && (
+        <div className="md:hidden text-xs text-muted-foreground text-center py-1 bg-muted/30 rounded-lg">
+          ← Swipe to scroll horizontally →
+        </div>
+      )}
+
       {/* Calendar Grid */}
       <Card>
         <CardContent className="p-0">

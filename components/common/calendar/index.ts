@@ -10,6 +10,7 @@ export type {
   CalendarEvent,
   CalendarEventSent,
   CalendarEventDue,
+  CalendarEventInterestDue,
   CalendarCell,
   CalendarConfig,
 } from './types';
