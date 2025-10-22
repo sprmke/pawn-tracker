@@ -22,7 +22,20 @@ export interface CalendarEventDue extends CalendarEventBase {
   totalAmount: number;
 }
 
-export type CalendarEvent = CalendarEventSent | CalendarEventDue;
+export interface CalendarEventInterestDue extends CalendarEventBase {
+  type: 'interest_due';
+  loan: any;
+  loanInvestor: any;
+  interestPeriod: any;
+  principal: number;
+  interest: number;
+  totalAmount: number;
+}
+
+export type CalendarEvent =
+  | CalendarEventSent
+  | CalendarEventDue
+  | CalendarEventInterestDue;
 
 export interface CalendarCell {
   date: Date;
