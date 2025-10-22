@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,7 +21,17 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { X, Plus, Eye, UserPlus } from 'lucide-react';
 import type { Investor, LoanWithInvestors } from '@/lib/types';
+import { toLocalDateString, isMoreThanOneMonth } from '@/lib/date-utils';
 import { InvestorFormModal } from '@/components/investors/investor-form-modal';
+import { LoanSummarySection } from './loan-summary-section';
+import { LoanInvestorsSection } from './loan-investors-section';
+import { FormHeader } from '@/components/common';
+import {
+  MultipleInterestManager,
+  InterestPeriodData,
+} from './multiple-interest-manager';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const loanSchema = z.object({
   loanName: z.string().min(1, 'Loan name is required'),
@@ -36,28 +46,35 @@ interface Transaction {
   amount: string;
   interestRate: string;
   interestAmount: string;
-  interestType: 'rate' | 'amount';
+  interestType: 'rate' | 'fixed';
   sentDate: string;
 }
 
 interface InvestorAllocation {
   investor: Investor;
   transactions: Transaction[];
+  hasMultipleInterest: boolean;
+  interestPeriods: InterestPeriodData[];
 }
 
 interface LoanFormProps {
   investors: Investor[];
   existingLoan?: LoanWithInvestors;
   onSuccess?: () => void;
+  onCancel?: () => void;
+  preselectedInvestorId?: number;
 }
 
 export function LoanForm({
   investors: initialInvestors,
   existingLoan,
   onSuccess,
+  onCancel,
+  preselectedInvestorId,
 }: LoanFormProps) {
   const router = useRouter();
   const isEditMode = !!existingLoan;
+  const formRef = useRef<HTMLFormElement>(null);
 
   // State for investors list (can be updated when new investor is added)
   const [investors, setInvestors] = useState<Investor[]>(initialInvestors);
@@ -73,13 +90,20 @@ export function LoanForm({
 
       existingLoan.loanInvestors.forEach((li) => {
         const transactions = investorMap.get(li.investor.id) || [];
+
+        // If type is 'fixed', interestRate contains the fixed amount
+        // If type is 'rate', interestRate contains the percentage
+        const interestAmount =
+          li.interestType === 'fixed' ? li.interestRate : '';
+        const interestRate = li.interestType === 'rate' ? li.interestRate : '';
+
         transactions.push({
           id: li.id.toString(),
           amount: li.amount,
-          interestRate: li.interestRate,
-          interestAmount: '',
-          interestType: 'rate' as const,
-          sentDate: new Date(li.sentDate).toISOString().split('T')[0],
+          interestRate: interestRate,
+          interestAmount: interestAmount,
+          interestType: li.interestType,
+          sentDate: toLocalDateString(li.sentDate),
         });
         investorMap.set(li.investor.id, transactions);
       });
@@ -90,13 +114,65 @@ export function LoanForm({
         const investor = existingLoan.loanInvestors.find(
           (li) => li.investor.id === investorId
         )?.investor;
+
+        // Get the first loan investor record for this investor to check hasMultipleInterest
+        const firstLoanInvestor = existingLoan.loanInvestors.find(
+          (li) => li.investor.id === investorId
+        );
+
+        // Convert interest periods if they exist (from the first transaction)
+        const interestPeriods: InterestPeriodData[] =
+          firstLoanInvestor?.interestPeriods
+            ? firstLoanInvestor.interestPeriods.map((ip) => ({
+                id: ip.id.toString(),
+                dueDate: toLocalDateString(ip.dueDate),
+                interestRate: ip.interestType === 'rate' ? ip.interestRate : '',
+                interestAmount:
+                  ip.interestType === 'fixed' ? ip.interestRate : '',
+                interestType: ip.interestType,
+              }))
+            : [];
+
         if (investor) {
-          result.push({ investor, transactions });
+          result.push({
+            investor,
+            transactions,
+            hasMultipleInterest:
+              firstLoanInvestor?.hasMultipleInterest || false,
+            interestPeriods: interestPeriods,
+          });
         }
       });
 
       return result;
     }
+
+    // If preselectedInvestorId is provided, add that investor
+    if (preselectedInvestorId) {
+      const preselectedInvestor = initialInvestors.find(
+        (inv) => inv.id === preselectedInvestorId
+      );
+      if (preselectedInvestor) {
+        return [
+          {
+            investor: preselectedInvestor,
+            transactions: [
+              {
+                id: `temp-${Date.now()}`,
+                amount: '',
+                interestRate: '10',
+                interestAmount: '',
+                interestType: 'rate',
+                sentDate: toLocalDateString(new Date()),
+              },
+            ],
+            hasMultipleInterest: false,
+            interestPeriods: [],
+          },
+        ];
+      }
+    }
+
     return [];
   });
   const [showPreview, setShowPreview] = useState(false);
@@ -115,7 +191,7 @@ export function LoanForm({
       ? {
           loanName: existingLoan.loanName,
           type: existingLoan.type,
-          dueDate: new Date(existingLoan.dueDate).toISOString().split('T')[0],
+          dueDate: toLocalDateString(existingLoan.dueDate),
           freeLotSqm: existingLoan.freeLotSqm?.toString() || '',
           notes: existingLoan.notes || '',
         }
@@ -199,9 +275,11 @@ export function LoanForm({
               interestRate: '10',
               interestAmount: '',
               interestType: 'rate',
-              sentDate: new Date().toISOString().split('T')[0],
+              sentDate: toLocalDateString(new Date()),
             },
           ],
+          hasMultipleInterest: false,
+          interestPeriods: [],
         },
       ]);
     }
@@ -236,9 +314,11 @@ export function LoanForm({
             interestRate: '10',
             interestAmount: '',
             interestType: 'rate',
-            sentDate: new Date().toISOString().split('T')[0],
+            sentDate: toLocalDateString(new Date()),
           },
         ],
+        hasMultipleInterest: false,
+        interestPeriods: [],
       },
     ]);
   };
@@ -263,7 +343,7 @@ export function LoanForm({
                   interestRate: '10',
                   interestAmount: '',
                   interestType: 'rate',
-                  sentDate: new Date().toISOString().split('T')[0],
+                  sentDate: toLocalDateString(new Date()),
                 },
               ],
             }
@@ -298,9 +378,40 @@ export function LoanForm({
         si.investor.id === investorId
           ? {
               ...si,
-              transactions: si.transactions.map((t) =>
-                t.id === transactionId ? { ...t, [field]: value } : t
-              ),
+              transactions: si.transactions.map((t) => {
+                if (t.id !== transactionId) return t;
+
+                const updatedTransaction = { ...t, [field]: value };
+
+                // When amount, interestRate, or interestAmount changes, update the corresponding field
+                const amount =
+                  parseFloat(field === 'amount' ? value : t.amount) || 0;
+
+                if (field === 'interestRate' && amount > 0) {
+                  // When rate changes, calculate and update fixed amount
+                  const rate = parseFloat(value) || 0;
+                  const fixedAmount = amount * (rate / 100);
+                  updatedTransaction.interestAmount = fixedAmount.toFixed(2);
+                } else if (field === 'interestAmount' && amount > 0) {
+                  // When fixed amount changes, calculate and update rate
+                  const fixedAmount = parseFloat(value) || 0;
+                  const rate = (fixedAmount / amount) * 100;
+                  updatedTransaction.interestRate = rate.toFixed(2);
+                } else if (field === 'amount') {
+                  // When amount changes, recalculate based on current interest type
+                  if (t.interestType === 'rate') {
+                    const rate = parseFloat(t.interestRate) || 0;
+                    const fixedAmount = amount * (rate / 100);
+                    updatedTransaction.interestAmount = fixedAmount.toFixed(2);
+                  } else {
+                    const fixedAmount = parseFloat(t.interestAmount) || 0;
+                    const rate = amount > 0 ? (fixedAmount / amount) * 100 : 0;
+                    updatedTransaction.interestRate = rate.toFixed(2);
+                  }
+                }
+
+                return updatedTransaction;
+              }),
             }
           : si
       )
@@ -323,14 +434,33 @@ export function LoanForm({
         let interest = 0;
         let interestRate = 0;
 
-        if (transaction.interestType === 'rate') {
-          interestRate = parseFloat(transaction.interestRate) || 0;
-          interest = capital * (interestRate / 100);
-        } else {
-          interest = parseFloat(transaction.interestAmount) || 0;
-          // Calculate the equivalent rate from fixed amount
+        // Calculate interest based on investor's mode (not per transaction)
+        if (si.hasMultipleInterest && si.interestPeriods.length > 0) {
+          // Calculate total interest from all periods for this transaction
+          si.interestPeriods.forEach((period) => {
+            if (period.interestType === 'rate') {
+              const rate = parseFloat(period.interestRate) || 0;
+              interest += capital * (rate / 100);
+            } else {
+              interest += parseFloat(period.interestAmount) || 0;
+            }
+          });
+
+          // Calculate average rate
           if (capital > 0) {
             interestRate = (interest / capital) * 100;
+          }
+        } else {
+          // Single interest calculation
+          if (transaction.interestType === 'rate') {
+            interestRate = parseFloat(transaction.interestRate) || 0;
+            interest = capital * (interestRate / 100);
+          } else {
+            interest = parseFloat(transaction.interestAmount) || 0;
+            // Calculate the equivalent rate from fixed amount
+            if (capital > 0) {
+              interestRate = (interest / capital) * 100;
+            }
           }
         }
 
@@ -434,27 +564,47 @@ export function LoanForm({
         investorId: number;
         amount: string;
         interestRate: string;
+        interestType: 'rate' | 'fixed';
         sentDate: Date;
+        hasMultipleInterest: boolean;
+        interestPeriods?: Array<{
+          dueDate: Date;
+          interestRate: string;
+          interestType: 'rate' | 'fixed';
+        }>;
       }> = [];
 
       selectedInvestors.forEach((si) => {
+        // Prepare interest periods if multiple interest is enabled (at investor level)
+        const interestPeriods = si.hasMultipleInterest
+          ? si.interestPeriods.map((period) => ({
+              dueDate: new Date(period.dueDate),
+              interestRate:
+                period.interestType === 'fixed'
+                  ? period.interestAmount
+                  : period.interestRate,
+              interestType: period.interestType,
+            }))
+          : undefined;
+
         si.transactions.forEach((transaction) => {
           let interestRate = transaction.interestRate;
+          let interestType: 'rate' | 'fixed' = 'rate';
 
-          // If user chose fixed amount, calculate the equivalent rate
-          if (transaction.interestType === 'amount') {
-            const capital = parseFloat(transaction.amount) || 0;
-            const interest = parseFloat(transaction.interestAmount) || 0;
-            if (capital > 0) {
-              interestRate = ((interest / capital) * 100).toFixed(2);
-            }
+          // If user chose fixed amount, store the fixed amount directly in interestRate
+          if (transaction.interestType === 'fixed') {
+            interestRate = transaction.interestAmount;
+            interestType = 'fixed';
           }
 
           investorData.push({
             investorId: si.investor.id,
             amount: transaction.amount,
             interestRate: interestRate,
+            interestType: interestType,
             sentDate: new Date(transaction.sentDate),
+            hasMultipleInterest: si.hasMultipleInterest,
+            interestPeriods: interestPeriods,
           });
         });
       });
@@ -474,7 +624,7 @@ export function LoanForm({
       if (onSuccess) {
         onSuccess();
       } else {
-        router.push('/loans');
+        router.push('/transactions/loans');
         router.refresh();
       }
     } catch (error) {
@@ -497,8 +647,42 @@ export function LoanForm({
   const preview = showPreview ? calculatePreview() : [];
   const summary = showPreview ? calculateSummary() : null;
 
+  const handleFormSubmit = () => {
+    formRef.current?.requestSubmit();
+  };
+
+  const handleCancelClick = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      router.back();
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <FormHeader
+        title={isEditMode ? existingLoan.loanName : 'Create Loan'}
+        description={
+          isEditMode
+            ? 'Update loan details and investor allocations'
+            : 'Add a new loan with investor allocations'
+        }
+        onCancel={handleCancelClick}
+        onSubmit={handleFormSubmit}
+        isSubmitting={isSubmitting}
+        isEditMode={isEditMode}
+        submitLabel={
+          isSubmitting
+            ? isEditMode
+              ? 'Updating...'
+              : 'Creating...'
+            : isEditMode
+            ? 'Update Loan'
+            : 'Create Loan'
+        }
+      />
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">Loan Details</CardTitle>
@@ -569,7 +753,7 @@ export function LoanForm({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="investors-section">
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">Investors</CardTitle>
         </CardHeader>
@@ -623,6 +807,100 @@ export function LoanForm({
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
+
+                      {/* Multiple Interest Manager - at investor level */}
+                      {watchDueDate &&
+                        si.transactions.some(
+                          (t) =>
+                            t.sentDate &&
+                            isMoreThanOneMonth(t.sentDate, watchDueDate)
+                        ) && (
+                          <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                            <Label className="text-sm font-semibold inline-flex">
+                              Interest Configuration
+                            </Label>
+                            <Alert className="bg-blue-50 border-blue-200">
+                              <AlertCircle className="h-4 w-4 text-blue-600" />
+                              <AlertDescription className="text-xs text-blue-800">
+                                <strong>Notice:</strong> We detected that this
+                                investor has a transaction spanning multiple
+                                months. You can manage interest for each month
+                                separately using the "Multiple Interest" option
+                                below.
+                              </AlertDescription>
+                            </Alert>
+                            <MultipleInterestManager
+                              sentDate={(() => {
+                                // Get the earliest sent date from all transactions
+                                const dates = si.transactions
+                                  .map((t) => t.sentDate)
+                                  .filter((d) => d)
+                                  .sort();
+                                return dates[0] || '';
+                              })()}
+                              loanDueDate={watchDueDate || ''}
+                              amount={si.transactions
+                                .reduce(
+                                  (sum, t) => sum + (parseFloat(t.amount) || 0),
+                                  0
+                                )
+                                .toString()}
+                              defaultInterestRate={(() => {
+                                // Calculate weighted average rate from all transactions
+                                const totalAmount = si.transactions.reduce(
+                                  (sum, t) => sum + (parseFloat(t.amount) || 0),
+                                  0
+                                );
+                                if (totalAmount === 0) return '10';
+
+                                const weightedRate = si.transactions.reduce(
+                                  (sum, t) => {
+                                    const amount = parseFloat(t.amount) || 0;
+                                    const rate =
+                                      t.interestType === 'rate'
+                                        ? parseFloat(t.interestRate) || 0
+                                        : amount > 0
+                                        ? ((parseFloat(t.interestAmount) || 0) /
+                                            amount) *
+                                          100
+                                        : 0;
+                                    return sum + amount * rate;
+                                  },
+                                  0
+                                );
+
+                                return (weightedRate / totalAmount).toFixed(2);
+                              })()}
+                              defaultInterestType="rate"
+                              initialMode={
+                                si.hasMultipleInterest ? 'multiple' : 'single'
+                              }
+                              initialPeriods={si.interestPeriods}
+                              onPeriodsChange={(periods) => {
+                                setSelectedInvestors(
+                                  selectedInvestors.map((inv) =>
+                                    inv.investor.id === si.investor.id
+                                      ? { ...inv, interestPeriods: periods }
+                                      : inv
+                                  )
+                                );
+                              }}
+                              onModeChange={(mode) => {
+                                setSelectedInvestors(
+                                  selectedInvestors.map((inv) =>
+                                    inv.investor.id === si.investor.id
+                                      ? {
+                                          ...inv,
+                                          hasMultipleInterest:
+                                            mode === 'multiple',
+                                        }
+                                      : inv
+                                  )
+                                );
+                              }}
+                            />
+                          </div>
+                        )}
 
                       {/* Transactions */}
                       <div className="space-y-3">
@@ -698,79 +976,98 @@ export function LoanForm({
                                   <Input
                                     type="date"
                                     value={transaction.sentDate}
-                                    onChange={(e) =>
+                                    max={watchDueDate || undefined}
+                                    onChange={(e) => {
+                                      const newDate = e.target.value;
+                                      // Check if date is already used by another transaction
+                                      const isDateUsed = si.transactions.some(
+                                        (t) =>
+                                          t.id !== transaction.id &&
+                                          t.sentDate === newDate
+                                      );
+
+                                      if (isDateUsed) {
+                                        alert(
+                                          'This date is already used by another transaction for this investor. Please select a different date.'
+                                        );
+                                        return;
+                                      }
+
                                       updateTransaction(
                                         si.investor.id,
                                         transaction.id,
                                         'sentDate',
-                                        e.target.value
-                                      )
-                                    }
+                                        newDate
+                                      );
+                                    }}
                                   />
                                 </div>
                               </div>
 
-                              <div className="space-y-2">
-                                <Label className="text-xs">Interest</Label>
-                                <Tabs
-                                  value={transaction.interestType}
-                                  onValueChange={(value) =>
-                                    updateTransaction(
-                                      si.investor.id,
-                                      transaction.id,
-                                      'interestType',
-                                      value as 'rate' | 'amount'
-                                    )
-                                  }
-                                >
-                                  <TabsList className="grid w-full grid-cols-2 h-8">
-                                    <TabsTrigger
-                                      value="rate"
-                                      className="text-xs"
-                                    >
-                                      Rate (%)
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                      value="amount"
-                                      className="text-xs"
-                                    >
-                                      Fixed (₱)
-                                    </TabsTrigger>
-                                  </TabsList>
-                                  <TabsContent value="rate" className="mt-2">
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={transaction.interestRate}
-                                      onChange={(e) =>
-                                        updateTransaction(
-                                          si.investor.id,
-                                          transaction.id,
-                                          'interestRate',
-                                          e.target.value
-                                        )
-                                      }
-                                      placeholder="10"
-                                    />
-                                  </TabsContent>
-                                  <TabsContent value="amount" className="mt-2">
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={transaction.interestAmount}
-                                      onChange={(e) =>
-                                        updateTransaction(
-                                          si.investor.id,
-                                          transaction.id,
-                                          'interestAmount',
-                                          e.target.value
-                                        )
-                                      }
-                                      placeholder="0.00"
-                                    />
-                                  </TabsContent>
-                                </Tabs>
-                              </div>
+                              {/* Interest input - only show if NOT using multiple interest */}
+                              {!si.hasMultipleInterest && (
+                                <div className="space-y-2">
+                                  <Label className="text-xs">Interest</Label>
+                                  <Tabs
+                                    value={transaction.interestType}
+                                    onValueChange={(value) =>
+                                      updateTransaction(
+                                        si.investor.id,
+                                        transaction.id,
+                                        'interestType',
+                                        value as 'rate' | 'fixed'
+                                      )
+                                    }
+                                  >
+                                    <TabsList className="grid w-full grid-cols-2 h-8">
+                                      <TabsTrigger
+                                        value="rate"
+                                        className="text-xs"
+                                      >
+                                        Rate (%)
+                                      </TabsTrigger>
+                                      <TabsTrigger
+                                        value="fixed"
+                                        className="text-xs"
+                                      >
+                                        Fixed (₱)
+                                      </TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="rate" className="mt-2">
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={transaction.interestRate}
+                                        onChange={(e) =>
+                                          updateTransaction(
+                                            si.investor.id,
+                                            transaction.id,
+                                            'interestRate',
+                                            e.target.value
+                                          )
+                                        }
+                                        placeholder="10"
+                                      />
+                                    </TabsContent>
+                                    <TabsContent value="fixed" className="mt-2">
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={transaction.interestAmount}
+                                        onChange={(e) =>
+                                          updateTransaction(
+                                            si.investor.id,
+                                            transaction.id,
+                                            'interestAmount',
+                                            e.target.value
+                                          )
+                                        }
+                                        placeholder="0.00"
+                                      />
+                                    </TabsContent>
+                                  </Tabs>
+                                </div>
+                              )}
 
                               {isFutureSentDate && (
                                 <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
@@ -817,284 +1114,72 @@ export function LoanForm({
           </Button>
 
           {showPreview && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">
-                  Loan Preview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  {(() => {
-                    // Group preview by investor
-                    const investorMap = new Map<
-                      number,
-                      Array<(typeof preview)[0]>
-                    >();
+            <div className="space-y-6">
+              <LoanInvestorsSection
+                investorsWithTransactions={(() => {
+                  // Group preview by investor and transform to match component format
+                  const investorMap = new Map<
+                    number,
+                    Array<(typeof preview)[0]>
+                  >();
 
-                    preview.forEach((p) => {
-                      const existing = investorMap.get(p.investor.id) || [];
-                      existing.push(p);
-                      investorMap.set(p.investor.id, existing);
-                    });
+                  preview.forEach((p) => {
+                    const existing = investorMap.get(p.investor.id) || [];
+                    existing.push(p);
+                    investorMap.set(p.investor.id, existing);
+                  });
 
-                    return Array.from(investorMap.values()).map(
-                      (transactions) => {
-                        const investor = transactions[0].investor;
-                        const totalCapital = transactions.reduce(
-                          (sum, t) => sum + t.capital,
-                          0
-                        );
-                        const totalInterest = transactions.reduce(
-                          (sum, t) => sum + t.interest,
-                          0
-                        );
-                        const grandTotal = totalCapital + totalInterest;
-                        const averageRate =
-                          totalCapital > 0
-                            ? (totalInterest / totalCapital) * 100
-                            : 0;
+                  return Array.from(investorMap.values()).map(
+                    (transactions) => {
+                      const investorId = transactions[0].investor.id;
+                      const investorData = selectedInvestors.find(
+                        (si) => si.investor.id === investorId
+                      );
 
-                        return (
-                          <div
-                            key={investor.id}
-                            className="p-4 border rounded-lg space-y-1"
-                          >
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                              <h4 className="font-semibold text-sm sm:text-base">
-                                {investor.name}
-                              </h4>
-                              {transactions.length > 1 && (
-                                <Badge
-                                  variant="secondary"
-                                  className="w-fit text-xs"
-                                >
-                                  {transactions.length} Transactions
-                                </Badge>
-                              )}
-                            </div>
+                      return {
+                        investor: transactions[0].investor,
+                        transactions: transactions.map((t, index) => ({
+                          id: `preview-${t.investor.id}-${index}`,
+                          amount: t.capital.toString(),
+                          interestRate: t.interestRate.toString(),
+                          interestType: 'rate' as const,
+                          sentDate: t.sentDate,
+                        })),
+                        hasMultipleInterest:
+                          investorData?.hasMultipleInterest || false,
+                        interestPeriods: investorData?.interestPeriods
+                          ? investorData.interestPeriods.map((period) => ({
+                              id: period.id,
+                              dueDate: period.dueDate,
+                              // For fixed type, use interestAmount; for rate type, use interestRate
+                              interestRate:
+                                period.interestType === 'fixed'
+                                  ? period.interestAmount
+                                  : period.interestRate,
+                              interestType: period.interestType,
+                            }))
+                          : [],
+                      };
+                    }
+                  );
+                })()}
+                title="Loan Preview"
+                showEmail={false}
+              />
 
-                            {/* Individual Transactions */}
-                            <div className="space-y-2">
-                              {transactions.map((p, index) => {
-                                // Check if sent date is in the future
-                                const today = new Date();
-                                today.setHours(0, 0, 0, 0);
-                                const sentDate = new Date(p.sentDate);
-                                sentDate.setHours(0, 0, 0, 0);
-                                const isFutureSentDate = sentDate > today;
-
-                                return (
-                                  <div
-                                    key={`${p.investor.id}-${index}`}
-                                    className={`p-3 rounded-lg space-y-2 ${
-                                      isFutureSentDate
-                                        ? 'bg-yellow-50'
-                                        : 'bg-muted/30'
-                                    }`}
-                                  >
-                                    {transactions.length > 1 && (
-                                      <div className="flex items-center mb-2 space-x-2">
-                                        <span className="text-sm font-semibold text-muted-foreground">
-                                          Transaction {index + 1}
-                                        </span>
-                                        {isFutureSentDate && (
-                                          <Badge
-                                            variant="warning"
-                                            className="text-[10px] h-3.5 px-1 py-0 leading-none"
-                                          >
-                                            To be paid
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    )}
-                                    {transactions.length === 1 &&
-                                      isFutureSentDate && (
-                                        <div className="flex items-center mb-2">
-                                          <Badge
-                                            variant="warning"
-                                            className="text-[10px] h-3.5 px-1 py-0 leading-none"
-                                          >
-                                            To be paid
-                                          </Badge>
-                                        </div>
-                                      )}
-                                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
-                                      <div>
-                                        <p className="text-muted-foreground">
-                                          Capital
-                                        </p>
-                                        <p className="font-medium">
-                                          {formatCurrency(p.capital)}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <p className="text-muted-foreground">
-                                          Rate
-                                        </p>
-                                        <p className="font-medium">
-                                          {p.interestRate.toFixed(2)}%
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <p className="text-muted-foreground">
-                                          Interest
-                                        </p>
-                                        <p className="font-medium">
-                                          {formatCurrency(p.interest)}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <p className="text-muted-foreground">
-                                          Total
-                                        </p>
-                                        <p className="font-semibold">
-                                          {formatCurrency(p.total)}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <p className="text-muted-foreground">
-                                          Sent Date
-                                        </p>
-                                        <p className="font-medium">
-                                          {p.sentDate}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-
-                            {/* Grand Total for this investor */}
-                            {transactions.length > 1 && (
-                              <div className="pt-2 px-3 border-t">
-                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs sm:text-sm">
-                                  <div>
-                                    <p className="text-muted-foreground font-semibold">
-                                      Total Capital
-                                    </p>
-                                    <p className="font-bold">
-                                      {formatCurrency(totalCapital)}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-muted-foreground font-semibold">
-                                      Avg. Rate
-                                    </p>
-                                    <p className="font-bold">
-                                      {averageRate.toFixed(2)}%
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-muted-foreground font-semibold">
-                                      Total Interest
-                                    </p>
-                                    <p className="font-bold">
-                                      {formatCurrency(totalInterest)}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-muted-foreground font-semibold">
-                                      Grand Total
-                                    </p>
-                                    <p className="font-bold text-base">
-                                      {formatCurrency(grandTotal)}
-                                    </p>
-                                  </div>
-                                  <div></div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      }
-                    );
-                  })()}
-                </div>
-
-                {summary && (
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold mb-4 text-sm sm:text-base">
-                      Summary
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          Total Principal
-                        </p>
-                        <p className="text-lg sm:text-xl font-bold break-words">
-                          {formatCurrency(summary.totalCapital)}
-                        </p>
-                      </div>
-                      <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          Avg. Rate
-                        </p>
-                        <p className="text-lg sm:text-xl font-bold break-words">
-                          {summary.averageRate.toFixed(2)}%
-                        </p>
-                      </div>
-                      <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          Total Interest
-                        </p>
-                        <p className="text-lg sm:text-xl font-bold break-words">
-                          {formatCurrency(summary.totalInterest)}
-                        </p>
-                      </div>
-                      <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          Total Amount
-                        </p>
-                        <p className="text-lg sm:text-xl font-bold break-words">
-                          {formatCurrency(summary.totalAmount)}
-                        </p>
-                      </div>
-                      <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          Status
-                        </p>
-                        <div className="text-lg sm:text-xl font-bold break-words">
-                          <Badge
-                            variant={
-                              summary.status === 'Fully Funded'
-                                ? 'success'
-                                : summary.status === 'Partially Funded'
-                                ? 'warning'
-                                : summary.status === 'Overdue'
-                                ? 'destructive'
-                                : 'default'
-                            }
-                          >
-                            {summary.status}
-                          </Badge>
-                        </div>
-                      </div>
-                      {summary.status === 'Partially Funded' &&
-                        summary.balance > 0 && (
-                          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <p className="text-xs sm:text-sm text-yellow-800 font-semibold">
-                              Pending Balance
-                            </p>
-                            <p className="text-lg sm:text-xl font-bold break-words text-yellow-900">
-                              {formatCurrency(summary.balance)}
-                            </p>
-                          </div>
-                        )}
-                      <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          Investors
-                        </p>
-                        <p className="text-lg sm:text-xl font-bold break-words">
-                          {summary.uniqueInvestors}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              {summary && (
+                <LoanSummarySection
+                  totalPrincipal={summary.totalCapital}
+                  averageRate={summary.averageRate}
+                  totalInterest={summary.totalInterest}
+                  totalAmount={summary.totalAmount}
+                  uniqueInvestors={summary.uniqueInvestors}
+                  status={summary.status}
+                  balance={summary.balance}
+                  showStatus={true}
+                />
+              )}
+            </div>
           )}
         </>
       )}
@@ -1103,7 +1188,7 @@ export function LoanForm({
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.back()}
+          onClick={handleCancelClick}
           className="flex-1 w-full"
         >
           Cancel
