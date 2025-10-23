@@ -1,19 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -23,27 +22,42 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  ArrowLeft,
   TrendingUp,
   DollarSign,
-  Activity,
-  Edit,
-  Trash2,
-  AlertCircle,
+  ArrowLeft,
   Mail,
   User,
-  Calendar,
   Phone,
+  Percent,
+  Plus,
+  Edit,
+  Filter,
+  MapPin,
+  X,
 } from 'lucide-react';
-import Link from 'next/link';
-import { InvestorWithLoans } from '@/lib/types';
+import { InvestorWithLoans, LoanWithInvestors } from '@/lib/types';
 import {
-  getLoanStatusBadge,
-  getLoanTypeBadge,
   getTransactionTypeBadge,
   getTransactionDirectionBadge,
+  getLoanStatusBadge,
+  getLoanTypeBadge,
 } from '@/lib/badge-config';
 import { InvestorForm } from '@/components/investors/investor-form';
+import { formatCurrency, formatDate } from '@/lib/format';
+import {
+  calculateTotalPrincipal,
+  calculateTotalInterest,
+  calculateAverageRate,
+} from '@/lib/calculations';
+import {
+  StatCard,
+  DetailHeader,
+  LoansTable,
+  SearchFilter,
+  RangeFilter,
+  CollapsibleSection,
+  CollapsibleContent,
+} from '@/components/common';
 
 interface InvestorDetailClientProps {
   investor: InvestorWithLoans;
@@ -52,107 +66,289 @@ interface InvestorDetailClientProps {
 export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [expandedLoans, setExpandedLoans] = useState<Set<number>>(new Set());
+  const [loans, setLoans] = useState<LoanWithInvestors[]>([]);
+  const [loansLoading, setLoansLoading] = useState(true);
 
-  const formatCurrency = (amount: string | number) => {
-    const value = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP',
-    }).format(value);
+  // Transaction filters
+  const [transactionSearchQuery, setTransactionSearchQuery] = useState('');
+  const [transactionTypeFilter, setTransactionTypeFilter] =
+    useState<string>('all');
+  const [transactionDirectionFilter, setTransactionDirectionFilter] =
+    useState<string>('all');
+  const [minAmount, setMinAmount] = useState<string>('');
+  const [maxAmount, setMaxAmount] = useState<string>('');
+  const [minBalance, setMinBalance] = useState<string>('');
+  const [maxBalance, setMaxBalance] = useState<string>('');
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+
+  // Loan filters
+  const [loanSearchQuery, setLoanSearchQuery] = useState('');
+  const [loanTypeFilter, setLoanTypeFilter] = useState<string>('all');
+  const [loanStatusFilter, setLoanStatusFilter] = useState<string>('all');
+  const [freeLotFilter, setFreeLotFilter] = useState<string>('all');
+  const [minPrincipal, setMinPrincipal] = useState<string>('');
+  const [maxPrincipal, setMaxPrincipal] = useState<string>('');
+  const [minAvgRate, setMinAvgRate] = useState<string>('');
+  const [maxAvgRate, setMaxAvgRate] = useState<string>('');
+  const [minInterest, setMinInterest] = useState<string>('');
+  const [maxInterest, setMaxInterest] = useState<string>('');
+  const [minTotalAmount, setMinTotalAmount] = useState<string>('');
+  const [maxTotalAmount, setMaxTotalAmount] = useState<string>('');
+  const [showMoreLoanFilters, setShowMoreLoanFilters] = useState(false);
+
+  // Fetch complete loan data with all investors
+  const fetchLoansData = async () => {
+    try {
+      setLoansLoading(true);
+      // Get unique loan IDs from investor's loan investors
+      const loanIds = Array.from(
+        new Set(investor.loanInvestors.map((li) => li.loan.id))
+      );
+
+      // Fetch all loans data
+      const response = await fetch('/api/loans');
+      const allLoans: LoanWithInvestors[] = await response.json();
+
+      // Filter to only loans that this investor is part of
+      const investorLoans = allLoans.filter((loan) =>
+        loanIds.includes(loan.id)
+      );
+
+      setLoans(investorLoans);
+    } catch (error) {
+      console.error('Error fetching loans:', error);
+    } finally {
+      setLoansLoading(false);
+    }
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-PH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  useEffect(() => {
+    fetchLoansData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [investor.id]);
+
+  // Calculate unique loan count
+  const uniqueLoanCount = Array.from(
+    new Set(investor.loanInvestors.map((li) => li.loan.id))
+  ).length;
 
   // Calculate stats
-  const totalCapital = investor.loanInvestors.reduce(
-    (sum, li) => sum + parseFloat(li.amount),
-    0
-  );
-
-  const totalInterest = investor.loanInvestors.reduce((sum, li) => {
-    const amount = parseFloat(li.amount);
-    const rate = parseFloat(li.interestRate) / 100;
-    return sum + amount * rate;
-  }, 0);
-
+  const totalCapital = calculateTotalPrincipal(investor.loanInvestors);
+  const totalInterest = calculateTotalInterest(investor.loanInvestors);
+  const avgRate = calculateAverageRate(investor.loanInvestors);
   const totalGains = totalCapital + totalInterest;
 
-  const latestTransaction = investor.transactions[0];
-  const currentBalance = latestTransaction
-    ? parseFloat(latestTransaction.balance)
-    : 0;
-
-  const getBalanceStatus = (balance: number) => {
-    if (balance > 100000)
-      return { status: 'Can invest', variant: 'default' as const };
-    if (balance > 50000)
-      return { status: 'Low funds', variant: 'secondary' as const };
-    return { status: 'No funds', variant: 'destructive' as const };
-  };
-
-  const balanceStatus = getBalanceStatus(currentBalance);
-
   const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      const response = await fetch(`/api/investors/${investor.id}`, {
-        method: 'DELETE',
-      });
+    const response = await fetch(`/api/investors/${investor.id}`, {
+      method: 'DELETE',
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete investor');
-      }
-
-      router.push('/investors');
-      router.refresh();
-    } catch (error) {
-      console.error('Error deleting investor:', error);
-      alert(
-        error instanceof Error
-          ? error.message
-          : 'Failed to delete investor. Please try again.'
-      );
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteModal(false);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete investor');
     }
+
+    router.push('/investors');
+    router.refresh();
   };
 
   const canDelete =
     investor.loanInvestors.length === 0 && investor.transactions.length === 0;
 
+  // Clear transaction filters
+  const clearTransactionFilters = () => {
+    setTransactionSearchQuery('');
+    setTransactionTypeFilter('all');
+    setTransactionDirectionFilter('all');
+    setMinAmount('');
+    setMaxAmount('');
+    setMinBalance('');
+    setMaxBalance('');
+  };
+
+  // Clear loan filters
+  const clearLoanFilters = () => {
+    setLoanSearchQuery('');
+    setLoanTypeFilter('all');
+    setLoanStatusFilter('all');
+    setFreeLotFilter('all');
+    setMinPrincipal('');
+    setMaxPrincipal('');
+    setMinAvgRate('');
+    setMaxAvgRate('');
+    setMinInterest('');
+    setMaxInterest('');
+    setMinTotalAmount('');
+    setMaxTotalAmount('');
+  };
+
+  // Check if there are active filters
+  const hasActiveAmountFilters =
+    minAmount !== '' ||
+    maxAmount !== '' ||
+    minBalance !== '' ||
+    maxBalance !== '';
+
+  const hasActiveTransactionFilters =
+    transactionSearchQuery !== '' ||
+    transactionTypeFilter !== 'all' ||
+    transactionDirectionFilter !== 'all' ||
+    hasActiveAmountFilters;
+
+  const hasActiveLoanAmountFilters =
+    minPrincipal !== '' ||
+    maxPrincipal !== '' ||
+    minAvgRate !== '' ||
+    maxAvgRate !== '' ||
+    minInterest !== '' ||
+    maxInterest !== '' ||
+    minTotalAmount !== '' ||
+    maxTotalAmount !== '' ||
+    freeLotFilter !== 'all';
+
+  const hasActiveLoanFilters =
+    loanSearchQuery !== '' ||
+    loanTypeFilter !== 'all' ||
+    loanStatusFilter !== 'all' ||
+    hasActiveLoanAmountFilters;
+
+  // Filter transactions
+  const filteredTransactions = investor.transactions.filter((transaction) => {
+    // Search filter
+    if (transactionSearchQuery) {
+      const query = transactionSearchQuery.toLowerCase();
+      const matchesName = transaction.name.toLowerCase().includes(query);
+      const matchesNotes = transaction.notes?.toLowerCase().includes(query);
+      if (!matchesName && !matchesNotes) return false;
+    }
+
+    // Type filter
+    if (
+      transactionTypeFilter !== 'all' &&
+      transaction.type !== transactionTypeFilter
+    ) {
+      return false;
+    }
+
+    // Direction filter
+    if (
+      transactionDirectionFilter !== 'all' &&
+      transaction.direction !== transactionDirectionFilter
+    ) {
+      return false;
+    }
+
+    // Amount range filter
+    const amount = parseFloat(transaction.amount);
+    if (minAmount !== '' && amount < parseFloat(minAmount)) {
+      return false;
+    }
+    if (maxAmount !== '' && amount > parseFloat(maxAmount)) {
+      return false;
+    }
+
+    // Balance range filter
+    const balance = parseFloat(transaction.balance);
+    if (minBalance !== '' && balance < parseFloat(minBalance)) {
+      return false;
+    }
+    if (maxBalance !== '' && balance > parseFloat(maxBalance)) {
+      return false;
+    }
+
+    return true;
+  });
+
+  // Filter loans
+  const filteredLoans = loans.filter((loan) => {
+    // Search filter
+    if (loanSearchQuery) {
+      const query = loanSearchQuery.toLowerCase();
+      const matchesName = loan.loanName.toLowerCase().includes(query);
+      const matchesNotes = loan.notes?.toLowerCase().includes(query);
+      if (!matchesName && !matchesNotes) return false;
+    }
+
+    // Type filter
+    if (loanTypeFilter !== 'all' && loan.type !== loanTypeFilter) {
+      return false;
+    }
+
+    // Status filter
+    if (loanStatusFilter !== 'all' && loan.status !== loanStatusFilter) {
+      return false;
+    }
+
+    // Free lot filter
+    if (freeLotFilter !== 'all') {
+      if (freeLotFilter === 'with' && !loan.freeLotSqm) return false;
+      if (freeLotFilter === 'without' && loan.freeLotSqm) return false;
+    }
+
+    // Calculate loan amounts for filtering
+    const totalPrincipal = loan.loanInvestors.reduce(
+      (sum, li) => sum + parseFloat(li.amount),
+      0
+    );
+    const totalInterest = calculateTotalInterest(loan.loanInvestors);
+    const avgRate = calculateAverageRate(loan.loanInvestors);
+    const totalAmount = totalPrincipal + totalInterest;
+
+    // Principal range filter
+    if (minPrincipal !== '' && totalPrincipal < parseFloat(minPrincipal)) {
+      return false;
+    }
+    if (maxPrincipal !== '' && totalPrincipal > parseFloat(maxPrincipal)) {
+      return false;
+    }
+
+    // Average rate range filter
+    if (minAvgRate !== '' && avgRate < parseFloat(minAvgRate)) {
+      return false;
+    }
+    if (maxAvgRate !== '' && avgRate > parseFloat(maxAvgRate)) {
+      return false;
+    }
+
+    // Interest range filter
+    if (minInterest !== '' && totalInterest < parseFloat(minInterest)) {
+      return false;
+    }
+    if (maxInterest !== '' && totalInterest > parseFloat(maxInterest)) {
+      return false;
+    }
+
+    // Total amount range filter
+    if (minTotalAmount !== '' && totalAmount < parseFloat(minTotalAmount)) {
+      return false;
+    }
+    if (maxTotalAmount !== '' && totalAmount > parseFloat(maxTotalAmount)) {
+      return false;
+    }
+
+    return true;
+  });
+
   if (isEditing) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Edit Investor
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Update investor information
-            </p>
-          </div>
-          <Button variant="outline" onClick={() => setIsEditing(false)}>
-            Cancel
-          </Button>
-        </div>
-
+      <div className="max-w-2xl mx-auto">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push('/investors')}
+          className="-ml-2 w-fit mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Investors
+        </Button>
         <InvestorForm
           existingInvestor={investor}
           onSuccess={() => {
             setIsEditing(false);
             router.refresh();
           }}
+          onCancel={() => setIsEditing(false)}
         />
       </div>
     );
@@ -160,87 +356,33 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="space-y-1">
-          <Link href="/investors">
-            <Button variant="ghost" size="sm" className="mb-2 -ml-2">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Investors
-            </Button>
-          </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            {investor.name}
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Investor portfolio and activity
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsEditing(true)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => setShowDeleteModal(true)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      </div>
-
-      {/* Delete Confirmation Modal */}
-      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              Delete Investor
-            </DialogTitle>
-            <DialogDescription>
-              {canDelete ? (
-                <>
-                  Are you sure you want to delete{' '}
-                  <strong>{investor.name}</strong>? This action cannot be
-                  undone.
-                </>
-              ) : (
-                <>
-                  Cannot delete this investor because they have{' '}
-                  <strong>{investor.loanInvestors.length}</strong> active
-                  loan(s) and <strong>{investor.transactions.length}</strong>{' '}
-                  transaction(s). Please remove all loans and transactions
-                  first.
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteModal(false)}
-              disabled={isDeleting}
-            >
-              {canDelete ? 'Cancel' : 'Close'}
-            </Button>
-            {canDelete && (
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Deleting...' : 'Yes, Delete'}
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DetailHeader
+        title={investor.name}
+        description="Investor portfolio and activity"
+        backLabel="Back to Investors"
+        onBack={() => router.push('/investors')}
+        onDelete={handleDelete}
+        deleteTitle="Delete Investor"
+        deleteDescription={`Are you sure you want to delete ${investor.name}? This action cannot be undone.`}
+        canDelete={canDelete}
+        deleteWarning={`Cannot delete this investor because they have ${investor.loanInvestors.length} active loan(s) and ${investor.transactions.length} transaction(s). Please remove all loans and transactions first.`}
+      />
 
       {/* Contact Info Card */}
       <Card>
         <CardContent className="space-y-4 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Contact Information</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setIsEditing(true)}
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -271,173 +413,376 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Total Capital</p>
-                <p className="text-xl sm:text-2xl font-bold">
-                  {formatCurrency(totalCapital)}
-                </p>
-              </div>
-              <DollarSign className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard title="Total Capital" value={formatCurrency(totalCapital)} />
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Total Interest</p>
-                <p className="text-xl sm:text-2xl font-bold">
-                  {formatCurrency(totalInterest)}
-                </p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard title="Avg. Interest Rate" value={`${avgRate.toFixed(2)}%`} />
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Total Gains</p>
-                <p className="text-xl sm:text-2xl font-bold">
-                  {formatCurrency(totalGains)}
-                </p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total Interest"
+          value={formatCurrency(totalInterest)}
+        />
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Current Balance</p>
-                <p className="text-xl sm:text-2xl font-bold">
-                  {formatCurrency(currentBalance)}
-                </p>
-                <Badge variant={balanceStatus.variant} className="text-xs">
-                  {balanceStatus.status}
-                </Badge>
-              </div>
-              <Activity className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard title="Total Amount" value={formatCurrency(totalGains)} />
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="loans" className="w-full">
         <TabsList>
-          <TabsTrigger value="loans">
-            Loans ({investor.loanInvestors.length})
-          </TabsTrigger>
+          <TabsTrigger value="loans">Loans ({uniqueLoanCount})</TabsTrigger>
           <TabsTrigger value="transactions">
             Transactions ({investor.transactions.length})
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="loans" className="mt-6">
-          {investor.loanInvestors.length === 0 ? (
+        <TabsContent value="loans" className="mt-6 space-y-4">
+          {/* Search and Filters Section */}
+          {!loansLoading && loans.length > 0 && (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
+                {/* Search and Basic Filters Row */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {/* Search Input */}
+                  <SearchFilter
+                    value={loanSearchQuery}
+                    onChange={setLoanSearchQuery}
+                    placeholder="Search loans by name or notes..."
+                  />
+
+                  {/* Type Filter */}
+                  <Select
+                    value={loanTypeFilter}
+                    onValueChange={setLoanTypeFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="Lot Title">Lot Title</SelectItem>
+                      <SelectItem value="OR/CR">OR/CR</SelectItem>
+                      <SelectItem value="Agent">Agent</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Status Filter */}
+                  <Select
+                    value={loanStatusFilter}
+                    onValueChange={setLoanStatusFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Fully Funded">Fully Funded</SelectItem>
+                      <SelectItem value="Partially Funded">
+                        Partially Funded
+                      </SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="Overdue">Overdue</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* More Filters Button */}
+                  <CollapsibleSection
+                    inline
+                    isOpen={showMoreLoanFilters}
+                    onToggle={() =>
+                      setShowMoreLoanFilters(!showMoreLoanFilters)
+                    }
+                    trigger={{
+                      label: `${showMoreLoanFilters ? 'Less' : 'More'} Filters`,
+                      icon: Filter,
+                      showIndicator: hasActiveLoanAmountFilters,
+                    }}
+                  />
+
+                  {/* Clear Filters Button */}
+                  {hasActiveLoanFilters && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearLoanFilters}
+                      className="whitespace-nowrap"
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Clear All
+                    </Button>
+                  )}
+
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      router.push(
+                        `/transactions/loans/new?investorId=${investor.id}`
+                      )
+                    }
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add Loan
+                  </Button>
+                </div>
+
+                {/* Amount Range Filters - Collapsible Content */}
+                <CollapsibleContent isOpen={showMoreLoanFilters}>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {/* Total Principal Range */}
+                      <RangeFilter
+                        label="Total Principal"
+                        icon={DollarSign}
+                        minValue={minPrincipal}
+                        maxValue={maxPrincipal}
+                        onMinChange={setMinPrincipal}
+                        onMaxChange={setMaxPrincipal}
+                        minPlaceholder="Min (₱)"
+                        maxPlaceholder="Max (₱)"
+                      />
+
+                      {/* Average Rate Range */}
+                      <RangeFilter
+                        label="Avg. Rate"
+                        icon={TrendingUp}
+                        minValue={minAvgRate}
+                        maxValue={maxAvgRate}
+                        onMinChange={setMinAvgRate}
+                        onMaxChange={setMaxAvgRate}
+                        minPlaceholder="Min (%)"
+                        maxPlaceholder="Max (%)"
+                      />
+
+                      {/* Total Interest Range */}
+                      <RangeFilter
+                        label="Total Interest"
+                        icon={TrendingUp}
+                        minValue={minInterest}
+                        maxValue={maxInterest}
+                        onMinChange={setMinInterest}
+                        onMaxChange={setMaxInterest}
+                        minPlaceholder="Min (₱)"
+                        maxPlaceholder="Max (₱)"
+                      />
+
+                      {/* Total Amount Range */}
+                      <RangeFilter
+                        label="Total Amount"
+                        icon={DollarSign}
+                        minValue={minTotalAmount}
+                        maxValue={maxTotalAmount}
+                        onMinChange={setMinTotalAmount}
+                        onMaxChange={setMaxTotalAmount}
+                        minPlaceholder="Min (₱)"
+                        maxPlaceholder="Max (₱)"
+                      />
+                    </div>
+
+                    {/* Free Lot Filter */}
+                    <div className="pt-3 border-t">
+                      <div className="w-full sm:w-[240px]">
+                        <label className="text-xs font-semibold flex items-center gap-1 mb-2">
+                          <MapPin className="h-3.5 w-3.5" />
+                          Free Lot
+                        </label>
+                        <Select
+                          value={freeLotFilter}
+                          onValueChange={setFreeLotFilter}
+                        >
+                          <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder="All Lots" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Lots</SelectItem>
+                            <SelectItem value="with">With Free Lot</SelectItem>
+                            <SelectItem value="without">
+                              Without Free Lot
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </div>
+
+              {/* Results Count */}
+              {hasActiveLoanFilters && (
+                <div className="text-sm text-muted-foreground">
+                  Showing {filteredLoans.length} of {loans.length} loans
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Loans List */}
+          {loansLoading ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <p className="text-muted-foreground">Loading loans...</p>
+              </CardContent>
+            </Card>
+          ) : loans.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground">No loans yet</p>
               </CardContent>
             </Card>
-          ) : (
+          ) : filteredLoans.length === 0 ? (
             <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Loan Name</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Interest Rate</TableHead>
-                        <TableHead>Interest</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Sent Date</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {investor.loanInvestors.map((li) => {
-                        const amount = parseFloat(li.amount);
-                        const rate = parseFloat(li.interestRate);
-                        const interest = amount * (rate / 100);
-                        const total = amount + interest;
-
-                        // Check if sent date is in the future
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        const sentDate = new Date(li.sentDate);
-                        sentDate.setHours(0, 0, 0, 0);
-                        const isFutureSentDate = sentDate > today;
-
-                        return (
-                          <TableRow
-                            key={li.id}
-                            className={isFutureSentDate ? 'bg-yellow-50' : ''}
-                          >
-                            <TableCell className="font-medium">
-                              <Link
-                                href={`/loans/${li.loan.id}`}
-                                className="hover:underline"
-                              >
-                                {li.loan.loanName}
-                              </Link>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={getLoanTypeBadge(li.loan.type).variant}
-                                className={
-                                  getLoanTypeBadge(li.loan.type).className
-                                }
-                              >
-                                {li.loan.type}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  getLoanStatusBadge(li.loan.status).variant
-                                }
-                                className={
-                                  getLoanStatusBadge(li.loan.status).className
-                                }
-                              >
-                                {li.loan.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{formatCurrency(amount)}</TableCell>
-                            <TableCell>{rate}%</TableCell>
-                            <TableCell>{formatCurrency(interest)}</TableCell>
-                            <TableCell className="font-semibold">
-                              {formatCurrency(total)}
-                            </TableCell>
-                            <TableCell>{formatDate(li.sentDate)}</TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <p className="text-muted-foreground mb-4">
+                  No loans match your filters
+                </p>
+                <Button variant="outline" onClick={clearLoanFilters}>
+                  <X className="mr-2 h-4 w-4" />
+                  Clear filters
+                </Button>
               </CardContent>
             </Card>
+          ) : (
+            <LoansTable
+              loans={filteredLoans}
+              itemsPerPage={10}
+              expandedRows={expandedLoans}
+              onToggleExpand={(loanId) => {
+                setExpandedLoans((prev) => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(loanId as number)) {
+                    newSet.delete(loanId as number);
+                  } else {
+                    newSet.add(loanId as number);
+                  }
+                  return newSet;
+                });
+              }}
+            />
           )}
         </TabsContent>
 
-        <TabsContent value="transactions" className="mt-6">
+        <TabsContent value="transactions" className="mt-6 space-y-4">
+          {/* Search and Filters Section */}
+          {investor.transactions.length > 0 && (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
+                {/* Search and Basic Filters Row */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {/* Search Input */}
+                  <SearchFilter
+                    value={transactionSearchQuery}
+                    onChange={setTransactionSearchQuery}
+                    placeholder="Search transactions by name or notes..."
+                  />
+
+                  {/* Type Filter */}
+                  <Select
+                    value={transactionTypeFilter}
+                    onValueChange={setTransactionTypeFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="Profit">Profit</SelectItem>
+                      <SelectItem value="Capital">Capital</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Direction Filter */}
+                  <Select
+                    value={transactionDirectionFilter}
+                    onValueChange={setTransactionDirectionFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Direction" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Directions</SelectItem>
+                      <SelectItem value="In">In</SelectItem>
+                      <SelectItem value="Out">Out</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* More Filters Button */}
+                  <CollapsibleSection
+                    inline
+                    isOpen={showMoreFilters}
+                    onToggle={() => setShowMoreFilters(!showMoreFilters)}
+                    trigger={{
+                      label: `${showMoreFilters ? 'Less' : 'More'} Filters`,
+                      icon: Filter,
+                      showIndicator: hasActiveAmountFilters,
+                    }}
+                  />
+
+                  {/* Clear Filters Button */}
+                  {hasActiveTransactionFilters && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearTransactionFilters}
+                      className="whitespace-nowrap"
+                    >
+                      Clear All
+                    </Button>
+                  )}
+                </div>
+
+                {/* Amount Range Filters - Collapsible Content */}
+                <CollapsibleContent isOpen={showMoreFilters}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Amount Range */}
+                    <RangeFilter
+                      label="Amount"
+                      icon={DollarSign}
+                      minValue={minAmount}
+                      maxValue={maxAmount}
+                      onMinChange={setMinAmount}
+                      onMaxChange={setMaxAmount}
+                      minPlaceholder="Min (₱)"
+                      maxPlaceholder="Max (₱)"
+                    />
+
+                    {/* Balance Range */}
+                    <RangeFilter
+                      label="Balance"
+                      icon={TrendingUp}
+                      minValue={minBalance}
+                      maxValue={maxBalance}
+                      onMinChange={setMinBalance}
+                      onMaxChange={setMaxBalance}
+                      minPlaceholder="Min (₱)"
+                      maxPlaceholder="Max (₱)"
+                    />
+                  </div>
+                </CollapsibleContent>
+              </div>
+
+              {/* Results Count */}
+              {hasActiveTransactionFilters && (
+                <div className="text-sm text-muted-foreground">
+                  Showing {filteredTransactions.length} of{' '}
+                  {investor.transactions.length} transactions
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Transactions Table */}
           {investor.transactions.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground">No transactions yet</p>
+              </CardContent>
+            </Card>
+          ) : filteredTransactions.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <p className="text-muted-foreground mb-4">
+                  No transactions match your filters
+                </p>
+                <Button variant="outline" onClick={clearTransactionFilters}>
+                  Clear filters
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -457,7 +802,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {investor.transactions.map((transaction) => (
+                      {filteredTransactions.map((transaction) => (
                         <TableRow key={transaction.id}>
                           <TableCell>{formatDate(transaction.date)}</TableCell>
                           <TableCell>
