@@ -11,6 +11,7 @@ export type TransactionType =
   | 'Debt'
   | 'Others';
 export type TransactionDirection = 'In' | 'Out';
+export type InterestType = 'rate' | 'fixed';
 
 export interface Investor {
   id: number;
@@ -33,15 +34,28 @@ export interface Loan {
   updatedAt: Date;
 }
 
+export interface InterestPeriod {
+  id: number;
+  loanInvestorId: number;
+  dueDate: Date;
+  interestRate: string;
+  interestType: InterestType;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface LoanInvestor {
   id: number;
   loanId: number;
   investorId: number;
   amount: string;
   interestRate: string;
+  interestType: InterestType;
   sentDate: Date;
+  hasMultipleInterest: boolean;
   createdAt: Date;
   updatedAt: Date;
+  interestPeriods?: InterestPeriod[];
 }
 
 export interface Transaction {
@@ -65,6 +79,10 @@ export interface LoanWithInvestors extends Loan {
 export interface InvestorWithLoans extends Investor {
   loanInvestors: (LoanInvestor & { loan: Loan })[];
   transactions: Transaction[];
+}
+
+export interface TransactionWithInvestor extends Transaction {
+  investor: Investor;
 }
 
 export interface LoanPreview {
