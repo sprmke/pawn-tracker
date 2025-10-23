@@ -34,6 +34,7 @@ export const transactionDirectionEnum = pgEnum('transaction_direction', [
   'In',
   'Out',
 ]);
+export const interestTypeEnum = pgEnum('interest_type', ['rate', 'fixed']);
 
 // Investors Table
 export const investors = pgTable('investors', {
@@ -68,8 +69,25 @@ export const loanInvestors = pgTable('loan_investors', {
     .references(() => investors.id, { onDelete: 'cascade' })
     .notNull(),
   amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
-  interestRate: decimal('interest_rate', { precision: 5, scale: 2 }).notNull(),
+  interestRate: decimal('interest_rate', { precision: 15, scale: 2 }).notNull(),
+  interestType: interestTypeEnum('interest_type').notNull().default('rate'),
   sentDate: timestamp('sent_date').notNull(),
+  hasMultipleInterest: boolean('has_multiple_interest')
+    .notNull()
+    .default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Interest Periods Table (for multiple interest due dates)
+export const interestPeriods = pgTable('interest_periods', {
+  id: serial('id').primaryKey(),
+  loanInvestorId: integer('loan_investor_id')
+    .references(() => loanInvestors.id, { onDelete: 'cascade' })
+    .notNull(),
+  dueDate: timestamp('due_date').notNull(),
+  interestRate: decimal('interest_rate', { precision: 15, scale: 2 }).notNull(),
+  interestType: interestTypeEnum('interest_type').notNull().default('rate'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -101,16 +119,30 @@ export const loansRelations = relations(loans, ({ many }) => ({
   loanInvestors: many(loanInvestors),
 }));
 
-export const loanInvestorsRelations = relations(loanInvestors, ({ one }) => ({
-  loan: one(loans, {
-    fields: [loanInvestors.loanId],
-    references: [loans.id],
-  }),
-  investor: one(investors, {
-    fields: [loanInvestors.investorId],
-    references: [investors.id],
-  }),
-}));
+export const loanInvestorsRelations = relations(
+  loanInvestors,
+  ({ one, many }) => ({
+    loan: one(loans, {
+      fields: [loanInvestors.loanId],
+      references: [loans.id],
+    }),
+    investor: one(investors, {
+      fields: [loanInvestors.investorId],
+      references: [investors.id],
+    }),
+    interestPeriods: many(interestPeriods),
+  })
+);
+
+export const interestPeriodsRelations = relations(
+  interestPeriods,
+  ({ one }) => ({
+    loanInvestor: one(loanInvestors, {
+      fields: [interestPeriods.loanInvestorId],
+      references: [loanInvestors.id],
+    }),
+  })
+);
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({
   investor: one(investors, {
