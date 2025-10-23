@@ -1,29 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import Link from 'next/link';
 import {
-  ArrowRight,
   TrendingUp,
   DollarSign,
   LayoutGrid,
   Table as TableIcon,
-  ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
   UserPlus,
-  Search,
   X,
   Filter,
 } from 'lucide-react';
@@ -34,38 +22,45 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { InvestorWithLoans } from '@/lib/types';
+import {
+  CollapsibleSection,
+  CollapsibleContent,
+  InvestorsTable,
+  ActionButtonsGroup,
+  SearchFilter,
+  RangeFilter,
+} from '@/components/common';
+import { formatCurrency, isFutureDate } from '@/lib/format';
+import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
+import {
+  calculateInvestorStats,
+  calculateAverageRate,
+  calculateInterest,
+  calculateInvestmentTotal,
+  calculateLoanBalance,
+} from '@/lib/calculations';
 
-type SortField =
-  | 'name'
-  | 'email'
-  | 'totalCapital'
-  | 'totalInterest'
-  | 'totalLoans'
-  | 'currentBalance';
-type SortDirection = 'asc' | 'desc';
-
-interface InvestorStats {
-  totalCapital: number;
-  totalInterest: number;
-  activeLoans: number;
-  currentBalance: number;
-  totalLoans: number;
-  completedLoans: number;
-  overdueLoans: number;
-  totalGain: number;
-}
+const getBalanceStatus = (balance: number) => {
+  if (balance > 100000)
+    return { status: 'Can invest', variant: 'default' as const };
+  if (balance > 50000)
+    return { status: 'Low funds', variant: 'secondary' as const };
+  return { status: 'No funds', variant: 'destructive' as const };
+};
 
 export default function InvestorsPage() {
+  const router = useRouter();
   const [investors, setInvestors] = useState<InvestorWithLoans[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedInvestors, setExpandedInvestors] = useState<Set<number>>(
+    new Set()
+  );
+  const [expandedTableRows, setExpandedTableRows] = useState<Set<number>>(
+    new Set()
+  );
 
   // Filter states
   const [loanStatusFilter, setLoanStatusFilter] = useState<string>('all');
@@ -95,81 +90,32 @@ export default function InvestorsPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP',
-    }).format(amount);
+  const toggleInvestor = (investorId: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setExpandedInvestors((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(investorId)) {
+        newSet.delete(investorId);
+      } else {
+        newSet.add(investorId);
+      }
+      return newSet;
+    });
   };
 
-  const getInvestorStats = (investor: InvestorWithLoans): InvestorStats => {
-    const totalCapital = investor.loanInvestors.reduce(
-      (sum, li) => sum + parseFloat(li.amount),
-      0
-    );
-
-    const totalInterest = investor.loanInvestors.reduce((sum, li) => {
-      const amount = parseFloat(li.amount);
-      const rate = parseFloat(li.interestRate) / 100;
-      return sum + amount * rate;
-    }, 0);
-
-    const activeLoans = investor.loanInvestors.filter(
-      (li) =>
-        li.loan.status === 'Fully Funded' ||
-        li.loan.status === 'Partially Funded'
-    ).length;
-
-    const completedLoans = investor.loanInvestors.filter(
-      (li) => li.loan.status === 'Completed'
-    ).length;
-
-    const overdueLoans = investor.loanInvestors.filter(
-      (li) => li.loan.status === 'Overdue'
-    ).length;
-
-    // Get latest balance from transactions
-    const latestTransaction =
-      investor.transactions.length > 0
-        ? investor.transactions.sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-          )[0]
-        : null;
-
-    const currentBalance = latestTransaction
-      ? parseFloat(latestTransaction.balance)
-      : 0;
-
-    const totalGain = totalCapital + totalInterest;
-
-    return {
-      totalCapital,
-      totalInterest,
-      activeLoans,
-      currentBalance,
-      totalLoans: investor.loanInvestors.length,
-      completedLoans,
-      overdueLoans,
-      totalGain,
-    };
-  };
-
-  const getBalanceStatus = (balance: number) => {
-    if (balance > 100000)
-      return { status: 'Can invest', variant: 'default' as const };
-    if (balance > 50000)
-      return { status: 'Low funds', variant: 'secondary' as const };
-    return { status: 'No funds', variant: 'destructive' as const };
-  };
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-    setCurrentPage(1); // Reset to first page when sorting
+  const toggleTableRow = (investorId: string | number) => {
+    setExpandedTableRows((prev) => {
+      const newSet = new Set(prev);
+      const id =
+        typeof investorId === 'string' ? parseInt(investorId) : investorId;
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
   };
 
   const clearFilters = () => {
@@ -183,7 +129,6 @@ export default function InvestorsPage() {
     setMaxInterest('');
     setMinGain('');
     setMaxGain('');
-    setCurrentPage(1);
   };
 
   const hasActiveAmountFilters =
@@ -201,7 +146,7 @@ export default function InvestorsPage() {
 
   // Filter investors based on search and filters
   const filteredInvestors = investors.filter((investor) => {
-    const stats = getInvestorStats(investor);
+    const stats = calculateInvestorStats(investor);
 
     // Search filter
     if (searchQuery) {
@@ -263,68 +208,6 @@ export default function InvestorsPage() {
 
     return true;
   });
-
-  const sortedInvestors = [...filteredInvestors].sort((a, b) => {
-    const aStats = getInvestorStats(a);
-    const bStats = getInvestorStats(b);
-    let aValue: any;
-    let bValue: any;
-
-    switch (sortField) {
-      case 'name':
-        aValue = a.name.toLowerCase();
-        bValue = b.name.toLowerCase();
-        break;
-      case 'email':
-        aValue = a.email.toLowerCase();
-        bValue = b.email.toLowerCase();
-        break;
-      case 'totalCapital':
-        aValue = aStats.totalCapital;
-        bValue = bStats.totalCapital;
-        break;
-      case 'totalInterest':
-        aValue = aStats.totalInterest;
-        bValue = bStats.totalInterest;
-        break;
-      case 'totalLoans':
-        aValue = aStats.totalLoans;
-        bValue = bStats.totalLoans;
-        break;
-      case 'currentBalance':
-        aValue = aStats.currentBalance;
-        bValue = bStats.currentBalance;
-        break;
-      default:
-        return 0;
-    }
-
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(sortedInvestors.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedInvestors = sortedInvestors.slice(startIndex, endIndex);
-
-  const SortButton = ({
-    field,
-    children,
-  }: {
-    field: SortField;
-    children: React.ReactNode;
-  }) => (
-    <button
-      onClick={() => handleSort(field)}
-      className="flex items-center gap-1 hover:text-foreground transition-colors"
-    >
-      {children}
-      <ArrowUpDown className="h-3 w-3" />
-    </button>
-  );
 
   if (loading) {
     return (
@@ -389,37 +272,16 @@ export default function InvestorsPage() {
           {/* Search and Loan Status Row */}
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Search Input */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search investors by name or email..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="pl-9 pr-9"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setCurrentPage(1);
-                  }}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+            <SearchFilter
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search investors by name or email..."
+            />
 
             {/* Loan Status Filter */}
             <Select
               value={loanStatusFilter}
-              onValueChange={(value) => {
-                setLoanStatusFilter(value);
-                setCurrentPage(1);
-              }}
+              onValueChange={(value) => setLoanStatusFilter(value)}
             >
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Loan Status" />
@@ -434,21 +296,16 @@ export default function InvestorsPage() {
             </Select>
 
             {/* More Filters Button */}
-            <Button
-              variant={showMoreFilters ? 'secondary' : 'outline'}
-              size="sm"
-              onClick={() => setShowMoreFilters(!showMoreFilters)}
-              className="whitespace-nowrap relative"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              {showMoreFilters ? 'Less' : 'More'} Filters
-              {hasActiveAmountFilters && (
-                <span className="ml-2 flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
-              )}
-            </Button>
+            <CollapsibleSection
+              inline
+              isOpen={showMoreFilters}
+              onToggle={() => setShowMoreFilters(!showMoreFilters)}
+              trigger={{
+                label: `${showMoreFilters ? 'Less' : 'More'} Filters`,
+                icon: Filter,
+                showIndicator: hasActiveAmountFilters,
+              }}
+            />
 
             {/* Clear Filters Button */}
             {hasActiveFilters && (
@@ -464,134 +321,46 @@ export default function InvestorsPage() {
             )}
           </div>
 
-          {/* Amount Range Filters - Collapsible */}
-          {showMoreFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 border rounded-lg bg-muted/30 animate-in slide-in-from-top-2 duration-200">
-              {/* Current Balance Range */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold flex items-center gap-1">
-                  <DollarSign className="h-3.5 w-3.5" />
-                  Current Balance
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min (₱)"
-                    value={minBalance}
-                    onChange={(e) => {
-                      setMinBalance(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="h-9 text-sm"
-                  />
-                  <span className="text-muted-foreground">-</span>
-                  <Input
-                    type="number"
-                    placeholder="Max (₱)"
-                    value={maxBalance}
-                    onChange={(e) => {
-                      setMaxBalance(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="h-9 text-sm"
-                  />
-                </div>
-              </div>
-
+          {/* Amount Range Filters - Collapsible Content */}
+          <CollapsibleContent isOpen={showMoreFilters}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {/* Total Capital Range */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold flex items-center gap-1">
-                  <DollarSign className="h-3.5 w-3.5" />
-                  Total Capital
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min (₱)"
-                    value={minCapital}
-                    onChange={(e) => {
-                      setMinCapital(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="h-9 text-sm"
-                  />
-                  <span className="text-muted-foreground">-</span>
-                  <Input
-                    type="number"
-                    placeholder="Max (₱)"
-                    value={maxCapital}
-                    onChange={(e) => {
-                      setMaxCapital(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="h-9 text-sm"
-                  />
-                </div>
-              </div>
+              <RangeFilter
+                label="Total Capital"
+                icon={DollarSign}
+                minValue={minCapital}
+                maxValue={maxCapital}
+                onMinChange={setMinCapital}
+                onMaxChange={setMaxCapital}
+                minPlaceholder="Min (₱)"
+                maxPlaceholder="Max (₱)"
+              />
 
               {/* Total Interest Range */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold flex items-center gap-1">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  Total Interest
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min (₱)"
-                    value={minInterest}
-                    onChange={(e) => {
-                      setMinInterest(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="h-9 text-sm"
-                  />
-                  <span className="text-muted-foreground">-</span>
-                  <Input
-                    type="number"
-                    placeholder="Max (₱)"
-                    value={maxInterest}
-                    onChange={(e) => {
-                      setMaxInterest(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="h-9 text-sm"
-                  />
-                </div>
-              </div>
+              <RangeFilter
+                label="Total Interest"
+                icon={TrendingUp}
+                minValue={minInterest}
+                maxValue={maxInterest}
+                onMinChange={setMinInterest}
+                onMaxChange={setMaxInterest}
+                minPlaceholder="Min (₱)"
+                maxPlaceholder="Max (₱)"
+              />
 
               {/* Total Gain Range */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold flex items-center gap-1">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  Total Gain
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min (₱)"
-                    value={minGain}
-                    onChange={(e) => {
-                      setMinGain(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="h-9 text-sm"
-                  />
-                  <span className="text-muted-foreground">-</span>
-                  <Input
-                    type="number"
-                    placeholder="Max (₱)"
-                    value={maxGain}
-                    onChange={(e) => {
-                      setMaxGain(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="h-9 text-sm"
-                  />
-                </div>
-              </div>
+              <RangeFilter
+                label="Total Gain"
+                icon={TrendingUp}
+                minValue={minGain}
+                maxValue={maxGain}
+                onMinChange={setMinGain}
+                onMaxChange={setMaxGain}
+                minPlaceholder="Min (₱)"
+                maxPlaceholder="Max (₱)"
+              />
             </div>
-          )}
+          </CollapsibleContent>
         </div>
 
         {/* Results Count */}
@@ -630,238 +399,499 @@ export default function InvestorsPage() {
         <>
           {viewMode === 'cards' && (
             <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
-              {sortedInvestors.map((investor) => {
-                const stats = getInvestorStats(investor);
-                const balanceStatus = getBalanceStatus(stats.currentBalance);
+              {filteredInvestors.map((investor) => {
+                const stats = calculateInvestorStats(investor);
+                const avgRate = calculateAverageRate(investor.loanInvestors);
+
+                // Get today's date at midnight for comparison
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                // Get unique sent dates (only today and future)
+                const uniqueSentDates = Array.from(
+                  new Set(
+                    investor.loanInvestors.map(
+                      (li) => new Date(li.sentDate).toISOString().split('T')[0]
+                    )
+                  )
+                )
+                  .map((dateStr) => new Date(dateStr))
+                  .filter((date) => {
+                    const checkDate = new Date(date);
+                    checkDate.setHours(0, 0, 0, 0);
+                    return checkDate >= today;
+                  })
+                  .sort((a, b) => a.getTime() - b.getTime());
+
+                // Get unique due dates from all loans (only today and future)
+                const dueDateSet = new Set<string>();
+                investor.loanInvestors.forEach((li) => {
+                  dueDateSet.add(
+                    new Date(li.loan.dueDate).toISOString().split('T')[0]
+                  );
+                  if (li.hasMultipleInterest && li.interestPeriods) {
+                    li.interestPeriods.forEach((period) => {
+                      dueDateSet.add(
+                        new Date(period.dueDate).toISOString().split('T')[0]
+                      );
+                    });
+                  }
+                });
+
+                const uniqueDueDates = Array.from(dueDateSet)
+                  .map((dateStr) => new Date(dateStr))
+                  .filter((date) => {
+                    const checkDate = new Date(date);
+                    checkDate.setHours(0, 0, 0, 0);
+                    return checkDate >= today;
+                  })
+                  .sort((a, b) => a.getTime() - b.getTime());
+
+                // Group loan investors by loan ID to get unique loans
+                const loanMap = new Map<
+                  number,
+                  {
+                    loan: (typeof investor.loanInvestors)[0]['loan'];
+                    transactions: Array<(typeof investor.loanInvestors)[0]>;
+                  }
+                >();
+
+                investor.loanInvestors.forEach((li) => {
+                  const loanId = li.loan.id;
+                  if (!loanMap.has(loanId)) {
+                    loanMap.set(loanId, {
+                      loan: li.loan,
+                      transactions: [],
+                    });
+                  }
+                  loanMap.get(loanId)!.transactions.push(li);
+                });
+
+                const uniqueLoans = Array.from(loanMap.values());
 
                 return (
-                  <Link key={investor.id} href={`/investors/${investor.id}`}>
-                    <Card className="hover:shadow-lg transition-shadow h-full">
-                      <CardHeader>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1 flex-1 min-w-0">
-                            <CardTitle className="text-lg sm:text-xl truncate">
-                              {investor.name}
-                            </CardTitle>
-                            <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                              {investor.email}
-                            </p>
-                          </div>
-                          <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <Card
+                    key={investor.id}
+                    className="hover:shadow-lg transition-shadow h-full"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <CardTitle className="text-sm sm:text-base truncate">
+                            {investor.name}
+                          </CardTitle>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {investor.email}
+                          </p>
                         </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <DollarSign className="h-3 w-3 flex-shrink-0" />
-                              <p className="text-xs">Total Capital</p>
-                            </div>
-                            <p className="text-base sm:text-lg font-semibold break-words">
-                              {formatCurrency(stats.totalCapital)}
-                            </p>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <TrendingUp className="h-3 w-3 flex-shrink-0" />
-                              <p className="text-xs">Total Interest</p>
-                            </div>
-                            <p className="text-base sm:text-lg font-semibold break-words">
-                              {formatCurrency(stats.totalInterest)}
-                            </p>
-                          </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4 px-4">
+                      {/* Summary Section */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3">
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Total Capital
+                          </p>
+                          <p className="text-sm font-medium break-words">
+                            {formatCurrency(stats.totalCapital)}
+                          </p>
                         </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Avg. Rate
+                          </p>
+                          <p className="text-sm font-medium">
+                            {avgRate.toFixed(2)}%
+                          </p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Total Interest
+                          </p>
+                          <p className="text-sm font-medium break-words">
+                            {formatCurrency(stats.totalInterest)}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Total Amount
+                          </p>
+                          <p className="text-sm font-medium break-words">
+                            {formatCurrency(
+                              stats.totalCapital + stats.totalInterest
+                            )}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Upcoming Out Dates
+                          </p>
+                          <div className="flex flex-col gap-0.5 items-start">
+                            {uniqueSentDates.length > 0 ? (
+                              uniqueSentDates.map((date, index) => {
+                                const checkDate = new Date(date);
+                                checkDate.setHours(0, 0, 0, 0);
+                                const isFuture = checkDate > today;
 
-                        <div className="flex items-center justify-between pt-2 border-t">
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">
-                              Loans:
-                            </span>{' '}
-                            <span className="font-medium">
-                              {stats.totalLoans}
-                            </span>
-                            {stats.activeLoans > 0 && (
-                              <span className="text-muted-foreground">
-                                {' '}
-                                ({stats.activeLoans} active)
+                                return (
+                                  <span
+                                    key={index}
+                                    className={`${
+                                      uniqueSentDates.length > 1
+                                        ? 'text-[10px]'
+                                        : 'text-xs'
+                                    } px-2 py-0.5 rounded inline-block font-medium ${
+                                      isFuture ? 'bg-yellow-200' : ''
+                                    }`}
+                                  >
+                                    {date.toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                    })}
+                                  </span>
+                                );
+                              })
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                -
                               </span>
                             )}
                           </div>
-                          <Badge variant={balanceStatus.variant}>
-                            {balanceStatus.status}
-                          </Badge>
                         </div>
-
-                        <div className="pt-2 border-t">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs sm:text-sm text-muted-foreground">
-                              Current Balance
-                            </span>
-                            <span className="text-base sm:text-lg font-semibold break-words text-right">
-                              {formatCurrency(stats.currentBalance)}
-                            </span>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            Upcoming In Dates
+                          </p>
+                          <div className="flex flex-col gap-0.5 items-start">
+                            {uniqueDueDates.length > 0 ? (
+                              uniqueDueDates.map((date, index) => (
+                                <span
+                                  key={index}
+                                  className={`${
+                                    uniqueDueDates.length > 1
+                                      ? 'text-[10px]'
+                                      : 'text-xs'
+                                  } px-2 py-0.5 rounded inline-block font-medium`}
+                                >
+                                  {date.toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                -
+                              </span>
+                            )}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="pt-2 border-t">
+                        <ActionButtonsGroup
+                          isExpanded={expandedInvestors.has(investor.id)}
+                          onToggle={(e) => toggleInvestor(investor.id, e)}
+                          viewHref={`/investors/${investor.id}`}
+                          showToggle={true}
+                          size="md"
+                        />
+                      </div>
+
+                      {/* Loans Section - Only shown when expanded */}
+                      {expandedInvestors.has(investor.id) && (
+                        <div className="space-y-3">
+                          {(() => {
+                            // Filter to only show active loans (not completed)
+                            const activeLoans = uniqueLoans.filter(
+                              ({ loan }) => loan.status !== 'Completed'
+                            );
+
+                            if (activeLoans.length === 0) {
+                              return (
+                                <div className="pt-2 border-t">
+                                  <p className="text-xs text-muted-foreground text-center py-3">
+                                    No active loans
+                                  </p>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div className="pt-2 border-t">
+                                <div className="px-3 mb-2">
+                                  <p className="text-xs font-medium text-xs text-muted-foreground">
+                                    Active Loans{' '}
+                                    <span className="text-[10px] text-muted-foreground">
+                                      (Not marked as completed)
+                                    </span>
+                                  </p>
+                                </div>
+                                <div>
+                                  {activeLoans.map(({ loan, transactions }) => {
+                                    // Calculate totals for this loan
+                                    const totalPrincipal = transactions.reduce(
+                                      (sum, t) => sum + parseFloat(t.amount),
+                                      0
+                                    );
+                                    const totalInterest = transactions.reduce(
+                                      (sum, t) =>
+                                        sum +
+                                        calculateInterest(
+                                          t.amount,
+                                          t.interestRate,
+                                          t.interestType
+                                        ),
+                                      0
+                                    );
+                                    const avgRate =
+                                      calculateAverageRate(transactions);
+                                    const total =
+                                      totalPrincipal + totalInterest;
+
+                                    // Get sent dates for this loan
+                                    const sentDates = Array.from(
+                                      new Set(
+                                        transactions.map(
+                                          (t) =>
+                                            new Date(t.sentDate)
+                                              .toISOString()
+                                              .split('T')[0]
+                                        )
+                                      )
+                                    )
+                                      .map((dateStr) => new Date(dateStr))
+                                      .sort(
+                                        (a, b) => a.getTime() - b.getTime()
+                                      );
+
+                                    // Get due dates for this loan
+                                    const dueDateSet = new Set<string>();
+                                    dueDateSet.add(
+                                      new Date(loan.dueDate)
+                                        .toISOString()
+                                        .split('T')[0]
+                                    );
+
+                                    // Add interest period due dates
+                                    transactions.forEach((t) => {
+                                      if (
+                                        t.hasMultipleInterest &&
+                                        t.interestPeriods
+                                      ) {
+                                        t.interestPeriods.forEach((period) => {
+                                          dueDateSet.add(
+                                            new Date(period.dueDate)
+                                              .toISOString()
+                                              .split('T')[0]
+                                          );
+                                        });
+                                      }
+                                    });
+
+                                    const dueDates = Array.from(dueDateSet)
+                                      .map((dateStr) => new Date(dateStr))
+                                      .sort(
+                                        (a, b) => a.getTime() - b.getTime()
+                                      );
+
+                                    return (
+                                      <div
+                                        key={loan.id}
+                                        className="p-3 bg-muted/30 rounded-lg space-y-2 border-t"
+                                      >
+                                        <div className="flex items-start justify-between gap-2">
+                                          <Link
+                                            href={`/transactions/loans/${loan.id}`}
+                                            className="font-medium text-sm hover:underline"
+                                          >
+                                            {loan.loanName}
+                                          </Link>
+                                          <div className="flex items-center gap-1 flex-shrink-0">
+                                            <Badge
+                                              variant={
+                                                getLoanTypeBadge(loan.type)
+                                                  .variant
+                                              }
+                                              className={`text-[10px] py-0.5 ${
+                                                getLoanTypeBadge(loan.type)
+                                                  .className
+                                              }`}
+                                            >
+                                              {loan.type}
+                                            </Badge>
+                                            <Badge
+                                              variant={
+                                                getLoanStatusBadge(loan.status)
+                                                  .variant
+                                              }
+                                              className={`text-[10px] py-0.5 ${
+                                                getLoanStatusBadge(loan.status)
+                                                  .className
+                                              }`}
+                                            >
+                                              {loan.status}
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-2 text-xs">
+                                          <div>
+                                            <p className="text-muted-foreground text-[9px]">
+                                              Principal
+                                            </p>
+                                            <p className="font-medium text-xs">
+                                              {formatCurrency(totalPrincipal)}
+                                            </p>
+                                          </div>
+                                          <div>
+                                            <p className="text-muted-foreground text-[9px]">
+                                              Avg. Rate
+                                            </p>
+                                            <p className="font-medium text-xs">
+                                              {avgRate.toFixed(2)}%
+                                            </p>
+                                          </div>
+                                          <div>
+                                            <p className="text-muted-foreground text-[9px]">
+                                              Interest
+                                            </p>
+                                            <p className="font-medium text-xs">
+                                              {formatCurrency(totalInterest)}
+                                            </p>
+                                          </div>
+                                          <div>
+                                            <p className="text-muted-foreground text-[9px]">
+                                              Total
+                                            </p>
+                                            <p className="font-medium text-xs">
+                                              {formatCurrency(total)}
+                                            </p>
+                                          </div>
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-2 pt-2 text-xs">
+                                          <div>
+                                            <p className="text-muted-foreground text-[9px] mb-1">
+                                              Pending Balance
+                                            </p>
+                                            <div className="flex flex-wrap gap-1">
+                                              <p
+                                                className={`text-xs ${
+                                                  calculateLoanBalance(
+                                                    transactions
+                                                  ) > 0
+                                                    ? 'bg-yellow-200 p-1 rounded-md'
+                                                    : ''
+                                                }`}
+                                              >
+                                                {(() => {
+                                                  const balance =
+                                                    calculateLoanBalance(
+                                                      transactions
+                                                    );
+                                                  return balance > 0
+                                                    ? formatCurrency(balance)
+                                                    : '-';
+                                                })()}
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <p className="text-muted-foreground text-[9px] mb-1">
+                                              Sent Dates
+                                            </p>
+                                            <div className="flex flex-col items-start gap-1">
+                                              {sentDates.map((date, idx) => {
+                                                const checkDate = new Date(
+                                                  date
+                                                );
+                                                checkDate.setHours(0, 0, 0, 0);
+                                                const isFuture =
+                                                  checkDate > today;
+
+                                                return (
+                                                  <span
+                                                    key={idx}
+                                                    className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                                      isFuture
+                                                        ? 'bg-yellow-200'
+                                                        : 'bg-muted'
+                                                    }`}
+                                                  >
+                                                    {date.toLocaleDateString(
+                                                      'en-US',
+                                                      {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        year: 'numeric',
+                                                      }
+                                                    )}
+                                                  </span>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <p className="text-muted-foreground text-[9px] mb-1">
+                                              Due Dates
+                                            </p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {dueDates.map((date, idx) => (
+                                                <span
+                                                  key={idx}
+                                                  className="text-[10px] px-1.5 py-0.5 rounded bg-muted"
+                                                >
+                                                  {date.toLocaleDateString(
+                                                    'en-US',
+                                                    {
+                                                      month: 'short',
+                                                      day: 'numeric',
+                                                      year: 'numeric',
+                                                    }
+                                                  )}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <p className="text-muted-foreground text-[9px] mb-1">
+                                              Free Lot
+                                            </p>
+                                            <div className="flex flex-wrap gap-1">
+                                              <p className="text-xs">
+                                                {loan.freeLotSqm
+                                                  ? `${loan.freeLotSqm} sqm`
+                                                  : '-'}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>
           )}
 
           {viewMode === 'table' && (
-            <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>
-                          <SortButton field="name">Name</SortButton>
-                        </TableHead>
-                        <TableHead>
-                          <SortButton field="email">Email</SortButton>
-                        </TableHead>
-                        <TableHead className="text-right">
-                          <SortButton field="totalCapital">
-                            Total Capital
-                          </SortButton>
-                        </TableHead>
-                        <TableHead className="text-right">
-                          <SortButton field="totalInterest">
-                            Total Interest
-                          </SortButton>
-                        </TableHead>
-                        <TableHead>
-                          <SortButton field="totalLoans">Loans</SortButton>
-                        </TableHead>
-                        <TableHead className="text-right">
-                          <SortButton field="currentBalance">
-                            Current Balance
-                          </SortButton>
-                        </TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedInvestors.map((investor) => {
-                        const stats = getInvestorStats(investor);
-                        const balanceStatus = getBalanceStatus(
-                          stats.currentBalance
-                        );
-
-                        return (
-                          <TableRow
-                            key={investor.id}
-                            className="cursor-pointer"
-                          >
-                            <TableCell className="font-medium">
-                              <Link
-                                href={`/investors/${investor.id}`}
-                                className="hover:underline"
-                              >
-                                {investor.name}
-                              </Link>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {investor.email}
-                            </TableCell>
-                            <TableCell className="font-semibold">
-                              {formatCurrency(stats.totalCapital)}
-                            </TableCell>
-                            <TableCell className="font-semibold">
-                              {formatCurrency(stats.totalInterest)}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col gap-1">
-                                <span className="font-semibold">
-                                  {stats.totalLoans}
-                                </span>
-                                {stats.activeLoans > 0 && (
-                                  <span className="text-xs text-muted-foreground">
-                                    ({stats.activeLoans} active)
-                                  </span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-semibold">
-                              {formatCurrency(stats.currentBalance)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={balanceStatus.variant}>
-                                {balanceStatus.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Link href={`/investors/${investor.id}`}>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <ArrowRight className="h-4 w-4" />
-                                </Button>
-                              </Link>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-4 border-t">
-                    <div className="text-sm text-muted-foreground">
-                      Showing {startIndex + 1} to{' '}
-                      {Math.min(endIndex, sortedInvestors.length)} of{' '}
-                      {sortedInvestors.length} investors
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        disabled={currentPage === 1}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Previous
-                      </Button>
-                      <div className="flex items-center gap-1">
-                        {Array.from(
-                          { length: totalPages },
-                          (_, i) => i + 1
-                        ).map((page) => (
-                          <Button
-                            key={page}
-                            variant={
-                              currentPage === page ? 'default' : 'outline'
-                            }
-                            size="sm"
-                            onClick={() => setCurrentPage(page)}
-                            className="w-8 h-8 p-0"
-                          >
-                            {page}
-                          </Button>
-                        ))}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <InvestorsTable
+              investors={filteredInvestors}
+              itemsPerPage={10}
+              expandedRows={expandedTableRows}
+              onToggleExpand={toggleTableRow}
+            />
           )}
         </>
       )}
