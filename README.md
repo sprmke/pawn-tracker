@@ -135,19 +135,6 @@ The application uses the following main tables:
 - **loan_investors**: Junction table linking loans and investors with allocation details
 - **transactions**: Store investor transactions for balance tracking
 
-## Default Investors
-
-The application comes with these seeded investors:
-
-- Michael Manlulu (michael.manlulu@test.com)
-- Arianna Perez (arianna.perez@test.com)
-- Precious Natividad (precious.natividad@test.com)
-- Migui Lapira (migui.lapira@test.com)
-- Aida Perez (aida.perez@test.com)
-- Mike Perez (mike.perez@test.com)
-- Justin Perez (justin.perez@test.com)
-- Joann Perez (joann.perez@test.com)
-
 ## Available Scripts
 
 - `bun run dev` - Start development server
@@ -170,18 +157,82 @@ pawn-tracker/
 │   ├── layout.tsx        # Root layout
 │   └── page.tsx          # Dashboard
 ├── components/
+│   ├── common/           # Shared reusable components (NEW!)
+│   │   ├── stat-card.tsx
+│   │   ├── empty-state.tsx
+│   │   ├── page-header.tsx
+│   │   ├── view-mode-toggle.tsx
+│   │   ├── search-filter.tsx
+│   │   ├── range-filter.tsx
+│   │   ├── filter-section.tsx
+│   │   ├── collapsible-section.tsx
+│   │   ├── pagination.tsx
+│   │   ├── sort-button.tsx
+│   │   ├── investor-transaction-card.tsx
+│   │   └── README.md     # Component documentation
 │   ├── layout/           # Layout components (Nav)
 │   ├── loans/            # Loan-specific components
+│   ├── investors/        # Investor-specific components
 │   └── ui/               # shadcn/ui components
+├── hooks/                # Custom React hooks (NEW!)
+│   ├── use-pagination.ts
+│   ├── use-sorting.ts
+│   ├── use-filters.ts
+│   └── README.md         # Hooks documentation
 ├── db/
 │   ├── schema.ts         # Database schema
 │   ├── index.ts          # Database client
 │   └── seed.ts           # Seed script
 ├── lib/
+│   ├── format.ts         # Formatting utilities (NEW!)
+│   ├── calculations.ts   # Business logic calculations (NEW!)
+│   ├── badge-config.ts   # Badge configurations
 │   ├── types.ts          # TypeScript types
-│   └── utils.ts          # Utility functions
-└── drizzle.config.ts     # Drizzle ORM configuration
+│   └── utils.ts          # General utilities
+├── drizzle.config.ts     # Drizzle ORM configuration
+├── REFACTORING_SUMMARY.md # Refactoring documentation (NEW!)
+└── README.md
 ```
+
+## Code Architecture & DRY Principles
+
+This project follows **DRY (Don't Repeat Yourself)** principles with a well-organized component architecture:
+
+### Shared Utilities (`/lib/`)
+
+- **format.ts**: Centralized formatting functions (currency, dates, percentages)
+- **calculations.ts**: Business logic for loan calculations, investor stats, and aggregations
+- **badge-config.ts**: Consistent badge styling across the app
+
+### Reusable Components (`/components/common/`)
+
+All common UI patterns are componentized (12 components):
+
+- StatCard, EmptyState, PageHeader, ViewModeToggle, LoadingState
+- SearchFilter, RangeFilter, FilterSection, CollapsibleSection
+- Pagination, SortButton, InvestorTransactionCard
+
+See `/components/common/README.md` for detailed documentation.
+
+### Custom Hooks (`/hooks/`)
+
+Encapsulated logic for common patterns:
+
+- `usePagination`: Handle pagination state and logic
+- `useSorting`: Handle sorting state and logic
+- `useFilters`: Handle filtering state and logic
+
+See `/hooks/README.md` for detailed documentation.
+
+### Benefits
+
+✅ **~500+ lines of duplicate code eliminated**  
+✅ **Consistent formatting and calculations across the app**  
+✅ **Easy to maintain and test**  
+✅ **Type-safe with TypeScript**  
+✅ **Composable and reusable**
+
+See `REFACTORING_SUMMARY.md` for complete refactoring details.
 
 ## Key Features Explained
 
