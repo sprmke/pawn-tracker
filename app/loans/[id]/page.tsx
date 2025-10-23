@@ -22,6 +22,7 @@ async function getLoan(id: number) {
         loanInvestors: {
           with: {
             investor: true,
+            interestPeriods: true,
           },
         },
       },
@@ -36,9 +37,10 @@ async function getLoan(id: number) {
 export default async function LoanDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const loanId = parseInt(params.id);
+  const resolvedParams = await params;
+  const loanId = parseInt(resolvedParams.id);
 
   if (isNaN(loanId)) {
     notFound();
