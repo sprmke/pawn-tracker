@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { loans, loanInvestors } from '@/db/schema';
+import { loans, loanInvestors, interestPeriods } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export async function GET(
@@ -16,6 +16,7 @@ export async function GET(
         loanInvestors: {
           with: {
             investor: true,
+            interestPeriods: true,
           },
         },
       },
@@ -62,7 +63,7 @@ export async function PUT(
     // Update loan
     await db.update(loans).set(processedLoanData).where(eq(loans.id, loanId));
 
-    // Delete existing loan investors
+    // Delete existing loan investors (cascade will delete interest periods)
     await db.delete(loanInvestors).where(eq(loanInvestors.loanId, loanId));
 
     // Insert updated loan investors
@@ -72,10 +73,57 @@ export async function PUT(
         investorId: Number(inv.investorId),
         amount: String(inv.amount),
         interestRate: String(inv.interestRate),
+        interestType: inv.interestType || 'rate',
         sentDate: new Date(inv.sentDate),
+        hasMultipleInterest: inv.hasMultipleInterest || false,
       }));
 
-      await db.insert(loanInvestors).values(loanInvestorData);
+      const insertedLoanInvestors = await db
+        .insert(loanInvestors)
+        .values(loanInvestorData)
+        .returning();
+
+      // Insert interest periods if any
+      // Group by investor to avoid inserting periods multiple times for the same investor
+      const processedInvestors = new Set<number>();
+
+      for (let i = 0; i < investorData.length; i++) {
+        const inv = investorData[i];
+        const investorId = Number(inv.investorId);
+
+        console.log(`Processing investor ${i} (ID: ${investorId}):`, {
+          hasMultipleInterest: inv.hasMultipleInterest,
+          interestPeriodsLength: inv.interestPeriods?.length || 0,
+          interestPeriods: inv.interestPeriods,
+          alreadyProcessed: processedInvestors.has(investorId),
+        });
+
+        // Only insert interest periods once per investor (skip if already processed)
+        if (
+          !processedInvestors.has(investorId) &&
+          inv.hasMultipleInterest &&
+          inv.interestPeriods &&
+          inv.interestPeriods.length > 0
+        ) {
+          const loanInvestorId = insertedLoanInvestors[i].id;
+          const periodData = inv.interestPeriods.map((period: any) => ({
+            loanInvestorId,
+            dueDate: new Date(period.dueDate),
+            interestRate: String(period.interestRate),
+            interestType: period.interestType || 'rate',
+          }));
+
+          console.log(
+            'Inserting interest periods for loanInvestorId:',
+            loanInvestorId,
+            periodData
+          );
+          await db.insert(interestPeriods).values(periodData);
+          console.log('Interest periods inserted successfully');
+
+          processedInvestors.add(investorId);
+        }
+      }
     }
 
     // Fetch the updated loan with investors
@@ -85,6 +133,7 @@ export async function PUT(
         loanInvestors: {
           with: {
             investor: true,
+            interestPeriods: true,
           },
         },
       },
