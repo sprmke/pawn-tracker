@@ -132,7 +132,7 @@ export function InvestorTransactionsDisplay({
                   {investor.name}
                 </h4>
                 {showEmail && investor.email && (
-                  <p className="text-xs sm:text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {investor.email}
                   </p>
                 )}
@@ -285,7 +285,7 @@ export function InvestorTransactionsDisplay({
                             <Wallet className="mr-2 h-4 w-4" />
                             {payingTransactions.has(transaction.id!)
                               ? 'Paying...'
-                              : 'Pay Now'}
+                              : 'Mark as Paid'}
                           </Button>
                         </div>
                       )}
@@ -295,74 +295,72 @@ export function InvestorTransactionsDisplay({
             </div>
 
             {/* Show interest periods breakdown below all transactions */}
-            {item.hasMultipleInterest &&
-              item.interestPeriods &&
-              item.interestPeriods.length > 0 && (
-                <div className="mt-3 pt-3 border-t space-y-3">
-                  <p className="text-sm font-semibold text-foreground">
-                    Interest Breakdown
-                  </p>
-                  <div className="space-y-2">
-                    {item.interestPeriods.map((period, pIndex) => {
-                      // Use total capital (sum of all transactions) for interest calculation
-                      const periodInterest = calculateInterest(
-                        totalCapital,
-                        period.interestRate,
-                        period.interestType
-                      );
+            {item.interestPeriods && item.interestPeriods.length > 0 && (
+              <div className="mt-3 pt-3 border-t space-y-3">
+                <p className="text-sm font-semibold text-foreground">
+                  Interest Breakdown
+                </p>
+                <div className="space-y-2">
+                  {item.interestPeriods.map((period, pIndex) => {
+                    // Use total capital (sum of all transactions) for interest calculation
+                    const periodInterest = calculateInterest(
+                      totalCapital,
+                      period.interestRate,
+                      period.interestType
+                    );
 
-                      // Calculate the rate percentage based on the interest type
-                      const periodRate =
-                        period.interestType === 'fixed'
-                          ? totalCapital > 0
-                            ? (periodInterest / totalCapital) * 100
-                            : 0
-                          : parseFloat(period.interestRate);
+                    // Calculate the rate percentage based on the interest type
+                    const periodRate =
+                      period.interestType === 'fixed'
+                        ? totalCapital > 0
+                          ? (periodInterest / totalCapital) * 100
+                          : 0
+                        : parseFloat(period.interestRate);
 
-                      return (
-                        <div
-                          key={period.id || `period-${pIndex}`}
-                          className="p-3 bg-muted/50 rounded-lg"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              {pIndex === item.interestPeriods!.length - 1
-                                ? `Period ${pIndex + 1} (Loan Due Date)`
-                                : `Period ${pIndex + 1}`}
-                            </span>
+                    return (
+                      <div
+                        key={period.id || `period-${pIndex}`}
+                        className="p-3 bg-muted/50 rounded-lg"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {pIndex === item.interestPeriods!.length - 1
+                              ? `Period ${pIndex + 1} (Final)`
+                              : `Period ${pIndex + 1}`}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                          <div>
+                            <p className="text-muted-foreground text-xs">
+                              Due Date
+                            </p>
+                            <p className="font-medium">
+                              {formatDate(period.dueDate)}
+                            </p>
                           </div>
-                          <div className="grid grid-cols-3 gap-2 text-sm">
-                            <div>
-                              <p className="text-muted-foreground text-xs">
-                                Due Date
-                              </p>
-                              <p className="font-medium">
-                                {formatDate(period.dueDate)}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground text-xs">
-                                Rate
-                              </p>
-                              <p className="font-medium">
-                                {periodRate.toFixed(2)}%
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground text-xs">
-                                Interest
-                              </p>
-                              <p className="font-semibold">
-                                {formatCurrency(periodInterest)}
-                              </p>
-                            </div>
+                          <div>
+                            <p className="text-muted-foreground text-xs">
+                              Rate
+                            </p>
+                            <p className="font-medium">
+                              {periodRate.toFixed(2)}%
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground text-xs">
+                              Interest
+                            </p>
+                            <p className="font-semibold">
+                              {formatCurrency(periodInterest)}
+                            </p>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
+            )}
 
             {/* Grand Total for this investor */}
             {transactions.length > 1 && (
