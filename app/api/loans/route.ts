@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { loans, loanInvestors, investors } from '@/db/schema';
+import { loans, loanInvestors, investors, interestPeriods } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export async function GET() {
@@ -10,6 +10,7 @@ export async function GET() {
         loanInvestors: {
           with: {
             investor: true,
+            interestPeriods: true,
           },
         },
       },
@@ -59,13 +60,51 @@ export async function POST(request: Request) {
       investorId: Number(inv.investorId),
       amount: String(inv.amount),
       interestRate: String(inv.interestRate),
+      interestType: inv.interestType || 'rate',
       sentDate: new Date(inv.sentDate),
+      hasMultipleInterest: inv.hasMultipleInterest || false,
     }));
 
     console.log('Loan investor data:', loanInvestorData);
 
-    await db.insert(loanInvestors).values(loanInvestorData);
+    const insertedLoanInvestors = await db
+      .insert(loanInvestors)
+      .values(loanInvestorData)
+      .returning();
     console.log('Loan investors inserted');
+
+    // Insert interest periods if any
+    // Group by investor to avoid inserting periods multiple times for the same investor
+    const processedInvestors = new Set<number>();
+
+    for (let i = 0; i < investorData.length; i++) {
+      const inv = investorData[i];
+      const investorId = Number(inv.investorId);
+
+      // Only insert interest periods once per investor (skip if already processed)
+      if (
+        !processedInvestors.has(investorId) &&
+        inv.hasMultipleInterest &&
+        inv.interestPeriods &&
+        inv.interestPeriods.length > 0
+      ) {
+        const loanInvestorId = insertedLoanInvestors[i].id;
+        const periodData = inv.interestPeriods.map((period: any) => ({
+          loanInvestorId,
+          dueDate: new Date(period.dueDate),
+          interestRate: String(period.interestRate),
+          interestType: period.interestType || 'rate',
+        }));
+
+        await db.insert(interestPeriods).values(periodData);
+        console.log(
+          'Interest periods inserted for loan investor:',
+          loanInvestorId
+        );
+
+        processedInvestors.add(investorId);
+      }
+    }
 
     // Fetch the complete loan with investors
     const completeLoan = await db.query.loans.findFirst({
@@ -74,6 +113,7 @@ export async function POST(request: Request) {
         loanInvestors: {
           with: {
             investor: true,
+            interestPeriods: true,
           },
         },
       },
