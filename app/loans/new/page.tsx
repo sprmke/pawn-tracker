@@ -5,28 +5,34 @@ import { LoanForm } from '@/components/loans/loan-form';
 async function getInvestors() {
   try {
     const allInvestors = await db.select().from(investors);
-    return allInvestors;
+    // Convert null to undefined for contactNumber to match Investor type
+    return allInvestors.map((investor) => ({
+      ...investor,
+      contactNumber: investor.contactNumber ?? undefined,
+    }));
   } catch (error) {
     console.error('Error fetching investors:', error);
     return [];
   }
 }
 
-export default async function NewLoanPage() {
+interface NewLoanPageProps {
+  searchParams: Promise<{ investorId?: string }>;
+}
+
+export default async function NewLoanPage({ searchParams }: NewLoanPageProps) {
+  const params = await searchParams;
   const allInvestors = await getInvestors();
+  const preselectedInvestorId = params.investorId
+    ? parseInt(params.investorId)
+    : undefined;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          Create New Loan
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Add a new loan and assign investors
-        </p>
-      </div>
-
-      <LoanForm investors={allInvestors} />
+    <div className="max-w-4xl mx-auto">
+      <LoanForm
+        investors={allInvestors}
+        preselectedInvestorId={preselectedInvestorId}
+      />
     </div>
   );
 }
