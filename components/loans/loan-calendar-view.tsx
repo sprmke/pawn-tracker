@@ -106,6 +106,22 @@ export function LoanCalendarView({
         }
       },
       renderEventCard,
+      legendGroups: [
+        {
+          title: 'Out',
+          items: [
+            { label: 'Sent', color: 'bg-red-500' },
+            { label: 'Scheduled', color: 'bg-yellow-500' },
+          ],
+        },
+        {
+          title: 'In',
+          items: [
+            { label: 'Interest Due', color: 'bg-blue-600' },
+            { label: 'Due Date', color: 'bg-green-600' },
+          ],
+        },
+      ],
     }),
     [onLoanClick]
   );
