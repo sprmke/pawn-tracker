@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,10 +27,6 @@ import {
   Users,
   Calendar,
   MapPin,
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  Search,
   X,
   Filter,
   TrendingUp,
@@ -41,11 +39,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { LoanWithInvestors } from '@/lib/types';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import { LoanCalendarView } from '@/components/loans/loan-calendar-view';
 import { LoanDetailModal } from '@/components/loans/loan-detail-modal';
+import {
+  calculateTotalInterest,
+  calculateAverageRate,
+  calculateTransactionStats,
+} from '@/lib/calculations';
+import {
+  InvestorTransactionCard,
+  LoansTable,
+  ActionButtonsGroup,
+  SearchFilter,
+  RangeFilter,
+  CardPagination,
+} from '@/components/common';
 
 type SortField =
   | 'loanName'
@@ -72,7 +82,6 @@ export default function LoansPage() {
   );
   const [sortField, setSortField] = useState<SortField>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [expandedInvestors, setExpandedInvestors] = useState<Set<number>>(
     new Set()
@@ -165,6 +174,20 @@ export default function LoansPage() {
     );
   };
 
+  const getAverageRate = (loan: LoanWithInvestors) => {
+    return calculateAverageRate(loan.loanInvestors);
+  };
+
+  const getTotalInterest = (loan: LoanWithInvestors) => {
+    return calculateTotalInterest(loan.loanInvestors);
+  };
+
+  const getTotalAmount = (loan: LoanWithInvestors) => {
+    const principal = getTotalPrincipal(loan);
+    const interest = getTotalInterest(loan);
+    return principal + interest;
+  };
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -172,7 +195,6 @@ export default function LoansPage() {
       setSortField(field);
       setSortDirection('asc');
     }
-    setCurrentPage(1); // Reset to first page when sorting
   };
 
   const clearFilters = () => {
@@ -189,7 +211,6 @@ export default function LoansPage() {
     setMaxInterest('');
     setMinTotalAmount('');
     setMaxTotalAmount('');
-    setCurrentPage(1);
   };
 
   const hasActiveAmountFilters =
@@ -246,14 +267,9 @@ export default function LoansPage() {
 
     // Calculate loan amounts for filtering
     const totalPrincipal = getTotalPrincipal(loan);
-    const totalInterest = loan.loanInvestors.reduce((sum, li) => {
-      const capital = parseFloat(li.amount);
-      const rate = parseFloat(li.interestRate) / 100;
-      return sum + capital * rate;
-    }, 0);
-    const avgRate =
-      totalPrincipal > 0 ? (totalInterest / totalPrincipal) * 100 : 0;
-    const totalAmount = totalPrincipal + totalInterest;
+    const totalInterest = getTotalInterest(loan);
+    const avgRate = getAverageRate(loan);
+    const totalAmount = getTotalAmount(loan);
 
     // Principal range filter
     if (minPrincipal !== '' && totalPrincipal < parseFloat(minPrincipal)) {
@@ -380,28 +396,6 @@ export default function LoansPage() {
     return 0;
   });
 
-  // Pagination
-  const totalPages = Math.ceil(sortedLoans.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedLoans = sortedLoans.slice(startIndex, endIndex);
-
-  const SortButton = ({
-    field,
-    children,
-  }: {
-    field: SortField;
-    children: React.ReactNode;
-  }) => (
-    <button
-      onClick={() => handleSort(field)}
-      className="flex items-center gap-1 hover:text-foreground transition-colors"
-    >
-      {children}
-      <ArrowUpDown className="h-3 w-3" />
-    </button>
-  );
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -476,36 +470,19 @@ export default function LoansPage() {
           {/* Search and Basic Filters Row */}
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Search Input */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search loans by name or notes..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="pl-9 pr-9"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setCurrentPage(1);
-                  }}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+            <SearchFilter
+              value={searchQuery}
+              onChange={(value) => {
+                setSearchQuery(value);
+              }}
+              placeholder="Search loans by name or notes..."
+            />
 
             {/* Status Filter */}
             <Select
               value={statusFilter}
               onValueChange={(value) => {
                 setStatusFilter(value);
-                setCurrentPage(1);
               }}
             >
               <SelectTrigger className="w-full sm:w-[180px]">
@@ -527,7 +504,6 @@ export default function LoansPage() {
               value={typeFilter}
               onValueChange={(value) => {
                 setTypeFilter(value);
-                setCurrentPage(1);
               }}
             >
               <SelectTrigger className="w-full sm:w-[180px]">
@@ -577,128 +553,68 @@ export default function LoansPage() {
             <div className="space-y-3 p-4 border rounded-lg bg-muted/30 animate-in slide-in-from-top-2 duration-200">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {/* Total Principal Range */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold flex items-center gap-1">
-                    <DollarSign className="h-3.5 w-3.5" />
-                    Total Principal
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Min (₱)"
-                      value={minPrincipal}
-                      onChange={(e) => {
-                        setMinPrincipal(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="h-9 text-sm"
-                    />
-                    <span className="text-muted-foreground">-</span>
-                    <Input
-                      type="number"
-                      placeholder="Max (₱)"
-                      value={maxPrincipal}
-                      onChange={(e) => {
-                        setMaxPrincipal(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="h-9 text-sm"
-                    />
-                  </div>
-                </div>
+                <RangeFilter
+                  label="Total Principal"
+                  icon={DollarSign}
+                  minValue={minPrincipal}
+                  maxValue={maxPrincipal}
+                  onMinChange={(value) => {
+                    setMinPrincipal(value);
+                  }}
+                  onMaxChange={(value) => {
+                    setMaxPrincipal(value);
+                  }}
+                  minPlaceholder="Min (₱)"
+                  maxPlaceholder="Max (₱)"
+                />
 
                 {/* Average Rate Range */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold flex items-center gap-1">
-                    <TrendingUp className="h-3.5 w-3.5" />
-                    Avg. Rate
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Min (%)"
-                      value={minAvgRate}
-                      onChange={(e) => {
-                        setMinAvgRate(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="h-9 text-sm"
-                    />
-                    <span className="text-muted-foreground">-</span>
-                    <Input
-                      type="number"
-                      placeholder="Max (%)"
-                      value={maxAvgRate}
-                      onChange={(e) => {
-                        setMaxAvgRate(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="h-9 text-sm"
-                    />
-                  </div>
-                </div>
+                <RangeFilter
+                  label="Avg. Rate"
+                  icon={TrendingUp}
+                  minValue={minAvgRate}
+                  maxValue={maxAvgRate}
+                  onMinChange={(value) => {
+                    setMinAvgRate(value);
+                  }}
+                  onMaxChange={(value) => {
+                    setMaxAvgRate(value);
+                  }}
+                  minPlaceholder="Min (%)"
+                  maxPlaceholder="Max (%)"
+                />
 
                 {/* Total Interest Range */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold flex items-center gap-1">
-                    <TrendingUp className="h-3.5 w-3.5" />
-                    Total Interest
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Min (₱)"
-                      value={minInterest}
-                      onChange={(e) => {
-                        setMinInterest(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="h-9 text-sm"
-                    />
-                    <span className="text-muted-foreground">-</span>
-                    <Input
-                      type="number"
-                      placeholder="Max (₱)"
-                      value={maxInterest}
-                      onChange={(e) => {
-                        setMaxInterest(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="h-9 text-sm"
-                    />
-                  </div>
-                </div>
+                <RangeFilter
+                  label="Total Interest"
+                  icon={TrendingUp}
+                  minValue={minInterest}
+                  maxValue={maxInterest}
+                  onMinChange={(value) => {
+                    setMinInterest(value);
+                  }}
+                  onMaxChange={(value) => {
+                    setMaxInterest(value);
+                  }}
+                  minPlaceholder="Min (₱)"
+                  maxPlaceholder="Max (₱)"
+                />
 
                 {/* Total Amount Range */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold flex items-center gap-1">
-                    <DollarSign className="h-3.5 w-3.5" />
-                    Total Amount
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Min (₱)"
-                      value={minTotalAmount}
-                      onChange={(e) => {
-                        setMinTotalAmount(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="h-9 text-sm"
-                    />
-                    <span className="text-muted-foreground">-</span>
-                    <Input
-                      type="number"
-                      placeholder="Max (₱)"
-                      value={maxTotalAmount}
-                      onChange={(e) => {
-                        setMaxTotalAmount(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="h-9 text-sm"
-                    />
-                  </div>
-                </div>
+                <RangeFilter
+                  label="Total Amount"
+                  icon={DollarSign}
+                  minValue={minTotalAmount}
+                  maxValue={maxTotalAmount}
+                  onMinChange={(value) => {
+                    setMinTotalAmount(value);
+                  }}
+                  onMaxChange={(value) => {
+                    setMaxTotalAmount(value);
+                  }}
+                  minPlaceholder="Min (₱)"
+                  maxPlaceholder="Max (₱)"
+                />
               </div>
 
               {/* Free Lot and Investor Filters */}
@@ -713,7 +629,6 @@ export default function LoansPage() {
                     value={freeLotFilter}
                     onValueChange={(value) => {
                       setFreeLotFilter(value);
-                      setCurrentPage(1);
                     }}
                   >
                     <SelectTrigger className="w-full h-9">
@@ -757,7 +672,6 @@ export default function LoansPage() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 setSelectedInvestors([]);
-                                setCurrentPage(1);
                               }}
                               className="text-xs text-muted-foreground hover:text-foreground"
                             >
@@ -781,7 +695,6 @@ export default function LoansPage() {
                                     return [...prev, investor.id];
                                   }
                                 });
-                                setCurrentPage(1);
                               }}
                             >
                               <div
@@ -870,729 +783,285 @@ export default function LoansPage() {
           )}
 
           {viewMode === 'cards' && (
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
-              {sortedLoans.map((loan) => (
-                <Card
-                  key={loan.id}
-                  className="hover:shadow-lg transition-shadow h-full"
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <CardTitle className="text-lg sm:text-xl truncate">
-                          {loan.loanName}
-                        </CardTitle>
-                      </div>
-                      <Badge
-                        variant={getLoanTypeBadge(loan.type).variant}
-                        className={`text-xs ${
-                          getLoanTypeBadge(loan.type).className || ''
-                        }`}
-                      >
-                        {loan.type}
-                      </Badge>
-                      <Badge
-                        variant={getLoanStatusBadge(loan.status).variant}
-                        className={getLoanStatusBadge(loan.status).className}
-                      >
-                        {loan.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Summary Section */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-[10px] text-muted-foreground mb-1">
-                          Total Principal
-                        </p>
-                        <p className="text-sm font-bold break-words">
-                          {formatCurrency(getTotalPrincipal(loan).toString())}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-[10px] text-muted-foreground mb-1">
-                          Avg. Rate
-                        </p>
-                        <p className="text-sm font-bold">
-                          {(() => {
-                            const totalPrincipal = getTotalPrincipal(loan);
-                            const totalInterest = loan.loanInvestors.reduce(
-                              (sum, li) => {
-                                const capital = parseFloat(li.amount);
-                                const rate = parseFloat(li.interestRate) / 100;
-                                return sum + capital * rate;
-                              },
-                              0
-                            );
-                            const avgRate =
-                              totalPrincipal > 0
-                                ? (totalInterest / totalPrincipal) * 100
-                                : 0;
-                            return `${avgRate.toFixed(2)}%`;
-                          })()}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-[10px] text-muted-foreground mb-1">
-                          Total Interest
-                        </p>
-                        <p className="text-sm font-bold break-words">
-                          {formatCurrency(
-                            loan.loanInvestors
-                              .reduce((sum, li) => {
-                                const capital = parseFloat(li.amount);
-                                const rate = parseFloat(li.interestRate) / 100;
-                                return sum + capital * rate;
-                              }, 0)
-                              .toString()
-                          )}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-[10px] text-muted-foreground mb-1">
-                          Total Amount
-                        </p>
-                        <p className="text-sm font-bold break-words">
-                          {(() => {
-                            const totalPrincipal = getTotalPrincipal(loan);
-                            const totalInterest = loan.loanInvestors.reduce(
-                              (sum, li) => {
-                                const capital = parseFloat(li.amount);
-                                const rate = parseFloat(li.interestRate) / 100;
-                                return sum + capital * rate;
-                              },
-                              0
-                            );
-                            return formatCurrency(
-                              (totalPrincipal + totalInterest).toString()
-                            );
-                          })()}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-[10px] text-muted-foreground mb-1">
-                          Due Date
-                        </p>
-                        <p className="text-sm font-bold">
-                          {new Date(loan.dueDate).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-[10px] text-muted-foreground mb-1">
-                          Free Lot
-                        </p>
-                        <p className="text-sm font-bold">
-                          {loan.freeLotSqm ? `${loan.freeLotSqm} sqm` : '-'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Toggle Buttons */}
-                    <div className="pt-2 border-t flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex-1 h-8 text-xs"
-                        onClick={(e) => toggleInvestors(loan.id, e)}
-                      >
-                        {expandedInvestors.has(loan.id) ? (
-                          <>
-                            <ChevronUp className="h-3 w-3 mr-1" />
-                            Hide
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown className="h-3 w-3 mr-1" />
-                            More
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex-1 h-8 text-xs"
-                        onClick={() => router.push(`/loans/${loan.id}`)}
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        View
-                      </Button>
-                    </div>
-
-                    {/* Notes & Investors Section - Only shown when expanded */}
-                    {expandedInvestors.has(loan.id) && (
-                      <div className="space-y-3">
-                        {/* Investors Section */}
-                        {loan.loanInvestors.length > 0 && (
-                          <div className="pt-2 border-t">
-                            <p className="text-xs text-muted-foreground mb-3">
-                              Investors:
+            <CardPagination
+              items={sortedLoans}
+              itemsPerPage={itemsPerPage}
+              itemName="loans"
+              renderItems={(paginatedLoans) => (
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
+                  {paginatedLoans.map((loan) => (
+                    <Card
+                      key={loan.id}
+                      className="hover:shadow-lg transition-shadow h-full"
+                    >
+                      <CardHeader className="pb-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <CardTitle className="text-sm sm:text-base truncate">
+                              {loan.loanName}
+                            </CardTitle>
+                          </div>
+                          <Badge
+                            variant={getLoanTypeBadge(loan.type).variant}
+                            className={`text-[10px] ${
+                              getLoanTypeBadge(loan.type).className || ''
+                            }`}
+                          >
+                            {loan.type}
+                          </Badge>
+                          <Badge
+                            variant={getLoanStatusBadge(loan.status).variant}
+                            className={`text-[10px] ${
+                              getLoanStatusBadge(loan.status).className || ''
+                            }`}
+                          >
+                            {loan.status}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4 px-4">
+                        {/* Summary Section */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          <div className="p-2 bg-muted/50 rounded-lg">
+                            <p className="text-[10px] text-muted-foreground mb-1">
+                              Total Principal
                             </p>
-                            <div className="space-y-3">
+                            <p className="text-sm font-medium break-words">
+                              {formatCurrency(
+                                getTotalPrincipal(loan).toString()
+                              )}
+                            </p>
+                          </div>
+                          <div className="p-2 bg-muted/50 rounded-lg">
+                            <p className="text-[10px] text-muted-foreground mb-1">
+                              Avg. Rate
+                            </p>
+                            <p className="text-sm font-medium">
+                              {getAverageRate(loan).toFixed(2)}%
+                            </p>
+                          </div>
+                          <div className="p-2 bg-muted/50 rounded-lg">
+                            <p className="text-[10px] text-muted-foreground mb-1">
+                              Total Interest
+                            </p>
+                            <p className="text-sm font-medium break-words">
+                              {formatCurrency(
+                                getTotalInterest(loan).toString()
+                              )}
+                            </p>
+                          </div>
+                          <div className="p-2 bg-muted/50 rounded-lg">
+                            <p className="text-[10px] text-muted-foreground mb-1">
+                              Total Amount
+                            </p>
+                            <p className="text-sm font-medium break-words">
+                              {formatCurrency(getTotalAmount(loan).toString())}
+                            </p>
+                          </div>
+                          <div className="p-2 bg-muted/50 rounded-lg">
+                            <p className="text-[10px] text-muted-foreground mb-1">
+                              Sent Dates
+                            </p>
+                            <div className="flex flex-col gap-0.5 items-start">
                               {(() => {
-                                // Group by investor
-                                const investorMap = new Map<
-                                  number,
-                                  Array<(typeof loan.loanInvestors)[0]>
-                                >();
-                                loan.loanInvestors.forEach((li) => {
-                                  const existing =
-                                    investorMap.get(li.investor.id) || [];
-                                  existing.push(li);
-                                  investorMap.set(li.investor.id, existing);
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+
+                                // Get unique sent dates
+                                const uniqueDates = Array.from(
+                                  new Set(
+                                    loan.loanInvestors.map(
+                                      (li) =>
+                                        new Date(li.sentDate)
+                                          .toISOString()
+                                          .split('T')[0]
+                                    )
+                                  )
+                                )
+                                  .map((dateStr) => new Date(dateStr))
+                                  .sort((a, b) => a.getTime() - b.getTime());
+
+                                return uniqueDates.map((date, index) => {
+                                  const sentDate = new Date(date);
+                                  sentDate.setHours(0, 0, 0, 0);
+                                  const isFuture = sentDate > today;
+
+                                  return (
+                                    <span
+                                      key={index}
+                                      className={`${
+                                        uniqueDates.length > 1
+                                          ? 'text-[10px]'
+                                          : 'text-xs'
+                                      } px-2 py-0.5 rounded inline-block font-medium ${
+                                        isFuture ? 'bg-yellow-200' : ''
+                                      }`}
+                                    >
+                                      {date.toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                      })}
+                                    </span>
+                                  );
                                 });
-
-                                return Array.from(investorMap.values()).map(
-                                  (transactions) => {
-                                    const investor = transactions[0].investor;
-
-                                    // Calculate totals
-                                    const totalPrincipal = transactions.reduce(
-                                      (sum, t) => sum + parseFloat(t.amount),
-                                      0
-                                    );
-                                    const totalInterest = transactions.reduce(
-                                      (sum, t) => {
-                                        const capital = parseFloat(t.amount);
-                                        const rate =
-                                          parseFloat(t.interestRate) / 100;
-                                        return sum + capital * rate;
-                                      },
-                                      0
-                                    );
-                                    const avgRate =
-                                      totalPrincipal > 0
-                                        ? (totalInterest / totalPrincipal) * 100
-                                        : 0;
-                                    const total =
-                                      totalPrincipal + totalInterest;
-
-                                    // Get comma-separated dates
-                                    const dates = transactions
-                                      .map((t) =>
-                                        new Date(t.sentDate).toLocaleDateString(
-                                          'en-US',
-                                          {
-                                            month: 'short',
-                                            day: 'numeric',
-                                          }
-                                        )
-                                      )
-                                      .join(', ');
-
-                                    // Check if any transaction has a future sent date
-                                    const today = new Date();
-                                    today.setHours(0, 0, 0, 0);
-                                    const hasFutureSentDate = transactions.some(
-                                      (t) => {
-                                        const sentDate = new Date(t.sentDate);
-                                        sentDate.setHours(0, 0, 0, 0);
-                                        return sentDate > today;
-                                      }
-                                    );
-
-                                    return (
-                                      <div
-                                        key={investor.id}
-                                        className="space-y-1.5"
-                                      >
-                                        <div className="flex items-center justify-between gap-2">
-                                          <span className="text-xs font-semibold">
-                                            {investor.name}
-                                          </span>
-                                          <span className="text-[10px] text-muted-foreground">
-                                            {dates}
-                                          </span>
-                                        </div>
-                                        <div
-                                          className={`pl-3 py-2 rounded text-[11px] ${
-                                            hasFutureSentDate
-                                              ? 'bg-yellow-50'
-                                              : 'bg-muted/30'
-                                          }`}
-                                        >
-                                          <div className="grid grid-cols-4 gap-2">
-                                            <div>
-                                              <span className="text-muted-foreground block text-[10px]">
-                                                Principal
-                                              </span>
-                                              <span className="font-medium text-foreground">
-                                                {formatCurrency(
-                                                  totalPrincipal.toString()
-                                                )}
-                                              </span>
-                                            </div>
-                                            <div>
-                                              <span className="text-muted-foreground block text-[10px]">
-                                                Avg. Rate
-                                              </span>
-                                              <span className="text-foreground">
-                                                {avgRate.toFixed(2)}%
-                                              </span>
-                                            </div>
-                                            <div>
-                                              <span className="text-muted-foreground block text-[10px]">
-                                                Interest
-                                              </span>
-                                              <span className="text-foreground">
-                                                {formatCurrency(
-                                                  totalInterest.toString()
-                                                )}
-                                              </span>
-                                            </div>
-                                            <div>
-                                              <span className="text-muted-foreground block text-[10px]">
-                                                Total
-                                              </span>
-                                              <span className="font-semibold text-foreground">
-                                                {formatCurrency(
-                                                  total.toString()
-                                                )}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  }
-                                );
                               })()}
                             </div>
                           </div>
-                        )}
-                        {/* Notes Section */}
-                        <div className="pt-2 border-t">
-                          <p className="text-xs text-muted-foreground mb-2">
-                            Notes:
-                          </p>
-                          <p className="text-xs">{loan.notes ?? '-'}</p>
+                          <div className="p-2 bg-muted/50 rounded-lg">
+                            <p className="text-[10px] text-muted-foreground mb-1">
+                              Due Date
+                              {loan.loanInvestors.some(
+                                (li) => li.hasMultipleInterest
+                              )
+                                ? 's'
+                                : ''}
+                            </p>
+                            <div className="flex flex-col gap-0.5 items-start">
+                              {(() => {
+                                // Collect all unique due dates
+                                const dueDateSet = new Set<string>();
+
+                                // Add main loan due date
+                                dueDateSet.add(
+                                  new Date(loan.dueDate)
+                                    .toISOString()
+                                    .split('T')[0]
+                                );
+
+                                // Add interest period due dates
+                                loan.loanInvestors.forEach((li) => {
+                                  if (
+                                    li.hasMultipleInterest &&
+                                    li.interestPeriods
+                                  ) {
+                                    li.interestPeriods.forEach((period) => {
+                                      dueDateSet.add(
+                                        new Date(period.dueDate)
+                                          .toISOString()
+                                          .split('T')[0]
+                                      );
+                                    });
+                                  }
+                                });
+
+                                const uniqueDates = Array.from(dueDateSet)
+                                  .map((dateStr) => new Date(dateStr))
+                                  .sort((a, b) => a.getTime() - b.getTime());
+
+                                return uniqueDates.map((date, index) => (
+                                  <span
+                                    key={index}
+                                    className={`${
+                                      uniqueDates.length > 1
+                                        ? 'text-[10px]'
+                                        : 'text-xs'
+                                    } px-2 py-0.5 rounded inline-block font-medium`}
+                                  >
+                                    {date.toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                    })}
+                                  </span>
+                                ));
+                              })()}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+
+                        {/* Action Buttons */}
+                        <div className="pt-2 border-t">
+                          <ActionButtonsGroup
+                            isExpanded={expandedInvestors.has(loan.id)}
+                            onToggle={(e) => toggleInvestors(loan.id, e)}
+                            viewHref={`/loans/${loan.id}`}
+                            showToggle={true}
+                            size="md"
+                          />
+                        </div>
+
+                        {/* Notes & Investors Section - Only shown when expanded */}
+                        {expandedInvestors.has(loan.id) && (
+                          <div className="space-y-3">
+                            {/* Investors Section */}
+                            {loan.loanInvestors.length > 0 && (
+                              <div className="pt-2 border-t">
+                                <div className="space-y-3">
+                                  {(() => {
+                                    // Group by investor
+                                    const investorMap = new Map<
+                                      number,
+                                      Array<(typeof loan.loanInvestors)[0]>
+                                    >();
+                                    loan.loanInvestors.forEach((li) => {
+                                      const existing =
+                                        investorMap.get(li.investor.id) || [];
+                                      existing.push(li);
+                                      investorMap.set(li.investor.id, existing);
+                                    });
+
+                                    return Array.from(investorMap.values()).map(
+                                      (transactions) => {
+                                        const investor =
+                                          transactions[0].investor;
+
+                                        // Calculate totals
+                                        const stats =
+                                          calculateTransactionStats(
+                                            transactions
+                                          );
+                                        const totalPrincipal =
+                                          stats.totalPrincipal;
+                                        const totalInterest =
+                                          stats.totalInterest;
+                                        const avgRate = stats.averageRate;
+                                        const total = stats.total;
+
+                                        return (
+                                          <InvestorTransactionCard
+                                            key={investor.id}
+                                            investorName={investor.name}
+                                            transactions={transactions}
+                                            totalPrincipal={totalPrincipal}
+                                            avgRate={avgRate}
+                                            totalInterest={totalInterest}
+                                            total={total}
+                                          />
+                                        );
+                                      }
+                                    );
+                                  })()}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            />
           )}
 
           {viewMode === 'table' && (
-            <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>
-                          <SortButton field="loanName">Loan Name</SortButton>
-                        </TableHead>
-                        <TableHead>
-                          <SortButton field="type">Type</SortButton>
-                        </TableHead>
-                        <TableHead>
-                          <SortButton field="status">Status</SortButton>
-                        </TableHead>
-                        <TableHead>
-                          <SortButton field="dueDate">Due Date</SortButton>
-                        </TableHead>
-                        <TableHead>
-                          <SortButton field="totalPrincipal">
-                            Total Principal
-                          </SortButton>
-                        </TableHead>
-                        <TableHead>
-                          <SortButton field="avgRate">Avg. Rate</SortButton>
-                        </TableHead>
-                        <TableHead>
-                          <SortButton field="totalInterest">
-                            Total Interest
-                          </SortButton>
-                        </TableHead>
-                        <TableHead>
-                          <SortButton field="totalAmount">
-                            Total Amount
-                          </SortButton>
-                        </TableHead>
-                        <TableHead>
-                          <SortButton field="investors">Investors</SortButton>
-                        </TableHead>
-                        <TableHead>
-                          <SortButton field="freeLot">Free Lot</SortButton>
-                        </TableHead>
-                        <TableHead className="text-center">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedLoans.map((loan) => {
-                        const totalPrincipal = getTotalPrincipal(loan);
-                        const totalInterest = loan.loanInvestors.reduce(
-                          (sum, li) => {
-                            const capital = parseFloat(li.amount);
-                            const rate = parseFloat(li.interestRate) / 100;
-                            return sum + capital * rate;
-                          },
-                          0
-                        );
-                        const avgRate =
-                          totalPrincipal > 0
-                            ? (totalInterest / totalPrincipal) * 100
-                            : 0;
-                        const totalAmount = totalPrincipal + totalInterest;
-                        const uniqueInvestors = new Set(
-                          loan.loanInvestors.map((li) => li.investor.id)
-                        ).size;
-
-                        // Check if any transaction has a future sent date
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        const hasFutureSentDate = loan.loanInvestors.some(
-                          (li) => {
-                            const sentDate = new Date(li.sentDate);
-                            sentDate.setHours(0, 0, 0, 0);
-                            return sentDate > today;
-                          }
-                        );
-
-                        return (
-                          <>
-                            <TableRow
-                              key={loan.id}
-                              className={
-                                hasFutureSentDate
-                                  ? 'bg-yellow-50 hover:bg-yellow-100'
-                                  : 'hover:bg-muted/50'
-                              }
-                            >
-                              <TableCell className="font-medium">
-                                {loan.loanName}
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={getLoanTypeBadge(loan.type).variant}
-                                  className={
-                                    getLoanTypeBadge(loan.type).className
-                                  }
-                                >
-                                  {loan.type}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={
-                                    getLoanStatusBadge(loan.status).variant
-                                  }
-                                  className={
-                                    getLoanStatusBadge(loan.status).className
-                                  }
-                                >
-                                  {loan.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {new Date(loan.dueDate).toLocaleDateString(
-                                  'en-US',
-                                  {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric',
-                                  }
-                                )}
-                              </TableCell>
-                              <TableCell className="font-semibold">
-                                {formatCurrency(totalPrincipal.toString())}
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {avgRate.toFixed(2)}%
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                {formatCurrency(totalInterest.toString())}
-                              </TableCell>
-                              <TableCell className="font-bold">
-                                {formatCurrency(totalAmount.toString())}
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-sm font-medium">
-                                  {uniqueInvestors}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {loan.freeLotSqm
-                                  ? `${loan.freeLotSqm} sqm`
-                                  : '-'}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center justify-end gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 text-xs"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleInvestors(loan.id, e);
-                                    }}
-                                  >
-                                    {expandedInvestors.has(loan.id) ? (
-                                      <>
-                                        <ChevronUp className="h-3 w-3 mr-1" />
-                                        Hide
-                                      </>
-                                    ) : (
-                                      <>
-                                        <ChevronDown className="h-3 w-3 mr-1" />
-                                        More
-                                      </>
-                                    )}
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 text-xs"
-                                    onClick={() =>
-                                      router.push(`/loans/${loan.id}`)
-                                    }
-                                  >
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    View
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-
-                            {/* Expanded Row - Notes & Investors */}
-                            {expandedInvestors.has(loan.id) && (
-                              <TableRow key={`${loan.id}-expanded`}>
-                                <TableCell
-                                  colSpan={11}
-                                  className="bg-muted/30 p-4"
-                                >
-                                  <div className="space-y-4">
-                                    {/* Investors Section */}
-                                    {loan.loanInvestors.length > 0 && (
-                                      <div>
-                                        <p className="text-xs font-semibold text-muted-foreground mb-3">
-                                          Investors:
-                                        </p>
-                                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                          {(() => {
-                                            // Group by investor
-                                            const investorMap = new Map<
-                                              number,
-                                              Array<
-                                                (typeof loan.loanInvestors)[0]
-                                              >
-                                            >();
-                                            loan.loanInvestors.forEach((li) => {
-                                              const existing =
-                                                investorMap.get(
-                                                  li.investor.id
-                                                ) || [];
-                                              existing.push(li);
-                                              investorMap.set(
-                                                li.investor.id,
-                                                existing
-                                              );
-                                            });
-
-                                            return Array.from(
-                                              investorMap.values()
-                                            ).map((transactions) => {
-                                              const investor =
-                                                transactions[0].investor;
-
-                                              // Calculate totals
-                                              const totalPrincipal =
-                                                transactions.reduce(
-                                                  (sum, t) =>
-                                                    sum + parseFloat(t.amount),
-                                                  0
-                                                );
-                                              const totalInterest =
-                                                transactions.reduce(
-                                                  (sum, t) => {
-                                                    const capital = parseFloat(
-                                                      t.amount
-                                                    );
-                                                    const rate =
-                                                      parseFloat(
-                                                        t.interestRate
-                                                      ) / 100;
-                                                    return sum + capital * rate;
-                                                  },
-                                                  0
-                                                );
-                                              const avgRate =
-                                                totalPrincipal > 0
-                                                  ? (totalInterest /
-                                                      totalPrincipal) *
-                                                    100
-                                                  : 0;
-                                              const total =
-                                                totalPrincipal + totalInterest;
-
-                                              // Get comma-separated dates
-                                              const dates = transactions
-                                                .map((t) =>
-                                                  new Date(
-                                                    t.sentDate
-                                                  ).toLocaleDateString(
-                                                    'en-US',
-                                                    {
-                                                      month: 'short',
-                                                      day: 'numeric',
-                                                    }
-                                                  )
-                                                )
-                                                .join(', ');
-
-                                              // Check if any transaction has a future sent date
-                                              const today = new Date();
-                                              today.setHours(0, 0, 0, 0);
-                                              const hasFutureSentDate =
-                                                transactions.some((t) => {
-                                                  const sentDate = new Date(
-                                                    t.sentDate
-                                                  );
-                                                  sentDate.setHours(0, 0, 0, 0);
-                                                  return sentDate > today;
-                                                });
-
-                                              return (
-                                                <div
-                                                  key={investor.id}
-                                                  className={`space-y-1.5 p-3 rounded-lg border ${
-                                                    hasFutureSentDate
-                                                      ? 'bg-yellow-50'
-                                                      : 'bg-background'
-                                                  }`}
-                                                >
-                                                  <div className="flex items-center justify-between gap-2">
-                                                    <span className="text-sm font-semibold">
-                                                      {investor.name}
-                                                    </span>
-                                                    <span className="text-[10px] text-muted-foreground">
-                                                      {dates}
-                                                    </span>
-                                                  </div>
-                                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                                    <div>
-                                                      <span className="text-muted-foreground block text-[10px]">
-                                                        Principal
-                                                      </span>
-                                                      <span className="font-medium">
-                                                        {formatCurrency(
-                                                          totalPrincipal.toString()
-                                                        )}
-                                                      </span>
-                                                    </div>
-                                                    <div>
-                                                      <span className="text-muted-foreground block text-[10px]">
-                                                        Avg. Rate
-                                                      </span>
-                                                      <span>
-                                                        {avgRate.toFixed(2)}%
-                                                      </span>
-                                                    </div>
-                                                    <div>
-                                                      <span className="text-muted-foreground block text-[10px]">
-                                                        Interest
-                                                      </span>
-                                                      <span>
-                                                        {formatCurrency(
-                                                          totalInterest.toString()
-                                                        )}
-                                                      </span>
-                                                    </div>
-                                                    <div>
-                                                      <span className="text-muted-foreground block text-[10px]">
-                                                        Total
-                                                      </span>
-                                                      <span className="font-semibold">
-                                                        {formatCurrency(
-                                                          total.toString()
-                                                        )}
-                                                      </span>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              );
-                                            });
-                                          })()}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {/* Notes Section */}
-                                    <div>
-                                      <p className="text-xs font-semibold text-muted-foreground mb-2">
-                                        Notes:
-                                      </p>
-                                      <p className="text-sm">
-                                        {loan.notes ?? '-'}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-4 border-t">
-                    <div className="text-sm text-muted-foreground">
-                      Showing {startIndex + 1} to{' '}
-                      {Math.min(endIndex, sortedLoans.length)} of{' '}
-                      {sortedLoans.length} loans
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        disabled={currentPage === 1}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Previous
-                      </Button>
-                      <div className="flex items-center gap-1">
-                        {Array.from(
-                          { length: totalPages },
-                          (_, i) => i + 1
-                        ).map((page) => (
-                          <Button
-                            key={page}
-                            variant={
-                              currentPage === page ? 'default' : 'outline'
-                            }
-                            size="sm"
-                            onClick={() => setCurrentPage(page)}
-                            className="w-8 h-8 p-0"
-                          >
-                            {page}
-                          </Button>
-                        ))}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <LoansTable
+              loans={sortedLoans}
+              itemsPerPage={itemsPerPage}
+              expandedRows={expandedInvestors}
+              onToggleExpand={(loanId) => {
+                setExpandedInvestors((prev) => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(loanId as number)) {
+                    newSet.delete(loanId as number);
+                  } else {
+                    newSet.add(loanId as number);
+                  }
+                  return newSet;
+                });
+              }}
+            />
           )}
         </>
       )}
