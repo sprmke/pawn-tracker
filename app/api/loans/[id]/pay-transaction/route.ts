@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { loanInvestors, loans } from '@/db/schema';
-import { eq, and, gt } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+import { getTodayAtMidnight, normalizeToMidnight } from '@/lib/date-utils';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const loanId = parseInt(params.id);
+    const { id } = await params;
+    const loanId = parseInt(id);
     const { transactionId } = await request.json();
 
     if (isNaN(loanId) || !transactionId) {
@@ -29,16 +31,19 @@ export async function POST(
         )
       );
 
-    // Check if there are any remaining unpaid transactions (future dates)
-    const unpaidTransactions = await db
+    // Fetch all transactions for this loan
+    const allTransactions = await db
       .select()
       .from(loanInvestors)
-      .where(
-        and(
-          eq(loanInvestors.loanId, loanId),
-          gt(loanInvestors.sentDate, new Date())
-        )
-      );
+      .where(eq(loanInvestors.loanId, loanId));
+
+    // Check if there are any remaining unpaid transactions (future dates)
+    // Use date-only comparison (normalized to midnight) for consistency with UI
+    const today = getTodayAtMidnight();
+    const unpaidTransactions = allTransactions.filter((transaction) => {
+      const sentDate = normalizeToMidnight(transaction.sentDate);
+      return sentDate > today;
+    });
 
     // If no unpaid transactions remain, update loan status to "Fully Funded"
     if (unpaidTransactions.length === 0) {
