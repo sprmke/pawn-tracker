@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, ArrowDown, ArrowUp } from 'lucide-react';
-import { ViewMode } from './types';
+import { ViewMode, LegendGroup } from './types';
 
 interface CalendarHeaderProps {
   title: string;
@@ -13,6 +13,7 @@ interface CalendarHeaderProps {
   onPrevious: () => void;
   onNext: () => void;
   showLegend?: boolean;
+  legendGroups?: LegendGroup[];
 }
 
 export function CalendarHeader({
@@ -23,6 +24,7 @@ export function CalendarHeader({
   onPrevious,
   onNext,
   showLegend = true,
+  legendGroups,
 }: CalendarHeaderProps) {
   return (
     <Card>
@@ -32,54 +34,33 @@ export function CalendarHeader({
             <h2 className="text-xl font-bold">{title}</h2>
             <div className="flex flex-col-reverse xl:flex-row items-end xl:items-center gap-3">
               {/* Legend */}
-              {showLegend && (
-                <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs py-1.5 px-2 md:px-3 border border-gray-200 rounded-lg">
-                  {/* Out Group */}
-                  <div className="flex items-center gap-1 md:gap-2">
-                    <span className="font-semibold text-gray-600 hidden sm:inline">
-                      Out:
-                    </span>
-                    <div className="flex items-center gap-1 md:gap-1.5">
-                      <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-red-500">
-                        <ArrowUp className="h-2.5 w-2.5 md:h-3 md:w-3 text-white" />
+              {showLegend && legendGroups && legendGroups.length > 0 && (
+                <div className="flex flex-wrap items-center text-xs py-1.5 px-2 md:px-3 border border-gray-200 rounded-lg">
+                  {legendGroups.map((group, groupIndex) => (
+                    <div key={groupIndex} className="flex items-center">
+                      {groupIndex > 0 && (
+                        <div className="h-4 md:h-6 w-px bg-gray-300 inline-block mx-2 md:mx-4" />
+                      )}
+                      <div className="inline-flex items-center gap-1 md:gap-2">
+                        <span className="font-semibold text-gray-600 hidden sm:inline">
+                          {group.title}:
+                        </span>
+                        {group.items.map((item, itemIndex) => (
+                          <div
+                            key={itemIndex}
+                            className="flex items-center gap-1 md:gap-1.5"
+                          >
+                            <div
+                              className={`flex items-center justify-center w-3 h-3 md:w-4 md:h-4 rounded-full ${item.color}`}
+                            ></div>
+                            <span className="font-medium text-[10px] md:text-xs">
+                              {item.label}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                      <span className="font-medium text-[10px] md:text-xs">
-                        Sent
-                      </span>
                     </div>
-                    <div className="flex items-center gap-1 md:gap-1.5">
-                      <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-yellow-500">
-                        <ArrowUp className="h-2.5 w-2.5 md:h-3 md:w-3 text-white" />
-                      </div>
-                      <span className="font-medium text-[10px] md:text-xs">
-                        Scheduled
-                      </span>
-                    </div>
-                  </div>
-                  {/* Separator */}
-                  <div className="h-4 md:h-6 w-px bg-gray-300" />
-                  {/* In Group */}
-                  <div className="flex items-center gap-1 md:gap-2">
-                    <span className="font-semibold text-gray-600 hidden sm:inline">
-                      In:
-                    </span>
-                    <div className="flex items-center gap-1 md:gap-1.5">
-                      <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-blue-600">
-                        <ArrowDown className="h-2.5 w-2.5 md:h-3 md:w-3 text-white" />
-                      </div>
-                      <span className="font-medium text-[10px] md:text-xs">
-                        Interest Due
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 md:gap-1.5">
-                      <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-green-600">
-                        <ArrowDown className="h-2.5 w-2.5 md:h-3 md:w-3 text-white" />
-                      </div>
-                      <span className="font-medium text-[10px] md:text-xs">
-                        Due Date
-                      </span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               )}
               <div className="flex justify-end">
