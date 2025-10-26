@@ -5,10 +5,11 @@ import { eq } from 'drizzle-orm';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const investorId = parseInt(params.id);
+    const { id } = await params;
+    const investorId = parseInt(id);
 
     const investor = await db.query.investors.findFirst({
       where: eq(investors.id, investorId),
@@ -43,10 +44,11 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const investorId = parseInt(params.id);
+    const { id } = await params;
+    const investorId = parseInt(id);
     const body = await request.json();
 
     // Check if email is being changed and if it's already in use
@@ -93,10 +95,11 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const investorId = parseInt(params.id);
+    const { id } = await params;
+    const investorId = parseInt(id);
 
     // Check if investor has any loans or transactions
     const investor = await db.query.investors.findFirst({
