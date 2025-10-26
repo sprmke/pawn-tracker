@@ -45,76 +45,59 @@ export function LoanSentEventCard({
   const sizeClasses = {
     sm: {
       container: 'p-2 text-xs',
-      icon: 'w-4 h-4',
-      iconSize: 'h-3 w-3',
       badge: 'text-[8px] h-3.5 px-1 py-0',
       title: 'text-[11px]',
       investor: 'text-[10px]',
-      total: 'text-[11px] px-1.5 py-0.5',
+      total: 'text-[11px]',
     },
     md: {
       container: 'p-3 text-sm',
-      icon: 'w-6 h-6',
-      iconSize: 'h-4 w-4',
       badge: 'text-[8px] h-3.5 px-1 py-0',
       title: 'text-sm',
       investor: 'text-xs',
-      total: 'text-sm px-2 py-1',
+      total: 'text-sm',
     },
     lg: {
       container: 'p-3 text-sm',
-      icon: 'w-6 h-6',
-      iconSize: 'h-4 w-4',
       badge: 'text-[8px] h-3.5 px-1 py-0',
       title: 'text-sm',
       investor: 'text-xs',
-      total: 'text-sm px-2 py-1',
+      total: 'text-sm',
     },
   };
 
   const classes = sizeClasses[size];
   const colorClasses = isFuture
     ? 'from-yellow-50 to-yellow-100 border-yellow-500 bg-yellow-500 text-yellow-500'
-    : 'from-red-50 to-red-100 border-red-500 bg-red-500 text-red-500';
+    : 'border-red-500 text-red-500';
 
   return (
     <button
       onClick={onClick}
       className={`cursor-pointer w-full text-left rounded-lg hover:shadow-lg transition-all bg-gradient-to-br border-l-4 shadow-md ${classes.container} ${colorClasses}`}
     >
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div
-            className={`flex items-center justify-center rounded-full flex-shrink-0 ${
-              classes.icon
-            } ${isFuture ? 'bg-yellow-500' : 'bg-red-500'}`}
+      <div className="flex flex-col space-y-2">
+        <div className="flex space-x-1">
+          <Badge
+            variant={getLoanTypeBadge(loan.type).variant}
+            className={`${classes.badge} leading-none ${
+              getLoanTypeBadge(loan.type).className || ''
+            }`}
           >
-            <ArrowUp className={`${classes.iconSize} text-white`} />
-          </div>
-          <div className="flex-1 min-w-0 space-y-1">
-            <div className={`font-bold text-gray-900 ${classes.title}`}>
-              {loan.loanName}
-            </div>
-            <div className="flex flex-wrap gap-1">
-              <Badge
-                variant={getLoanTypeBadge(loan.type).variant}
-                className={`${classes.badge} leading-none ${
-                  getLoanTypeBadge(loan.type).className || ''
-                }`}
-              >
-                {loan.type}
-              </Badge>
-              <Badge
-                variant={getLoanStatusBadge(loan.status).variant}
-                className={`${classes.badge} leading-none ${
-                  getLoanStatusBadge(loan.status).className
-                }`}
-              >
-                {loan.status}
-              </Badge>
-            </div>
-          </div>
+            {loan.type}
+          </Badge>
+          <Badge
+            variant={getLoanStatusBadge(loan.status).variant}
+            className={`${classes.badge} leading-none ${
+              getLoanStatusBadge(loan.status).className
+            }`}
+          >
+            {loan.status}
+          </Badge>
         </div>
+        <p className={`font-bold text-gray-900 truncate ${classes.title}`}>
+          {loan.loanName}
+        </p>
         <div className={size === 'sm' ? 'space-y-1' : 'pl-8 space-y-1'}>
           <div className={`text-gray-700 space-y-0.5 ${classes.investor}`}>
             {investors.map((inv, idx) => (
@@ -133,11 +116,9 @@ export function LoanSentEventCard({
               </div>
             ))}
           </div>
-          <div
-            className={`font-bold text-gray-900 bg-white/60 rounded inline-block mt-1 ${classes.total}`}
-          >
-            {isFuture ? 'Send:' : 'Sent:'} {formatCurrency(totalAmount)}
-          </div>
+        </div>
+        <div className={`font-bold text-red-600 ${classes.total}`}>
+          -{formatCurrency(totalAmount)}
         </div>
       </div>
     </button>
@@ -156,30 +137,24 @@ export function LoanDueEventCard({
   const sizeClasses = {
     sm: {
       container: 'p-2 text-xs',
-      icon: 'w-4 h-4',
-      iconSize: 'h-3 w-3',
       badge: 'text-[8px] h-3.5 px-1 py-0',
       title: 'text-[11px]',
       detail: 'text-[10px]',
-      total: 'text-[11px] px-1.5 py-0.5',
+      total: 'text-[11px]',
     },
     md: {
       container: 'p-3 text-sm',
-      icon: 'w-6 h-6',
-      iconSize: 'h-4 w-4',
       badge: 'text-[8px] h-3.5 px-1 py-0',
       title: 'text-sm',
       detail: 'text-xs',
-      total: 'text-sm px-2 py-1',
+      total: 'text-sm',
     },
     lg: {
       container: 'p-3 text-sm',
-      icon: 'w-6 h-6',
-      iconSize: 'h-4 w-4',
       badge: 'text-[8px] h-3.5 px-1 py-0',
       title: 'text-sm',
       detail: 'text-xs',
-      total: 'text-sm px-2 py-1',
+      total: 'text-sm',
     },
   };
 
@@ -188,45 +163,31 @@ export function LoanDueEventCard({
   return (
     <button
       onClick={onClick}
-      className={`cursor-pointer w-full text-left rounded-lg hover:shadow-lg transition-all bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-600 shadow-md ${classes.container}`}
+      className={`cursor-pointer w-full text-left rounded-lg hover:shadow-lg transition-all bg-gradient-to-br border-l-4 border-green-600 shadow-md ${classes.container}`}
     >
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div
-            className={`flex items-center justify-center rounded-full bg-green-600 flex-shrink-0 ${classes.icon}`}
+      <div className="flex flex-col space-y-2">
+        <div className="flex space-x-1">
+          <Badge
+            variant={getLoanTypeBadge(loan.type).variant}
+            className={`${classes.badge} leading-none ${
+              getLoanTypeBadge(loan.type).className || ''
+            }`}
           >
-            <ArrowDown className={`${classes.iconSize} text-white`} />
-          </div>
-          <div className="flex-1 min-w-0 space-y-1">
-            <div className={`font-bold text-gray-900 ${classes.title}`}>
-              {loan.loanName}
-            </div>
-            <div className="flex flex-wrap gap-1">
-              <Badge
-                variant={getLoanTypeBadge(loan.type).variant}
-                className={`${classes.badge} leading-none ${
-                  getLoanTypeBadge(loan.type).className || ''
-                }`}
-              >
-                {loan.type}
-              </Badge>
-              <Badge
-                variant={getLoanStatusBadge(loan.status).variant}
-                className={`${classes.badge} leading-none ${
-                  getLoanStatusBadge(loan.status).className
-                }`}
-              >
-                {loan.status}
-              </Badge>
-            </div>
-          </div>
+            {loan.type}
+          </Badge>
+          <Badge
+            variant={getLoanStatusBadge(loan.status).variant}
+            className={`${classes.badge} leading-none ${
+              getLoanStatusBadge(loan.status).className
+            }`}
+          >
+            {loan.status}
+          </Badge>
         </div>
+        <p className={`font-bold text-gray-900 truncate ${classes.title}`}>
+          {loan.loanName}
+        </p>
         <div className={size === 'sm' ? 'space-y-1' : 'pl-8 space-y-1'}>
-          <div
-            className={`font-bold text-gray-900 bg-white/60 rounded inline-block ${classes.total}`}
-          >
-            Due: {formatCurrency(totalAmount)}
-          </div>
           <div className={`text-gray-700 space-y-0.5 ${classes.detail}`}>
             <div
               className={`flex items-center ${
@@ -249,6 +210,9 @@ export function LoanDueEventCard({
               </span>
             </div>
           </div>
+        </div>
+        <div className={`font-bold text-green-600 ${classes.total}`}>
+          +{formatCurrency(totalAmount)}
         </div>
       </div>
     </button>
