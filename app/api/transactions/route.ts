@@ -10,15 +10,22 @@ export async function GET(request: Request) {
     let allTransactions;
     if (investorId) {
       allTransactions = await db.query.transactions.findMany({
-        where: (transactions, { eq }) => eq(transactions.investorId, parseInt(investorId)),
+        where: (transactions, { eq }) =>
+          eq(transactions.investorId, parseInt(investorId)),
         orderBy: (transactions, { desc }) => [desc(transactions.date)],
+        with: {
+          investor: true,
+        },
       });
     } else {
       allTransactions = await db.query.transactions.findMany({
         orderBy: (transactions, { desc }) => [desc(transactions.date)],
+        with: {
+          investor: true,
+        },
       });
     }
-    
+
     return NextResponse.json(allTransactions);
   } catch (error) {
     console.error('Error fetching transactions:', error);
@@ -32,7 +39,17 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const newTransaction = await db.insert(transactions).values(body).returning();
+
+    // Convert ISO string date to Date object for Drizzle
+    const transactionData = {
+      ...body,
+      date: new Date(body.date),
+    };
+
+    const newTransaction = await db
+      .insert(transactions)
+      .values(transactionData)
+      .returning();
     return NextResponse.json(newTransaction[0], { status: 201 });
   } catch (error) {
     console.error('Error creating transaction:', error);
@@ -42,4 +59,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
