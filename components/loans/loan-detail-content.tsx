@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin } from 'lucide-react';
 import { LoanWithInvestors } from '@/lib/types';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import { formatDate } from '@/lib/format';
@@ -98,7 +97,6 @@ export function LoanDetailContent({
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Due Date</p>
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">{formatDate(loan.dueDate)}</span>
               </div>
             </div>
@@ -116,7 +114,6 @@ export function LoanDetailContent({
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Free Lot (sqm)</p>
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">
                   {loan.freeLotSqm ? `${loan.freeLotSqm} sqm` : '-'}
                 </span>
