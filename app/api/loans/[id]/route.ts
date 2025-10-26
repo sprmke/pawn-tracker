@@ -10,10 +10,11 @@ import {
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const loanId = parseInt(params.id);
+    const { id } = await params;
+    const loanId = parseInt(id);
 
     const loan = await db.query.loans.findFirst({
       where: eq(loans.id, loanId),
@@ -46,10 +47,11 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const loanId = parseInt(params.id);
+    const { id } = await params;
+    const loanId = parseInt(id);
     const body = await request.json();
     const { loanData, investorData } = body;
 
@@ -219,10 +221,11 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const loanId = parseInt(params.id);
+    const { id } = await params;
+    const loanId = parseInt(id);
 
     // Delete associated transactions first and get affected investors
     let affectedInvestorIds: number[] = [];
