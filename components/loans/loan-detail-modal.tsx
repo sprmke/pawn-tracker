@@ -146,7 +146,7 @@ export function LoanDetailModal({
         >
           {!isEditing && (
             <DialogHeader>
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-2">
                 <DialogTitle className="text-2xl font-bold">
                   {loan.loanName}
                 </DialogTitle>
