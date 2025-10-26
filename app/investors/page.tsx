@@ -33,6 +33,7 @@ import {
   CardPagination,
 } from '@/components/common';
 import { formatCurrency, isFutureDate } from '@/lib/format';
+import { getTodayAtMidnight, normalizeToMidnight } from '@/lib/date-utils';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import {
   calculateInvestorStats,
@@ -413,8 +414,7 @@ export default function InvestorsPage() {
                     );
 
                     // Get today's date at midnight for comparison
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
+                    const today = getTodayAtMidnight();
 
                     // Get unique sent dates (only today and future)
                     const uniqueSentDates = Array.from(
@@ -427,8 +427,7 @@ export default function InvestorsPage() {
                     )
                       .map((dateStr) => new Date(dateStr))
                       .filter((date) => {
-                        const checkDate = new Date(date);
-                        checkDate.setHours(0, 0, 0, 0);
+                        const checkDate = normalizeToMidnight(date);
                         return checkDate >= today;
                       })
                       .sort((a, b) => a.getTime() - b.getTime());
@@ -451,8 +450,7 @@ export default function InvestorsPage() {
                     const uniqueDueDates = Array.from(dueDateSet)
                       .map((dateStr) => new Date(dateStr))
                       .filter((date) => {
-                        const checkDate = new Date(date);
-                        checkDate.setHours(0, 0, 0, 0);
+                        const checkDate = normalizeToMidnight(date);
                         return checkDate >= today;
                       })
                       .sort((a, b) => a.getTime() - b.getTime());
@@ -535,13 +533,12 @@ export default function InvestorsPage() {
                             </div>
                             <div className="p-3 bg-muted/50 rounded-lg">
                               <p className="text-[10px] text-muted-foreground mb-1">
-                                Upcoming Out Dates
+                                Upcoming Sent Dates
                               </p>
                               <div className="flex flex-col gap-0.5 items-start">
                                 {uniqueSentDates.length > 0 ? (
                                   uniqueSentDates.map((date, index) => {
-                                    const checkDate = new Date(date);
-                                    checkDate.setHours(0, 0, 0, 0);
+                                    const checkDate = normalizeToMidnight(date);
                                     const isFuture = checkDate > today;
 
                                     return (
@@ -572,7 +569,7 @@ export default function InvestorsPage() {
                             </div>
                             <div className="p-3 bg-muted/50 rounded-lg">
                               <p className="text-[10px] text-muted-foreground mb-1">
-                                Upcoming In Dates
+                                Upcoming Due Dates
                               </p>
                               <div className="flex flex-col gap-0.5 items-start">
                                 {uniqueDueDates.length > 0 ? (
@@ -633,15 +630,7 @@ export default function InvestorsPage() {
 
                                 return (
                                   <div className="pt-2 border-t">
-                                    <div className="px-3 mb-2">
-                                      <p className="text-xs font-medium text-muted-foreground">
-                                        Active Loans{' '}
-                                        <span className="text-[10px] text-muted-foreground">
-                                          (Not marked as completed)
-                                        </span>
-                                      </p>
-                                    </div>
-                                    <div>
+                                    <div className="space-y-2">
                                       {activeLoans.map(
                                         ({ loan, transactions }) => {
                                           // Calculate totals for this loan
@@ -722,12 +711,12 @@ export default function InvestorsPage() {
                                           return (
                                             <div
                                               key={loan.id}
-                                              className="p-3 bg-muted/30 rounded-lg space-y-2 border-t"
+                                              className="p-3 bg-muted/30 rounded-lg space-y-2"
                                             >
                                               <div className="flex items-start justify-between gap-2">
                                                 <Link
                                                   href={`/transactions/loans/${loan.id}`}
-                                                  className="font-medium text-sm hover:underline"
+                                                  className="font-medium hover:underline text-xs"
                                                 >
                                                   {loan.loanName}
                                                 </Link>
@@ -738,7 +727,7 @@ export default function InvestorsPage() {
                                                         loan.type
                                                       ).variant
                                                     }
-                                                    className={`text-[10px] py-0.5 ${
+                                                    className={`text-[9.5px] h-5 ${
                                                       getLoanTypeBadge(
                                                         loan.type
                                                       ).className
@@ -752,7 +741,7 @@ export default function InvestorsPage() {
                                                         loan.status
                                                       ).variant
                                                     }
-                                                    className={`text-[10px] py-0.5 ${
+                                                    className={`text-[9.5px] h-5 ${
                                                       getLoanStatusBadge(
                                                         loan.status
                                                       ).className
@@ -767,7 +756,7 @@ export default function InvestorsPage() {
                                                   <p className="text-muted-foreground text-[9px]">
                                                     Principal
                                                   </p>
-                                                  <p className="font-medium text-xs">
+                                                  <p className="font-medium text-[11px]">
                                                     {formatCurrency(
                                                       totalPrincipal
                                                     )}
@@ -777,7 +766,7 @@ export default function InvestorsPage() {
                                                   <p className="text-muted-foreground text-[9px]">
                                                     Avg. Rate
                                                   </p>
-                                                  <p className="font-medium text-xs">
+                                                  <p className="font-medium text-[11px]">
                                                     {avgRate.toFixed(2)}%
                                                   </p>
                                                 </div>
@@ -785,7 +774,7 @@ export default function InvestorsPage() {
                                                   <p className="text-muted-foreground text-[9px]">
                                                     Interest
                                                   </p>
-                                                  <p className="font-medium text-xs">
+                                                  <p className="font-medium text-[11px]">
                                                     {formatCurrency(
                                                       totalInterest
                                                     )}
@@ -795,7 +784,7 @@ export default function InvestorsPage() {
                                                   <p className="text-muted-foreground text-[9px]">
                                                     Total
                                                   </p>
-                                                  <p className="font-medium text-xs">
+                                                  <p className="font-medium text-[11px]">
                                                     {formatCurrency(total)}
                                                   </p>
                                                 </div>
@@ -837,13 +826,9 @@ export default function InvestorsPage() {
                                                     {sentDates.map(
                                                       (date, idx) => {
                                                         const checkDate =
-                                                          new Date(date);
-                                                        checkDate.setHours(
-                                                          0,
-                                                          0,
-                                                          0,
-                                                          0
-                                                        );
+                                                          normalizeToMidnight(
+                                                            date
+                                                          );
                                                         const isFuture =
                                                           checkDate > today;
 
