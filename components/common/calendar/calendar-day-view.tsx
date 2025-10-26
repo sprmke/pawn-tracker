@@ -43,6 +43,9 @@ export function CalendarDayView({ cells, config }: CalendarDayViewProps) {
             events={cell.events}
             formatCurrency={formatCurrency}
             size="lg"
+            alwaysShow={config.alwaysShowSummary}
+            allEvents={config.allEvents}
+            currentDate={cell.date}
           />
 
           {/* Events List */}
