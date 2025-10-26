@@ -14,14 +14,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   TrendingUp,
   DollarSign,
   ArrowLeft,
@@ -36,12 +28,7 @@ import {
   X,
 } from 'lucide-react';
 import { InvestorWithLoans, LoanWithInvestors } from '@/lib/types';
-import {
-  getTransactionTypeBadge,
-  getTransactionDirectionBadge,
-  getLoanStatusBadge,
-  getLoanTypeBadge,
-} from '@/lib/badge-config';
+import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import { InvestorForm } from '@/components/investors/investor-form';
 import { formatCurrency, formatDate } from '@/lib/format';
 import {
@@ -58,6 +45,11 @@ import {
   CollapsibleSection,
   CollapsibleContent,
 } from '@/components/common';
+import {
+  TransactionsTable,
+  TransactionCreateModal,
+} from '@/components/transactions';
+import { LoanCreateModal } from '@/components/loans';
 
 interface InvestorDetailClientProps {
   investor: InvestorWithLoans;
@@ -67,11 +59,17 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [expandedLoans, setExpandedLoans] = useState<Set<number>>(new Set());
+  const [expandedTransactions, setExpandedTransactions] = useState<Set<number>>(
+    new Set()
+  );
   const [loans, setLoans] = useState<LoanWithInvestors[]>([]);
   const [loansLoading, setLoansLoading] = useState(true);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showLoanModal, setShowLoanModal] = useState(false);
 
   // Transaction filters
   const [transactionSearchQuery, setTransactionSearchQuery] = useState('');
+  const [showPastTransactions, setShowPastTransactions] = useState(false);
   const [transactionTypeFilter, setTransactionTypeFilter] =
     useState<string>('all');
   const [transactionDirectionFilter, setTransactionDirectionFilter] =
@@ -159,6 +157,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   // Clear transaction filters
   const clearTransactionFilters = () => {
     setTransactionSearchQuery('');
+    setShowPastTransactions(false);
     setTransactionTypeFilter('all');
     setTransactionDirectionFilter('all');
     setMinAmount('');
@@ -188,7 +187,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     minAmount !== '' ||
     maxAmount !== '' ||
     minBalance !== '' ||
-    maxBalance !== '';
+    maxBalance !== '' ||
+    showPastTransactions !== false;
 
   const hasActiveTransactionFilters =
     transactionSearchQuery !== '' ||
@@ -213,52 +213,80 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     loanStatusFilter !== 'all' ||
     hasActiveLoanAmountFilters;
 
+  // Transform transactions to include investor data
+  const transactionsWithInvestor = investor.transactions.map((transaction) => ({
+    ...transaction,
+    investor: {
+      id: investor.id,
+      name: investor.name,
+      email: investor.email,
+      contactNumber: investor.contactNumber,
+      createdAt: investor.createdAt,
+      updatedAt: investor.updatedAt,
+    },
+  }));
+
   // Filter transactions
-  const filteredTransactions = investor.transactions.filter((transaction) => {
-    // Search filter
-    if (transactionSearchQuery) {
-      const query = transactionSearchQuery.toLowerCase();
-      const matchesName = transaction.name.toLowerCase().includes(query);
-      const matchesNotes = transaction.notes?.toLowerCase().includes(query);
-      if (!matchesName && !matchesNotes) return false;
-    }
+  const filteredTransactions = transactionsWithInvestor.filter(
+    (transaction) => {
+      // Search filter
+      if (transactionSearchQuery) {
+        const query = transactionSearchQuery.toLowerCase();
+        const matchesName = transaction.name.toLowerCase().includes(query);
+        const matchesNotes = transaction.notes?.toLowerCase().includes(query);
+        if (!matchesName && !matchesNotes) return false;
+      }
 
-    // Type filter
-    if (
-      transactionTypeFilter !== 'all' &&
-      transaction.type !== transactionTypeFilter
-    ) {
-      return false;
-    }
+      // Past transactions filter
+      if (!showPastTransactions) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const transactionDate = new Date(transaction.date);
+        transactionDate.setHours(0, 0, 0, 0);
 
-    // Direction filter
-    if (
-      transactionDirectionFilter !== 'all' &&
-      transaction.direction !== transactionDirectionFilter
-    ) {
-      return false;
-    }
+        // Hide past transactions (date < today)
+        if (transactionDate < today) {
+          return false;
+        }
+      }
 
-    // Amount range filter
-    const amount = parseFloat(transaction.amount);
-    if (minAmount !== '' && amount < parseFloat(minAmount)) {
-      return false;
-    }
-    if (maxAmount !== '' && amount > parseFloat(maxAmount)) {
-      return false;
-    }
+      // Type filter
+      if (
+        transactionTypeFilter !== 'all' &&
+        transaction.type !== transactionTypeFilter
+      ) {
+        return false;
+      }
 
-    // Balance range filter
-    const balance = parseFloat(transaction.balance);
-    if (minBalance !== '' && balance < parseFloat(minBalance)) {
-      return false;
-    }
-    if (maxBalance !== '' && balance > parseFloat(maxBalance)) {
-      return false;
-    }
+      // Direction filter
+      if (
+        transactionDirectionFilter !== 'all' &&
+        transaction.direction !== transactionDirectionFilter
+      ) {
+        return false;
+      }
 
-    return true;
-  });
+      // Amount range filter
+      const amount = parseFloat(transaction.amount);
+      if (minAmount !== '' && amount < parseFloat(minAmount)) {
+        return false;
+      }
+      if (maxAmount !== '' && amount > parseFloat(maxAmount)) {
+        return false;
+      }
+
+      // Balance range filter
+      const balance = parseFloat(transaction.balance);
+      if (minBalance !== '' && balance < parseFloat(minBalance)) {
+        return false;
+      }
+      if (maxBalance !== '' && balance > parseFloat(maxBalance)) {
+        return false;
+      }
+
+      return true;
+    }
+  );
 
   // Filter loans
   const filteredLoans = loans.filter((loan) => {
@@ -428,10 +456,10 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
       {/* Tabs */}
       <Tabs defaultValue="loans" className="w-full">
         <TabsList>
-          <TabsTrigger value="loans">Loans ({uniqueLoanCount})</TabsTrigger>
           <TabsTrigger value="transactions">
             Transactions ({investor.transactions.length})
           </TabsTrigger>
+          <TabsTrigger value="loans">Loans ({uniqueLoanCount})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="loans" className="mt-6 space-y-4">
@@ -510,14 +538,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     </Button>
                   )}
 
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      router.push(
-                        `/transactions/loans/new?investorId=${investor.id}`
-                      )
-                    }
-                  >
+                  <Button size="sm" onClick={() => setShowLoanModal(true)}>
                     <Plus className="h-3 w-3" />
                     Add Loan
                   </Button>
@@ -682,8 +703,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="Profit">Profit</SelectItem>
-                      <SelectItem value="Capital">Capital</SelectItem>
+                      <SelectItem value="Investment">Investment</SelectItem>
+                      <SelectItem value="Loan">Loan</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -722,37 +743,71 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                       onClick={clearTransactionFilters}
                       className="whitespace-nowrap"
                     >
+                      <X className="mr-2 h-4 w-4" />
                       Clear All
                     </Button>
                   )}
+
+                  <Button
+                    size="sm"
+                    onClick={() => setShowTransactionModal(true)}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add Transaction
+                  </Button>
                 </div>
 
                 {/* Amount Range Filters - Collapsible Content */}
                 <CollapsibleContent isOpen={showMoreFilters}>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Amount Range */}
-                    <RangeFilter
-                      label="Amount"
-                      icon={DollarSign}
-                      minValue={minAmount}
-                      maxValue={maxAmount}
-                      onMinChange={setMinAmount}
-                      onMaxChange={setMaxAmount}
-                      minPlaceholder="Min (₱)"
-                      maxPlaceholder="Max (₱)"
-                    />
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Amount Range */}
+                      <RangeFilter
+                        label="Amount"
+                        icon={DollarSign}
+                        minValue={minAmount}
+                        maxValue={maxAmount}
+                        onMinChange={setMinAmount}
+                        onMaxChange={setMaxAmount}
+                        minPlaceholder="Min (₱)"
+                        maxPlaceholder="Max (₱)"
+                      />
 
-                    {/* Balance Range */}
-                    <RangeFilter
-                      label="Balance"
-                      icon={TrendingUp}
-                      minValue={minBalance}
-                      maxValue={maxBalance}
-                      onMinChange={setMinBalance}
-                      onMaxChange={setMaxBalance}
-                      minPlaceholder="Min (₱)"
-                      maxPlaceholder="Max (₱)"
-                    />
+                      {/* Balance Range */}
+                      <RangeFilter
+                        label="Balance"
+                        icon={TrendingUp}
+                        minValue={minBalance}
+                        maxValue={maxBalance}
+                        onMinChange={setMinBalance}
+                        onMaxChange={setMaxBalance}
+                        minPlaceholder="Min (₱)"
+                        maxPlaceholder="Max (₱)"
+                      />
+                    </div>
+
+                    {/* Show/Hide Past Transactions Filter */}
+                    <div className="pt-3 border-t">
+                      <div className="w-full sm:w-[240px]">
+                        <label className="text-xs font-semibold flex items-center gap-1 mb-2">
+                          Past Transactions
+                        </label>
+                        <Select
+                          value={showPastTransactions ? 'show' : 'hide'}
+                          onValueChange={(value) =>
+                            setShowPastTransactions(value === 'show')
+                          }
+                        >
+                          <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder="Past Transactions" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="hide">Hide Past</SelectItem>
+                            <SelectItem value="show">Show Past</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   </div>
                 </CollapsibleContent>
               </div>
@@ -781,89 +836,52 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   No transactions match your filters
                 </p>
                 <Button variant="outline" onClick={clearTransactionFilters}>
+                  <X className="mr-2 h-4 w-4" />
                   Clear filters
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Direction</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Balance</TableHead>
-                        <TableHead>Notes</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredTransactions.map((transaction) => (
-                        <TableRow key={transaction.id}>
-                          <TableCell>{formatDate(transaction.date)}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                getTransactionTypeBadge(transaction.type)
-                                  .variant
-                              }
-                              className={
-                                getTransactionTypeBadge(transaction.type)
-                                  .className
-                              }
-                            >
-                              {transaction.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                getTransactionDirectionBadge(
-                                  transaction.direction
-                                ).variant
-                              }
-                              className={
-                                getTransactionDirectionBadge(
-                                  transaction.direction
-                                ).className
-                              }
-                            >
-                              {transaction.direction}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {transaction.name}
-                          </TableCell>
-                          <TableCell
-                            className={
-                              transaction.direction === 'In'
-                                ? 'text-green-600 font-semibold'
-                                : 'text-red-600 font-semibold'
-                            }
-                          >
-                            {transaction.direction === 'In' ? '+' : '-'}
-                            {formatCurrency(transaction.amount)}
-                          </TableCell>
-                          <TableCell className="font-semibold">
-                            {formatCurrency(transaction.balance)}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {transaction.notes || '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+            <TransactionsTable
+              transactions={filteredTransactions}
+              itemsPerPage={10}
+              expandedRows={expandedTransactions}
+              onToggleExpand={(transactionId) => {
+                setExpandedTransactions((prev) => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(transactionId as number)) {
+                    newSet.delete(transactionId as number);
+                  } else {
+                    newSet.add(transactionId as number);
+                  }
+                  return newSet;
+                });
+              }}
+            />
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Transaction Create Modal */}
+      <TransactionCreateModal
+        open={showTransactionModal}
+        onOpenChange={setShowTransactionModal}
+        preselectedInvestorId={investor.id}
+        onSuccess={() => {
+          router.refresh();
+        }}
+      />
+
+      {/* Loan Create Modal */}
+      <LoanCreateModal
+        open={showLoanModal}
+        onOpenChange={setShowLoanModal}
+        preselectedInvestorId={investor.id}
+        onSuccess={() => {
+          fetchLoansData();
+          router.refresh();
+        }}
+      />
     </div>
   );
 }
