@@ -5,11 +5,7 @@ import { LoanForm } from '@/components/loans/loan-form';
 async function getInvestors() {
   try {
     const allInvestors = await db.select().from(investors);
-    // Convert null to undefined for contactNumber to match Investor type
-    return allInvestors.map((investor) => ({
-      ...investor,
-      contactNumber: investor.contactNumber ?? undefined,
-    }));
+    return allInvestors;
   } catch (error) {
     console.error('Error fetching investors:', error);
     return [];
