@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { loans, loanInvestors, interestPeriods } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import {
+  generateLoanTransactions,
+  deleteLoanTransactions,
+  recalculateInvestorBalances,
+} from '@/lib/loan-transactions';
 
 export async function GET(
   request: Request,
@@ -18,6 +23,9 @@ export async function GET(
             investor: true,
             interestPeriods: true,
           },
+        },
+        transactions: {
+          orderBy: (transactions, { asc }) => [asc(transactions.date)],
         },
       },
     });
@@ -62,6 +70,30 @@ export async function PUT(
 
     // Update loan
     await db.update(loans).set(processedLoanData).where(eq(loans.id, loanId));
+
+    // Delete existing transactions for this loan and get affected investors
+    let affectedInvestorIds: number[] = [];
+    let earliestDate: Date | null = null;
+    try {
+      const deletionResult = await deleteLoanTransactions(loanId);
+      affectedInvestorIds = deletionResult.investorIds;
+      earliestDate = deletionResult.earliestDate;
+      console.log('Deleted old transactions for loan');
+    } catch (error) {
+      console.error('Error deleting old transactions:', error);
+    }
+
+    // Recalculate balances for affected investors after deletion
+    if (affectedInvestorIds.length > 0 && earliestDate) {
+      try {
+        await recalculateInvestorBalances(affectedInvestorIds, earliestDate);
+        console.log(
+          'Recalculated balances after deletion for affected investors'
+        );
+      } catch (error) {
+        console.error('Error recalculating balances after deletion:', error);
+      }
+    }
 
     // Delete existing loan investors (cascade will delete interest periods)
     await db.delete(loanInvestors).where(eq(loanInvestors.loanId, loanId));
@@ -141,6 +173,33 @@ export async function PUT(
 
     console.log('Loan updated successfully:', updatedLoan);
 
+    // Generate new transactions for the updated loan
+    try {
+      await generateLoanTransactions(
+        {
+          loanName: processedLoanData.loanName,
+          dueDate: processedLoanData.dueDate,
+        },
+        investorData.map((inv: any) => ({
+          investorId: Number(inv.investorId),
+          amount: String(inv.amount),
+          sentDate: new Date(inv.sentDate),
+          interestRate: String(inv.interestRate),
+          interestType: inv.interestType || 'rate',
+          hasMultipleInterest: inv.hasMultipleInterest || false,
+          interestPeriods: inv.interestPeriods?.map((period: any) => ({
+            dueDate: new Date(period.dueDate),
+            interestRate: String(period.interestRate),
+            interestType: period.interestType || 'rate',
+          })),
+        })),
+        loanId
+      );
+      console.log('New transactions created for updated loan');
+    } catch (error) {
+      console.error('Error creating transactions for updated loan:', error);
+    }
+
     return NextResponse.json(updatedLoan);
   } catch (error) {
     console.error('Error updating loan:', error);
@@ -164,6 +223,30 @@ export async function DELETE(
 ) {
   try {
     const loanId = parseInt(params.id);
+
+    // Delete associated transactions first and get affected investors
+    let affectedInvestorIds: number[] = [];
+    let earliestDate: Date | null = null;
+    try {
+      const deletionResult = await deleteLoanTransactions(loanId);
+      affectedInvestorIds = deletionResult.investorIds;
+      earliestDate = deletionResult.earliestDate;
+      console.log('Deleted transactions for loan');
+    } catch (error) {
+      console.error('Error deleting transactions:', error);
+    }
+
+    // Recalculate balances for affected investors after deletion
+    if (affectedInvestorIds.length > 0 && earliestDate) {
+      try {
+        await recalculateInvestorBalances(affectedInvestorIds, earliestDate);
+        console.log(
+          'Recalculated balances after deletion for affected investors'
+        );
+      } catch (error) {
+        console.error('Error recalculating balances after deletion:', error);
+      }
+    }
 
     // Delete loan (cascade will handle loan_investors)
     await db.delete(loans).where(eq(loans.id, loanId));
