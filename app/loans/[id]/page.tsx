@@ -25,6 +25,9 @@ async function getLoan(id: number) {
             interestPeriods: true,
           },
         },
+        transactions: {
+          orderBy: (transactions, { asc }) => [asc(transactions.date)],
+        },
       },
     });
     return loan;
