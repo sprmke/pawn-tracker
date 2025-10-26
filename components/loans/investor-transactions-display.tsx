@@ -144,7 +144,7 @@ export function InvestorTransactionsDisplay({
               {transactions.length > 1 && (
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-foreground">
-                    Transactions
+                    Principal Payments
                   </p>
                   <Badge variant="secondary" className="text-xs w-fit">
                     {transactions.length} Transactions
