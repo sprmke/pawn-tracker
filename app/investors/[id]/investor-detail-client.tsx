@@ -48,8 +48,10 @@ import {
 import {
   TransactionsTable,
   TransactionCreateModal,
+  TransactionDetailModal,
 } from '@/components/transactions';
 import { LoanCreateModal } from '@/components/loans';
+import type { TransactionWithInvestor } from '@/lib/types';
 
 interface InvestorDetailClientProps {
   investor: InvestorWithLoans;
@@ -59,13 +61,14 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [expandedLoans, setExpandedLoans] = useState<Set<number>>(new Set());
-  const [expandedTransactions, setExpandedTransactions] = useState<Set<number>>(
-    new Set()
-  );
   const [loans, setLoans] = useState<LoanWithInvestors[]>([]);
   const [loansLoading, setLoansLoading] = useState(true);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showLoanModal, setShowLoanModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<TransactionWithInvestor | null>(null);
+  const [showTransactionDetailModal, setShowTransactionDetailModal] =
+    useState(false);
 
   // Transaction filters
   const [transactionSearchQuery, setTransactionSearchQuery] = useState('');
@@ -187,13 +190,13 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     minAmount !== '' ||
     maxAmount !== '' ||
     minBalance !== '' ||
-    maxBalance !== '' ||
-    showPastTransactions !== false;
+    maxBalance !== '';
 
   const hasActiveTransactionFilters =
     transactionSearchQuery !== '' ||
     transactionTypeFilter !== 'all' ||
     transactionDirectionFilter !== 'all' ||
+    showPastTransactions !== false ||
     hasActiveAmountFilters;
 
   const hasActiveLoanAmountFilters =
@@ -456,10 +459,10 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
       {/* Tabs */}
       <Tabs defaultValue="loans" className="w-full">
         <TabsList>
+          <TabsTrigger value="loans">Loans ({uniqueLoanCount})</TabsTrigger>
           <TabsTrigger value="transactions">
             Transactions ({investor.transactions.length})
           </TabsTrigger>
-          <TabsTrigger value="loans">Loans ({uniqueLoanCount})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="loans" className="mt-6 space-y-4">
@@ -693,6 +696,22 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     placeholder="Search transactions by name or notes..."
                   />
 
+                  {/* Show/Hide Past Transactions Filter */}
+                  <Select
+                    value={showPastTransactions ? 'show' : 'hide'}
+                    onValueChange={(value) =>
+                      setShowPastTransactions(value === 'show')
+                    }
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Past Transactions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hide">Hide Past</SelectItem>
+                      <SelectItem value="show">Show Past</SelectItem>
+                    </SelectContent>
+                  </Select>
+
                   {/* Type Filter */}
                   <Select
                     value={transactionTypeFilter}
@@ -759,55 +778,30 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
                 {/* Amount Range Filters - Collapsible Content */}
                 <CollapsibleContent isOpen={showMoreFilters}>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* Amount Range */}
-                      <RangeFilter
-                        label="Amount"
-                        icon={DollarSign}
-                        minValue={minAmount}
-                        maxValue={maxAmount}
-                        onMinChange={setMinAmount}
-                        onMaxChange={setMaxAmount}
-                        minPlaceholder="Min (₱)"
-                        maxPlaceholder="Max (₱)"
-                      />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Amount Range */}
+                    <RangeFilter
+                      label="Amount"
+                      icon={DollarSign}
+                      minValue={minAmount}
+                      maxValue={maxAmount}
+                      onMinChange={setMinAmount}
+                      onMaxChange={setMaxAmount}
+                      minPlaceholder="Min (₱)"
+                      maxPlaceholder="Max (₱)"
+                    />
 
-                      {/* Balance Range */}
-                      <RangeFilter
-                        label="Balance"
-                        icon={TrendingUp}
-                        minValue={minBalance}
-                        maxValue={maxBalance}
-                        onMinChange={setMinBalance}
-                        onMaxChange={setMaxBalance}
-                        minPlaceholder="Min (₱)"
-                        maxPlaceholder="Max (₱)"
-                      />
-                    </div>
-
-                    {/* Show/Hide Past Transactions Filter */}
-                    <div className="pt-3 border-t">
-                      <div className="w-full sm:w-[240px]">
-                        <label className="text-xs font-semibold flex items-center gap-1 mb-2">
-                          Past Transactions
-                        </label>
-                        <Select
-                          value={showPastTransactions ? 'show' : 'hide'}
-                          onValueChange={(value) =>
-                            setShowPastTransactions(value === 'show')
-                          }
-                        >
-                          <SelectTrigger className="w-full h-9">
-                            <SelectValue placeholder="Past Transactions" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="hide">Hide Past</SelectItem>
-                            <SelectItem value="show">Show Past</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                    {/* Balance Range */}
+                    <RangeFilter
+                      label="Balance"
+                      icon={TrendingUp}
+                      minValue={minBalance}
+                      maxValue={maxBalance}
+                      onMinChange={setMinBalance}
+                      onMaxChange={setMaxBalance}
+                      minPlaceholder="Min (₱)"
+                      maxPlaceholder="Max (₱)"
+                    />
                   </div>
                 </CollapsibleContent>
               </div>
@@ -845,17 +839,9 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
             <TransactionsTable
               transactions={filteredTransactions}
               itemsPerPage={10}
-              expandedRows={expandedTransactions}
-              onToggleExpand={(transactionId) => {
-                setExpandedTransactions((prev) => {
-                  const newSet = new Set(prev);
-                  if (newSet.has(transactionId as number)) {
-                    newSet.delete(transactionId as number);
-                  } else {
-                    newSet.add(transactionId as number);
-                  }
-                  return newSet;
-                });
+              onQuickView={(transaction) => {
+                setSelectedTransaction(transaction);
+                setShowTransactionDetailModal(true);
               }}
             />
           )}
@@ -879,6 +865,16 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         preselectedInvestorId={investor.id}
         onSuccess={() => {
           fetchLoansData();
+          router.refresh();
+        }}
+      />
+
+      {/* Transaction Detail Modal */}
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        open={showTransactionDetailModal}
+        onOpenChange={setShowTransactionDetailModal}
+        onUpdate={() => {
           router.refresh();
         }}
       />
