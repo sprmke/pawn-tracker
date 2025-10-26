@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { loans, loanInvestors, investors, interestPeriods } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { generateLoanTransactions } from '@/lib/loan-transactions';
 
 export async function GET() {
   try {
@@ -12,6 +13,9 @@ export async function GET() {
             investor: true,
             interestPeriods: true,
           },
+        },
+        transactions: {
+          orderBy: (transactions, { asc }) => [asc(transactions.date)],
         },
       },
       orderBy: (loans, { desc }) => [desc(loans.createdAt)],
@@ -120,6 +124,34 @@ export async function POST(request: Request) {
     });
 
     console.log('Complete loan fetched:', completeLoan);
+
+    // Generate transactions for the loan
+    try {
+      await generateLoanTransactions(
+        {
+          loanName: processedLoanData.loanName,
+          dueDate: processedLoanData.dueDate,
+        },
+        investorData.map((inv: any, index: number) => ({
+          investorId: Number(inv.investorId),
+          amount: String(inv.amount),
+          sentDate: new Date(inv.sentDate),
+          interestRate: String(inv.interestRate),
+          interestType: inv.interestType || 'rate',
+          hasMultipleInterest: inv.hasMultipleInterest || false,
+          interestPeriods: inv.interestPeriods?.map((period: any) => ({
+            dueDate: new Date(period.dueDate),
+            interestRate: String(period.interestRate),
+            interestType: period.interestType || 'rate',
+          })),
+        })),
+        loanId
+      );
+      console.log('Transactions created for loan');
+    } catch (error) {
+      console.error('Error creating transactions for loan:', error);
+      // Don't fail the loan creation if transaction creation fails
+    }
 
     return NextResponse.json(completeLoan, { status: 201 });
   } catch (error) {
