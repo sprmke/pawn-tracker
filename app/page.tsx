@@ -1,33 +1,38 @@
 import { db } from '@/db';
-import { loans, loanInvestors } from '@/db/schema';
-import { eq, sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, TrendingUp, FileText, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { getLoanStatusBadge } from '@/lib/badge-config';
+import { formatCurrency } from '@/lib/format';
+import {
+  calculateTotalPrincipal,
+  calculateTotalInterest,
+} from '@/lib/calculations';
+import { StatCard } from '@/components/common';
 
 async function getDashboardData() {
   try {
-    // Get all loans with investors
+    // Get all loans with investors and transactions
     const allLoans = await db.query.loans.findMany({
       with: {
         loanInvestors: {
           with: {
             investor: true,
+            interestPeriods: true,
           },
+        },
+        transactions: {
+          orderBy: (transactions, { asc }) => [asc(transactions.date)],
         },
       },
     });
 
     // Calculate statistics
-    const totalPrincipal = allLoans.reduce((sum, loan) => {
-      const loanTotal = loan.loanInvestors.reduce(
-        (loanSum, li) => loanSum + parseFloat(li.amount),
-        0
-      );
-      return sum + loanTotal;
-    }, 0);
+    const totalPrincipal = allLoans.reduce(
+      (sum, loan) => sum + calculateTotalPrincipal(loan.loanInvestors),
+      0
+    );
 
     const activeLoans = allLoans.filter(
       (loan) =>
@@ -41,14 +46,10 @@ async function getDashboardData() {
     const completedLoans = allLoans.filter(
       (loan) => loan.status === 'Completed'
     );
-    const totalInterestEarned = completedLoans.reduce((sum, loan) => {
-      const loanInterest = loan.loanInvestors.reduce((loanSum, li) => {
-        const amount = parseFloat(li.amount);
-        const rate = parseFloat(li.interestRate) / 100;
-        return loanSum + amount * rate;
-      }, 0);
-      return sum + loanInterest;
-    }, 0);
+    const totalInterestEarned = completedLoans.reduce(
+      (sum, loan) => sum + calculateTotalInterest(loan.loanInvestors),
+      0
+    );
 
     // Get recent loans
     const recentLoans = allLoans.slice(0, 5);
@@ -77,13 +78,6 @@ async function getDashboardData() {
 export default async function DashboardPage() {
   const data = await getDashboardData();
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP',
-    }).format(amount);
-  };
-
   return (
     <div className="space-y-6 sm:space-y-8">
       <div>
@@ -96,65 +90,33 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Principal
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(data.totalPrincipal)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {data.totalLoans} total loans
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total Principal"
+          value={formatCurrency(data.totalPrincipal)}
+          icon={DollarSign}
+          subtitle={`${data.totalLoans} total loans`}
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Interest Earned
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(data.totalInterestEarned)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              From completed loans
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Interest Earned"
+          value={formatCurrency(data.totalInterestEarned)}
+          icon={TrendingUp}
+          subtitle="From completed loans"
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Loans</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.activeLoans}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently in progress
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Active Loans"
+          value={data.activeLoans}
+          icon={FileText}
+          subtitle="Currently in progress"
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overdue Loans</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {data.overdueLoans}
-            </div>
-            <p className="text-xs text-muted-foreground">Needs attention</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Overdue Loans"
+          value={<span className="text-red-600">{data.overdueLoans}</span>}
+          icon={AlertCircle}
+          subtitle="Needs attention"
+        />
       </div>
 
       <Card>
@@ -167,7 +129,7 @@ export default async function DashboardPage() {
               <p className="text-center text-muted-foreground py-8">
                 No loans yet.{' '}
                 <Link
-                  href="/loans/new"
+                  href="/transactions/loans/new"
                   className="text-primary hover:underline"
                 >
                   Create your first loan
@@ -177,7 +139,7 @@ export default async function DashboardPage() {
               data.recentLoans.map((loan) => (
                 <Link
                   key={loan.id}
-                  href={`/loans/${loan.id}`}
+                  href={`/transactions/loans/${loan.id}`}
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-3"
                 >
                   <div className="space-y-1 flex-1">
@@ -187,10 +149,7 @@ export default async function DashboardPage() {
                       <span>•</span>
                       <span>
                         {formatCurrency(
-                          loan.loanInvestors.reduce(
-                            (sum, li) => sum + parseFloat(li.amount),
-                            0
-                          )
+                          calculateTotalPrincipal(loan.loanInvestors)
                         )}
                       </span>
                       <span>•</span>
