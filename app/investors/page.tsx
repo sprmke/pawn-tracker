@@ -30,6 +30,7 @@ import {
   ActionButtonsGroup,
   SearchFilter,
   RangeFilter,
+  CardPagination,
 } from '@/components/common';
 import { formatCurrency, isFutureDate } from '@/lib/format';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
@@ -54,6 +55,7 @@ export default function InvestorsPage() {
   const [investors, setInvestors] = useState<InvestorWithLoans[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const itemsPerPage = 10;
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedInvestors, setExpandedInvestors] = useState<Set<number>>(
     new Set()
@@ -398,491 +400,530 @@ export default function InvestorsPage() {
       ) : (
         <>
           {viewMode === 'cards' && (
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
-              {filteredInvestors.map((investor) => {
-                const stats = calculateInvestorStats(investor);
-                const avgRate = calculateAverageRate(investor.loanInvestors);
+            <CardPagination
+              items={filteredInvestors}
+              itemsPerPage={itemsPerPage}
+              itemName="investors"
+              renderItems={(paginatedInvestors) => (
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
+                  {paginatedInvestors.map((investor) => {
+                    const stats = calculateInvestorStats(investor);
+                    const avgRate = calculateAverageRate(
+                      investor.loanInvestors
+                    );
 
-                // Get today's date at midnight for comparison
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                    // Get today's date at midnight for comparison
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
 
-                // Get unique sent dates (only today and future)
-                const uniqueSentDates = Array.from(
-                  new Set(
-                    investor.loanInvestors.map(
-                      (li) => new Date(li.sentDate).toISOString().split('T')[0]
+                    // Get unique sent dates (only today and future)
+                    const uniqueSentDates = Array.from(
+                      new Set(
+                        investor.loanInvestors.map(
+                          (li) =>
+                            new Date(li.sentDate).toISOString().split('T')[0]
+                        )
+                      )
                     )
-                  )
-                )
-                  .map((dateStr) => new Date(dateStr))
-                  .filter((date) => {
-                    const checkDate = new Date(date);
-                    checkDate.setHours(0, 0, 0, 0);
-                    return checkDate >= today;
-                  })
-                  .sort((a, b) => a.getTime() - b.getTime());
+                      .map((dateStr) => new Date(dateStr))
+                      .filter((date) => {
+                        const checkDate = new Date(date);
+                        checkDate.setHours(0, 0, 0, 0);
+                        return checkDate >= today;
+                      })
+                      .sort((a, b) => a.getTime() - b.getTime());
 
-                // Get unique due dates from all loans (only today and future)
-                const dueDateSet = new Set<string>();
-                investor.loanInvestors.forEach((li) => {
-                  dueDateSet.add(
-                    new Date(li.loan.dueDate).toISOString().split('T')[0]
-                  );
-                  if (li.hasMultipleInterest && li.interestPeriods) {
-                    li.interestPeriods.forEach((period) => {
+                    // Get unique due dates from all loans (only today and future)
+                    const dueDateSet = new Set<string>();
+                    investor.loanInvestors.forEach((li) => {
                       dueDateSet.add(
-                        new Date(period.dueDate).toISOString().split('T')[0]
+                        new Date(li.loan.dueDate).toISOString().split('T')[0]
                       );
+                      if (li.hasMultipleInterest && li.interestPeriods) {
+                        li.interestPeriods.forEach((period) => {
+                          dueDateSet.add(
+                            new Date(period.dueDate).toISOString().split('T')[0]
+                          );
+                        });
+                      }
                     });
-                  }
-                });
 
-                const uniqueDueDates = Array.from(dueDateSet)
-                  .map((dateStr) => new Date(dateStr))
-                  .filter((date) => {
-                    const checkDate = new Date(date);
-                    checkDate.setHours(0, 0, 0, 0);
-                    return checkDate >= today;
-                  })
-                  .sort((a, b) => a.getTime() - b.getTime());
+                    const uniqueDueDates = Array.from(dueDateSet)
+                      .map((dateStr) => new Date(dateStr))
+                      .filter((date) => {
+                        const checkDate = new Date(date);
+                        checkDate.setHours(0, 0, 0, 0);
+                        return checkDate >= today;
+                      })
+                      .sort((a, b) => a.getTime() - b.getTime());
 
-                // Group loan investors by loan ID to get unique loans
-                const loanMap = new Map<
-                  number,
-                  {
-                    loan: (typeof investor.loanInvestors)[0]['loan'];
-                    transactions: Array<(typeof investor.loanInvestors)[0]>;
-                  }
-                >();
+                    // Group loan investors by loan ID to get unique loans
+                    const loanMap = new Map<
+                      number,
+                      {
+                        loan: (typeof investor.loanInvestors)[0]['loan'];
+                        transactions: Array<(typeof investor.loanInvestors)[0]>;
+                      }
+                    >();
 
-                investor.loanInvestors.forEach((li) => {
-                  const loanId = li.loan.id;
-                  if (!loanMap.has(loanId)) {
-                    loanMap.set(loanId, {
-                      loan: li.loan,
-                      transactions: [],
+                    investor.loanInvestors.forEach((li) => {
+                      const loanId = li.loan.id;
+                      if (!loanMap.has(loanId)) {
+                        loanMap.set(loanId, {
+                          loan: li.loan,
+                          transactions: [],
+                        });
+                      }
+                      loanMap.get(loanId)!.transactions.push(li);
                     });
-                  }
-                  loanMap.get(loanId)!.transactions.push(li);
-                });
 
-                const uniqueLoans = Array.from(loanMap.values());
+                    const uniqueLoans = Array.from(loanMap.values());
 
-                return (
-                  <Card
-                    key={investor.id}
-                    className="hover:shadow-lg transition-shadow h-full"
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="space-y-1 flex-1 min-w-0">
-                          <CardTitle className="text-sm sm:text-base truncate">
-                            {investor.name}
-                          </CardTitle>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {investor.email}
-                          </p>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4 px-4">
-                      {/* Summary Section */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3">
-                        <div className="p-3 bg-muted/50 rounded-lg">
-                          <p className="text-[10px] text-muted-foreground mb-1">
-                            Total Capital
-                          </p>
-                          <p className="text-sm font-medium break-words">
-                            {formatCurrency(stats.totalCapital)}
-                          </p>
-                        </div>
-                        <div className="p-3 bg-muted/50 rounded-lg">
-                          <p className="text-[10px] text-muted-foreground mb-1">
-                            Avg. Rate
-                          </p>
-                          <p className="text-sm font-medium">
-                            {avgRate.toFixed(2)}%
-                          </p>
-                        </div>
-                        <div className="p-3 bg-muted/50 rounded-lg">
-                          <p className="text-[10px] text-muted-foreground mb-1">
-                            Total Interest
-                          </p>
-                          <p className="text-sm font-medium break-words">
-                            {formatCurrency(stats.totalInterest)}
-                          </p>
-                        </div>
-                        <div className="p-3 bg-muted/50 rounded-lg">
-                          <p className="text-[10px] text-muted-foreground mb-1">
-                            Total Amount
-                          </p>
-                          <p className="text-sm font-medium break-words">
-                            {formatCurrency(
-                              stats.totalCapital + stats.totalInterest
-                            )}
-                          </p>
-                        </div>
-                        <div className="p-3 bg-muted/50 rounded-lg">
-                          <p className="text-[10px] text-muted-foreground mb-1">
-                            Upcoming Out Dates
-                          </p>
-                          <div className="flex flex-col gap-0.5 items-start">
-                            {uniqueSentDates.length > 0 ? (
-                              uniqueSentDates.map((date, index) => {
-                                const checkDate = new Date(date);
-                                checkDate.setHours(0, 0, 0, 0);
-                                const isFuture = checkDate > today;
+                    return (
+                      <Card
+                        key={investor.id}
+                        className="hover:shadow-lg transition-shadow h-full"
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-1 flex-1 min-w-0">
+                              <CardTitle className="text-sm sm:text-base truncate">
+                                {investor.name}
+                              </CardTitle>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {investor.email}
+                              </p>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4 px-4">
+                          {/* Summary Section */}
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            <div className="p-3 bg-muted/50 rounded-lg">
+                              <p className="text-[10px] text-muted-foreground mb-1">
+                                Total Capital
+                              </p>
+                              <p className="text-sm font-medium break-words">
+                                {formatCurrency(stats.totalCapital)}
+                              </p>
+                            </div>
+                            <div className="p-3 bg-muted/50 rounded-lg">
+                              <p className="text-[10px] text-muted-foreground mb-1">
+                                Avg. Rate
+                              </p>
+                              <p className="text-sm font-medium">
+                                {avgRate.toFixed(2)}%
+                              </p>
+                            </div>
+                            <div className="p-3 bg-muted/50 rounded-lg">
+                              <p className="text-[10px] text-muted-foreground mb-1">
+                                Total Interest
+                              </p>
+                              <p className="text-sm font-medium break-words">
+                                {formatCurrency(stats.totalInterest)}
+                              </p>
+                            </div>
+                            <div className="p-3 bg-muted/50 rounded-lg">
+                              <p className="text-[10px] text-muted-foreground mb-1">
+                                Total Amount
+                              </p>
+                              <p className="text-sm font-medium break-words">
+                                {formatCurrency(
+                                  stats.totalCapital + stats.totalInterest
+                                )}
+                              </p>
+                            </div>
+                            <div className="p-3 bg-muted/50 rounded-lg">
+                              <p className="text-[10px] text-muted-foreground mb-1">
+                                Upcoming Out Dates
+                              </p>
+                              <div className="flex flex-col gap-0.5 items-start">
+                                {uniqueSentDates.length > 0 ? (
+                                  uniqueSentDates.map((date, index) => {
+                                    const checkDate = new Date(date);
+                                    checkDate.setHours(0, 0, 0, 0);
+                                    const isFuture = checkDate > today;
+
+                                    return (
+                                      <span
+                                        key={index}
+                                        className={`${
+                                          uniqueSentDates.length > 1
+                                            ? 'text-[10px]'
+                                            : 'text-xs'
+                                        } px-2 py-0.5 rounded inline-block font-medium ${
+                                          isFuture ? 'bg-yellow-200' : ''
+                                        }`}
+                                      >
+                                        {date.toLocaleDateString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          year: 'numeric',
+                                        })}
+                                      </span>
+                                    );
+                                  })
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">
+                                    -
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="p-3 bg-muted/50 rounded-lg">
+                              <p className="text-[10px] text-muted-foreground mb-1">
+                                Upcoming In Dates
+                              </p>
+                              <div className="flex flex-col gap-0.5 items-start">
+                                {uniqueDueDates.length > 0 ? (
+                                  uniqueDueDates.map((date, index) => (
+                                    <span
+                                      key={index}
+                                      className={`${
+                                        uniqueDueDates.length > 1
+                                          ? 'text-[10px]'
+                                          : 'text-xs'
+                                      } px-2 py-0.5 rounded inline-block font-medium`}
+                                    >
+                                      {date.toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                      })}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">
+                                    -
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="pt-2 border-t">
+                            <ActionButtonsGroup
+                              isExpanded={expandedInvestors.has(investor.id)}
+                              onToggle={(e) => toggleInvestor(investor.id, e)}
+                              viewHref={`/investors/${investor.id}`}
+                              showToggle={true}
+                              size="md"
+                            />
+                          </div>
+
+                          {/* Loans Section - Only shown when expanded */}
+                          {expandedInvestors.has(investor.id) && (
+                            <div className="space-y-3">
+                              {(() => {
+                                // Filter to only show active loans (not completed)
+                                const activeLoans = uniqueLoans.filter(
+                                  ({ loan }) => loan.status !== 'Completed'
+                                );
+
+                                if (activeLoans.length === 0) {
+                                  return (
+                                    <div className="pt-2 border-t">
+                                      <p className="text-xs text-muted-foreground text-center py-3">
+                                        No active loans
+                                      </p>
+                                    </div>
+                                  );
+                                }
 
                                 return (
-                                  <span
-                                    key={index}
-                                    className={`${
-                                      uniqueSentDates.length > 1
-                                        ? 'text-[10px]'
-                                        : 'text-xs'
-                                    } px-2 py-0.5 rounded inline-block font-medium ${
-                                      isFuture ? 'bg-yellow-200' : ''
-                                    }`}
-                                  >
-                                    {date.toLocaleDateString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      year: 'numeric',
-                                    })}
-                                  </span>
-                                );
-                              })
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                -
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="p-3 bg-muted/50 rounded-lg">
-                          <p className="text-[10px] text-muted-foreground mb-1">
-                            Upcoming In Dates
-                          </p>
-                          <div className="flex flex-col gap-0.5 items-start">
-                            {uniqueDueDates.length > 0 ? (
-                              uniqueDueDates.map((date, index) => (
-                                <span
-                                  key={index}
-                                  className={`${
-                                    uniqueDueDates.length > 1
-                                      ? 'text-[10px]'
-                                      : 'text-xs'
-                                  } px-2 py-0.5 rounded inline-block font-medium`}
-                                >
-                                  {date.toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric',
-                                  })}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                -
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                                  <div className="pt-2 border-t">
+                                    <div className="px-3 mb-2">
+                                      <p className="text-xs font-medium text-muted-foreground">
+                                        Active Loans{' '}
+                                        <span className="text-[10px] text-muted-foreground">
+                                          (Not marked as completed)
+                                        </span>
+                                      </p>
+                                    </div>
+                                    <div>
+                                      {activeLoans.map(
+                                        ({ loan, transactions }) => {
+                                          // Calculate totals for this loan
+                                          const totalPrincipal =
+                                            transactions.reduce(
+                                              (sum, t) =>
+                                                sum + parseFloat(t.amount),
+                                              0
+                                            );
+                                          const totalInterest =
+                                            transactions.reduce(
+                                              (sum, t) =>
+                                                sum +
+                                                calculateInterest(
+                                                  t.amount,
+                                                  t.interestRate,
+                                                  t.interestType
+                                                ),
+                                              0
+                                            );
+                                          const avgRate =
+                                            calculateAverageRate(transactions);
+                                          const total =
+                                            totalPrincipal + totalInterest;
 
-                      {/* Action Buttons */}
-                      <div className="pt-2 border-t">
-                        <ActionButtonsGroup
-                          isExpanded={expandedInvestors.has(investor.id)}
-                          onToggle={(e) => toggleInvestor(investor.id, e)}
-                          viewHref={`/investors/${investor.id}`}
-                          showToggle={true}
-                          size="md"
-                        />
-                      </div>
+                                          // Get sent dates for this loan
+                                          const sentDates = Array.from(
+                                            new Set(
+                                              transactions.map(
+                                                (t) =>
+                                                  new Date(t.sentDate)
+                                                    .toISOString()
+                                                    .split('T')[0]
+                                              )
+                                            )
+                                          )
+                                            .map((dateStr) => new Date(dateStr))
+                                            .sort(
+                                              (a, b) =>
+                                                a.getTime() - b.getTime()
+                                            );
 
-                      {/* Loans Section - Only shown when expanded */}
-                      {expandedInvestors.has(investor.id) && (
-                        <div className="space-y-3">
-                          {(() => {
-                            // Filter to only show active loans (not completed)
-                            const activeLoans = uniqueLoans.filter(
-                              ({ loan }) => loan.status !== 'Completed'
-                            );
-
-                            if (activeLoans.length === 0) {
-                              return (
-                                <div className="pt-2 border-t">
-                                  <p className="text-xs text-muted-foreground text-center py-3">
-                                    No active loans
-                                  </p>
-                                </div>
-                              );
-                            }
-
-                            return (
-                              <div className="pt-2 border-t">
-                                <div className="px-3 mb-2">
-                                  <p className="text-xs font-medium text-xs text-muted-foreground">
-                                    Active Loans{' '}
-                                    <span className="text-[10px] text-muted-foreground">
-                                      (Not marked as completed)
-                                    </span>
-                                  </p>
-                                </div>
-                                <div>
-                                  {activeLoans.map(({ loan, transactions }) => {
-                                    // Calculate totals for this loan
-                                    const totalPrincipal = transactions.reduce(
-                                      (sum, t) => sum + parseFloat(t.amount),
-                                      0
-                                    );
-                                    const totalInterest = transactions.reduce(
-                                      (sum, t) =>
-                                        sum +
-                                        calculateInterest(
-                                          t.amount,
-                                          t.interestRate,
-                                          t.interestType
-                                        ),
-                                      0
-                                    );
-                                    const avgRate =
-                                      calculateAverageRate(transactions);
-                                    const total =
-                                      totalPrincipal + totalInterest;
-
-                                    // Get sent dates for this loan
-                                    const sentDates = Array.from(
-                                      new Set(
-                                        transactions.map(
-                                          (t) =>
-                                            new Date(t.sentDate)
-                                              .toISOString()
-                                              .split('T')[0]
-                                        )
-                                      )
-                                    )
-                                      .map((dateStr) => new Date(dateStr))
-                                      .sort(
-                                        (a, b) => a.getTime() - b.getTime()
-                                      );
-
-                                    // Get due dates for this loan
-                                    const dueDateSet = new Set<string>();
-                                    dueDateSet.add(
-                                      new Date(loan.dueDate)
-                                        .toISOString()
-                                        .split('T')[0]
-                                    );
-
-                                    // Add interest period due dates
-                                    transactions.forEach((t) => {
-                                      if (
-                                        t.hasMultipleInterest &&
-                                        t.interestPeriods
-                                      ) {
-                                        t.interestPeriods.forEach((period) => {
+                                          // Get due dates for this loan
+                                          const dueDateSet = new Set<string>();
                                           dueDateSet.add(
-                                            new Date(period.dueDate)
+                                            new Date(loan.dueDate)
                                               .toISOString()
                                               .split('T')[0]
                                           );
-                                        });
-                                      }
-                                    });
 
-                                    const dueDates = Array.from(dueDateSet)
-                                      .map((dateStr) => new Date(dateStr))
-                                      .sort(
-                                        (a, b) => a.getTime() - b.getTime()
-                                      );
+                                          // Add interest period due dates
+                                          transactions.forEach((t) => {
+                                            if (
+                                              t.hasMultipleInterest &&
+                                              t.interestPeriods
+                                            ) {
+                                              t.interestPeriods.forEach(
+                                                (period) => {
+                                                  dueDateSet.add(
+                                                    new Date(period.dueDate)
+                                                      .toISOString()
+                                                      .split('T')[0]
+                                                  );
+                                                }
+                                              );
+                                            }
+                                          });
 
-                                    return (
-                                      <div
-                                        key={loan.id}
-                                        className="p-3 bg-muted/30 rounded-lg space-y-2 border-t"
-                                      >
-                                        <div className="flex items-start justify-between gap-2">
-                                          <Link
-                                            href={`/transactions/loans/${loan.id}`}
-                                            className="font-medium text-sm hover:underline"
-                                          >
-                                            {loan.loanName}
-                                          </Link>
-                                          <div className="flex items-center gap-1 flex-shrink-0">
-                                            <Badge
-                                              variant={
-                                                getLoanTypeBadge(loan.type)
-                                                  .variant
-                                              }
-                                              className={`text-[10px] py-0.5 ${
-                                                getLoanTypeBadge(loan.type)
-                                                  .className
-                                              }`}
+                                          const dueDates = Array.from(
+                                            dueDateSet
+                                          )
+                                            .map((dateStr) => new Date(dateStr))
+                                            .sort(
+                                              (a, b) =>
+                                                a.getTime() - b.getTime()
+                                            );
+
+                                          return (
+                                            <div
+                                              key={loan.id}
+                                              className="p-3 bg-muted/30 rounded-lg space-y-2 border-t"
                                             >
-                                              {loan.type}
-                                            </Badge>
-                                            <Badge
-                                              variant={
-                                                getLoanStatusBadge(loan.status)
-                                                  .variant
-                                              }
-                                              className={`text-[10px] py-0.5 ${
-                                                getLoanStatusBadge(loan.status)
-                                                  .className
-                                              }`}
-                                            >
-                                              {loan.status}
-                                            </Badge>
-                                          </div>
-                                        </div>
-                                        <div className="grid grid-cols-4 gap-2 text-xs">
-                                          <div>
-                                            <p className="text-muted-foreground text-[9px]">
-                                              Principal
-                                            </p>
-                                            <p className="font-medium text-xs">
-                                              {formatCurrency(totalPrincipal)}
-                                            </p>
-                                          </div>
-                                          <div>
-                                            <p className="text-muted-foreground text-[9px]">
-                                              Avg. Rate
-                                            </p>
-                                            <p className="font-medium text-xs">
-                                              {avgRate.toFixed(2)}%
-                                            </p>
-                                          </div>
-                                          <div>
-                                            <p className="text-muted-foreground text-[9px]">
-                                              Interest
-                                            </p>
-                                            <p className="font-medium text-xs">
-                                              {formatCurrency(totalInterest)}
-                                            </p>
-                                          </div>
-                                          <div>
-                                            <p className="text-muted-foreground text-[9px]">
-                                              Total
-                                            </p>
-                                            <p className="font-medium text-xs">
-                                              {formatCurrency(total)}
-                                            </p>
-                                          </div>
-                                        </div>
-                                        <div className="grid grid-cols-4 gap-2 pt-2 text-xs">
-                                          <div>
-                                            <p className="text-muted-foreground text-[9px] mb-1">
-                                              Pending Balance
-                                            </p>
-                                            <div className="flex flex-wrap gap-1">
-                                              <p
-                                                className={`text-xs ${
-                                                  calculateLoanBalance(
-                                                    transactions
-                                                  ) > 0
-                                                    ? 'bg-yellow-200 p-1 rounded-md'
-                                                    : ''
-                                                }`}
-                                              >
-                                                {(() => {
-                                                  const balance =
-                                                    calculateLoanBalance(
-                                                      transactions
-                                                    );
-                                                  return balance > 0
-                                                    ? formatCurrency(balance)
-                                                    : '-';
-                                                })()}
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <div>
-                                            <p className="text-muted-foreground text-[9px] mb-1">
-                                              Sent Dates
-                                            </p>
-                                            <div className="flex flex-col items-start gap-1">
-                                              {sentDates.map((date, idx) => {
-                                                const checkDate = new Date(
-                                                  date
-                                                );
-                                                checkDate.setHours(0, 0, 0, 0);
-                                                const isFuture =
-                                                  checkDate > today;
-
-                                                return (
-                                                  <span
-                                                    key={idx}
-                                                    className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                                      isFuture
-                                                        ? 'bg-yellow-200'
-                                                        : 'bg-muted'
+                                              <div className="flex items-start justify-between gap-2">
+                                                <Link
+                                                  href={`/transactions/loans/${loan.id}`}
+                                                  className="font-medium text-sm hover:underline"
+                                                >
+                                                  {loan.loanName}
+                                                </Link>
+                                                <div className="flex items-center gap-1 flex-shrink-0">
+                                                  <Badge
+                                                    variant={
+                                                      getLoanTypeBadge(
+                                                        loan.type
+                                                      ).variant
+                                                    }
+                                                    className={`text-[10px] py-0.5 ${
+                                                      getLoanTypeBadge(
+                                                        loan.type
+                                                      ).className
                                                     }`}
                                                   >
-                                                    {date.toLocaleDateString(
-                                                      'en-US',
-                                                      {
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                        year: 'numeric',
+                                                    {loan.type}
+                                                  </Badge>
+                                                  <Badge
+                                                    variant={
+                                                      getLoanStatusBadge(
+                                                        loan.status
+                                                      ).variant
+                                                    }
+                                                    className={`text-[10px] py-0.5 ${
+                                                      getLoanStatusBadge(
+                                                        loan.status
+                                                      ).className
+                                                    }`}
+                                                  >
+                                                    {loan.status}
+                                                  </Badge>
+                                                </div>
+                                              </div>
+                                              <div className="grid grid-cols-4 gap-2 text-xs">
+                                                <div>
+                                                  <p className="text-muted-foreground text-[9px]">
+                                                    Principal
+                                                  </p>
+                                                  <p className="font-medium text-xs">
+                                                    {formatCurrency(
+                                                      totalPrincipal
+                                                    )}
+                                                  </p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-muted-foreground text-[9px]">
+                                                    Avg. Rate
+                                                  </p>
+                                                  <p className="font-medium text-xs">
+                                                    {avgRate.toFixed(2)}%
+                                                  </p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-muted-foreground text-[9px]">
+                                                    Interest
+                                                  </p>
+                                                  <p className="font-medium text-xs">
+                                                    {formatCurrency(
+                                                      totalInterest
+                                                    )}
+                                                  </p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-muted-foreground text-[9px]">
+                                                    Total
+                                                  </p>
+                                                  <p className="font-medium text-xs">
+                                                    {formatCurrency(total)}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              <div className="grid grid-cols-4 gap-2 pt-2 text-xs">
+                                                <div>
+                                                  <p className="text-muted-foreground text-[9px] mb-1">
+                                                    Pending Balance
+                                                  </p>
+                                                  <div className="flex flex-wrap gap-1">
+                                                    <p
+                                                      className={`text-xs ${
+                                                        calculateLoanBalance(
+                                                          transactions
+                                                        ) > 0
+                                                          ? 'bg-yellow-200 p-1 rounded-md'
+                                                          : ''
+                                                      }`}
+                                                    >
+                                                      {(() => {
+                                                        const balance =
+                                                          calculateLoanBalance(
+                                                            transactions
+                                                          );
+                                                        return balance > 0
+                                                          ? formatCurrency(
+                                                              balance
+                                                            )
+                                                          : '-';
+                                                      })()}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <div>
+                                                  <p className="text-muted-foreground text-[9px] mb-1">
+                                                    Sent Dates
+                                                  </p>
+                                                  <div className="flex flex-col items-start gap-1">
+                                                    {sentDates.map(
+                                                      (date, idx) => {
+                                                        const checkDate =
+                                                          new Date(date);
+                                                        checkDate.setHours(
+                                                          0,
+                                                          0,
+                                                          0,
+                                                          0
+                                                        );
+                                                        const isFuture =
+                                                          checkDate > today;
+
+                                                        return (
+                                                          <span
+                                                            key={idx}
+                                                            className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                                              isFuture
+                                                                ? 'bg-yellow-200'
+                                                                : 'bg-muted'
+                                                            }`}
+                                                          >
+                                                            {date.toLocaleDateString(
+                                                              'en-US',
+                                                              {
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                year: 'numeric',
+                                                              }
+                                                            )}
+                                                          </span>
+                                                        );
                                                       }
                                                     )}
-                                                  </span>
-                                                );
-                                              })}
+                                                  </div>
+                                                </div>
+                                                <div>
+                                                  <p className="text-muted-foreground text-[9px] mb-1">
+                                                    Due Dates
+                                                  </p>
+                                                  <div className="flex flex-wrap gap-1">
+                                                    {dueDates.map(
+                                                      (date, idx) => (
+                                                        <span
+                                                          key={idx}
+                                                          className="text-[10px] px-1.5 py-0.5 rounded bg-muted"
+                                                        >
+                                                          {date.toLocaleDateString(
+                                                            'en-US',
+                                                            {
+                                                              month: 'short',
+                                                              day: 'numeric',
+                                                              year: 'numeric',
+                                                            }
+                                                          )}
+                                                        </span>
+                                                      )
+                                                    )}
+                                                  </div>
+                                                </div>
+                                                <div>
+                                                  <p className="text-muted-foreground text-[9px] mb-1">
+                                                    Free Lot
+                                                  </p>
+                                                  <div className="flex flex-wrap gap-1">
+                                                    <p className="text-xs">
+                                                      {loan.freeLotSqm
+                                                        ? `${loan.freeLotSqm} sqm`
+                                                        : '-'}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </div>
                                             </div>
-                                          </div>
-                                          <div>
-                                            <p className="text-muted-foreground text-[9px] mb-1">
-                                              Due Dates
-                                            </p>
-                                            <div className="flex flex-wrap gap-1">
-                                              {dueDates.map((date, idx) => (
-                                                <span
-                                                  key={idx}
-                                                  className="text-[10px] px-1.5 py-0.5 rounded bg-muted"
-                                                >
-                                                  {date.toLocaleDateString(
-                                                    'en-US',
-                                                    {
-                                                      month: 'short',
-                                                      day: 'numeric',
-                                                      year: 'numeric',
-                                                    }
-                                                  )}
-                                                </span>
-                                              ))}
-                                            </div>
-                                          </div>
-                                          <div>
-                                            <p className="text-muted-foreground text-[9px] mb-1">
-                                              Free Lot
-                                            </p>
-                                            <div className="flex flex-wrap gap-1">
-                                              <p className="text-xs">
-                                                {loan.freeLotSqm
-                                                  ? `${loan.freeLotSqm} sqm`
-                                                  : '-'}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                                          );
+                                        }
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            />
           )}
 
           {viewMode === 'table' && (
