@@ -71,6 +71,9 @@ export function CalendarWeekView({
                   events={cell.events}
                   formatCurrency={config.formatCurrency}
                   size="sm"
+                  alwaysShow={config.alwaysShowSummary}
+                  allEvents={config.allEvents}
+                  currentDate={cell.date}
                 />
 
                 {/* Events List */}
