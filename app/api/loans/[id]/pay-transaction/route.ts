@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { loanInvestors, loans } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { getTodayAtMidnight, normalizeToMidnight } from '@/lib/date-utils';
 
 export async function POST(
   request: NextRequest,
@@ -20,10 +19,10 @@ export async function POST(
       );
     }
 
-    // Update the transaction's sent date to today
+    // Update the transaction's sent date to today and mark as paid
     await db
       .update(loanInvestors)
-      .set({ sentDate: new Date() })
+      .set({ sentDate: new Date(), isPaid: true })
       .where(
         and(
           eq(loanInvestors.id, transactionId),
@@ -37,13 +36,10 @@ export async function POST(
       .from(loanInvestors)
       .where(eq(loanInvestors.loanId, loanId));
 
-    // Check if there are any remaining unpaid transactions (future dates)
-    // Use date-only comparison (normalized to midnight) for consistency with UI
-    const today = getTodayAtMidnight();
-    const unpaidTransactions = allTransactions.filter((transaction) => {
-      const sentDate = normalizeToMidnight(transaction.sentDate);
-      return sentDate > today;
-    });
+    // Check if there are any remaining unpaid transactions
+    const unpaidTransactions = allTransactions.filter(
+      (transaction) => !transaction.isPaid
+    );
 
     // If no unpaid transactions remain, update loan status to "Fully Funded"
     if (unpaidTransactions.length === 0) {
