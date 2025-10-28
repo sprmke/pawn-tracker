@@ -44,13 +44,14 @@ import {
   RangeFilter,
   CollapsibleSection,
   CollapsibleContent,
+  InlineLoader,
 } from '@/components/common';
 import {
   TransactionsTable,
   TransactionCreateModal,
   TransactionDetailModal,
 } from '@/components/transactions';
-import { LoanCreateModal } from '@/components/loans';
+import { LoanCreateModal, LoanDetailModal } from '@/components/loans';
 import type { TransactionWithInvestor } from '@/lib/types';
 
 interface InvestorDetailClientProps {
@@ -69,6 +70,10 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     useState<TransactionWithInvestor | null>(null);
   const [showTransactionDetailModal, setShowTransactionDetailModal] =
     useState(false);
+  const [selectedLoan, setSelectedLoan] = useState<LoanWithInvestors | null>(
+    null
+  );
+  const [showLoanDetailModal, setShowLoanDetailModal] = useState(false);
 
   // Transaction filters
   const [transactionSearchQuery, setTransactionSearchQuery] = useState('');
@@ -640,8 +645,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
           {/* Loans List */}
           {loansLoading ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <p className="text-muted-foreground">Loading loans...</p>
+              <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+                <InlineLoader size="md" />
               </CardContent>
             </Card>
           ) : loans.length === 0 ? (
@@ -677,6 +682,10 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   }
                   return newSet;
                 });
+              }}
+              onQuickView={(loan) => {
+                setSelectedLoan(loan);
+                setShowLoanDetailModal(true);
               }}
             />
           )}
@@ -875,6 +884,17 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         open={showTransactionDetailModal}
         onOpenChange={setShowTransactionDetailModal}
         onUpdate={() => {
+          router.refresh();
+        }}
+      />
+
+      {/* Loan Detail Modal */}
+      <LoanDetailModal
+        loan={selectedLoan}
+        open={showLoanDetailModal}
+        onOpenChange={setShowLoanDetailModal}
+        onUpdate={() => {
+          fetchLoansData();
           router.refresh();
         }}
       />
