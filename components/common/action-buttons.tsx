@@ -72,7 +72,7 @@ export function QuickViewButton({
       <Maximize2
         className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} mr-1`}
       />
-      Quick View
+      View
     </Button>
   );
 }
@@ -124,6 +124,7 @@ interface ActionButtonsGroupProps {
   onViewClick?: (e: React.MouseEvent) => void;
   onQuickView?: (e: React.MouseEvent) => void;
   showToggle?: boolean;
+  showView?: boolean;
   size?: 'sm' | 'md';
   className?: string;
 }
@@ -135,6 +136,7 @@ export function ActionButtonsGroup({
   onViewClick,
   onQuickView,
   showToggle = true,
+  showView = true,
   size = 'sm',
   className = '',
 }: ActionButtonsGroupProps) {
@@ -146,26 +148,29 @@ export function ActionButtonsGroup({
         isCardSize ? 'gap-2' : 'justify-end gap-1'
       } ${className}`}
     >
-      {onQuickView ? (
-        <QuickViewButton
-          onClick={onQuickView}
-          size={size}
-          className={isCardSize ? 'flex-1' : ''}
-        />
-      ) : showToggle && onToggle ? (
+      {showToggle && onToggle && (
         <ToggleMoreButton
           isExpanded={isExpanded}
           onToggle={onToggle}
           size={size}
           className={isCardSize ? 'flex-1' : ''}
         />
-      ) : null}
-      <ViewButton
-        href={viewHref}
-        size={size}
-        onClick={onViewClick}
-        className={isCardSize ? 'flex-1' : ''}
-      />
+      )}
+      {onQuickView && (
+        <QuickViewButton
+          onClick={onQuickView}
+          size={size}
+          className={isCardSize ? 'flex-1' : ''}
+        />
+      )}
+      {showView && (
+        <ViewButton
+          href={viewHref}
+          size={size}
+          onClick={onViewClick}
+          className={isCardSize ? 'flex-1' : ''}
+        />
+      )}
     </div>
   );
 }
