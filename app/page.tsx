@@ -11,6 +11,10 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Wallet,
+  PhilippinePeso,
+  HandCoins,
+  TriangleAlert,
+  PiggyBank,
 } from 'lucide-react';
 import Link from 'next/link';
 import { getLoanStatusBadge } from '@/lib/badge-config';
@@ -26,7 +30,17 @@ import {
   CurrencyBarChart,
   LoanTypePieChart,
 } from '@/components/common/charts';
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import {
+  format,
+  subWeeks,
+  startOfWeek,
+  endOfWeek,
+  addDays,
+  isBefore,
+  isAfter,
+  isFuture,
+  isPast,
+} from 'date-fns';
 
 async function getDashboardData() {
   try {
@@ -118,69 +132,82 @@ async function getDashboardData() {
       (t) => t.type === 'Investment'
     );
 
-    // Calculate monthly trend data (last 6 months)
-    const monthlyData = [];
-    for (let i = 5; i >= 0; i--) {
-      const monthDate = subMonths(new Date(), i);
-      const monthStart = startOfMonth(monthDate);
-      const monthEnd = endOfMonth(monthDate);
+    // Calculate weekly trend data (last 8 weeks)
+    const weeklyData = [];
+    for (let i = 7; i >= 0; i--) {
+      const weekDate = subWeeks(new Date(), i);
+      const weekStart = startOfWeek(weekDate, { weekStartsOn: 0 }); // Sunday
+      const weekEnd = endOfWeek(weekDate, { weekStartsOn: 0 });
 
-      const monthTransactions = allTransactions.filter((t) => {
+      const weekTransactions = allTransactions.filter((t) => {
         const tDate = new Date(t.date);
-        return tDate >= monthStart && tDate <= monthEnd;
+        return tDate >= weekStart && tDate <= weekEnd;
       });
 
-      const monthInflow = monthTransactions
+      const weekInflow = weekTransactions
         .filter((t) => t.direction === 'In')
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
-      const monthOutflow = monthTransactions
+      const weekOutflow = weekTransactions
         .filter((t) => t.direction === 'Out')
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
-      monthlyData.push({
-        month: format(monthDate, 'MMM yyyy'),
-        inflow: monthInflow,
-        outflow: monthOutflow,
-        net: monthInflow - monthOutflow,
+      weeklyData.push({
+        week: format(weekStart, 'MMM dd'),
+        inflow: weekInflow,
+        outflow: weekOutflow,
+        net: weekInflow - weekOutflow,
       });
     }
 
-    // Loan type distribution
+    // Loan type distribution (Pastel Colors)
     const loanTypeData = [
       {
         name: 'Lot Title',
         value: allLoans.filter((l) => l.type === 'Lot Title').length,
-        color: '#8b5cf6', // Purple
+        color: '#fb923c', // Orange-400
       },
       {
         name: 'OR/CR',
         value: allLoans.filter((l) => l.type === 'OR/CR').length,
-        color: '#3b82f6', // Blue
+        color: '#818cf8', // Indigo-400
       },
       {
         name: 'Agent',
         value: allLoans.filter((l) => l.type === 'Agent').length,
-        color: '#f59e0b', // Orange
+        color: '#e879f9', // Fuchsia-400
       },
     ].filter((item) => item.value > 0);
 
     // Loan status distribution
+    const fullyFundedLoans = allLoans.filter(
+      (loan) => loan.status === 'Fully Funded'
+    ).length;
+
+    const partiallyFundedLoans = allLoans.filter(
+      (loan) => loan.status === 'Partially Funded'
+    ).length;
+
     const loanStatusData = [
       {
-        name: 'Active',
-        value: activeLoans,
-        color: '#10b981', // Green
+        name: 'Fully Funded',
+        value: fullyFundedLoans,
+        color: '#34d399', // Emerald-400
+      },
+      {
+        name: 'Partially Funded',
+        value: partiallyFundedLoans,
+        color: '#fcd34d', // Amber-300
       },
       {
         name: 'Completed',
         value: completedLoans,
-        color: '#6b7280', // Gray
+        color: '#38bdf8', // Sky-400
       },
       {
         name: 'Overdue',
         value: overdueLoans,
-        color: '#ef4444', // Red
+        color: '#fb7185', // Rose-400
       },
     ].filter((item) => item.value > 0);
 
@@ -197,11 +224,67 @@ async function getDashboardData() {
       .sort((a, b) => b.capital - a.capital)
       .slice(0, 5);
 
-    // Recent loans
-    const recentLoans = allLoans.slice(0, 5);
+    // Upcoming payments to send (unpaid loan investor transactions)
+    const now = new Date();
+    const unpaidLoanTransactions: Array<{
+      id: number;
+      loanId: number;
+      loanName: string;
+      investorName: string;
+      amount: string;
+      sentDate: Date;
+    }> = [];
 
-    // Recent transactions
-    const recentTransactions = allTransactions.slice(0, 10);
+    allLoans.forEach((loan) => {
+      loan.loanInvestors
+        .filter((li) => !li.isPaid)
+        .forEach((li) => {
+          unpaidLoanTransactions.push({
+            id: li.id,
+            loanId: loan.id,
+            loanName: loan.loanName,
+            investorName: li.investor.name,
+            amount: li.amount,
+            sentDate: li.sentDate,
+          });
+        });
+    });
+
+    const upcomingPaymentsToSend = unpaidLoanTransactions
+      .sort(
+        (a, b) =>
+          new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
+      )
+      .slice(0, 5);
+
+    // Upcoming payments due (loans due within next 14 days, excluding completed/overdue)
+    const fourteenDaysFromNow = addDays(now, 14);
+    const upcomingPaymentsDue = allLoans
+      .filter((loan) => {
+        const dueDate = new Date(loan.dueDate);
+        return (
+          (loan.status === 'Fully Funded' ||
+            loan.status === 'Partially Funded') &&
+          isAfter(dueDate, now) &&
+          isBefore(dueDate, fourteenDaysFromNow)
+        );
+      })
+      .sort(
+        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      )
+      .slice(0, 5);
+
+    // Overdue loans (status overdue or past due date)
+    const overdueLoansData = allLoans
+      .filter(
+        (loan) =>
+          loan.status === 'Overdue' ||
+          (loan.status !== 'Completed' && isPast(new Date(loan.dueDate)))
+      )
+      .sort(
+        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      )
+      .slice(0, 5);
 
     return {
       // Overview stats
@@ -218,13 +301,14 @@ async function getDashboardData() {
       loanTransactions: loanTransactions.length,
       investmentTransactions: investmentTransactions.length,
       // Chart data
-      monthlyData,
+      weeklyData,
       loanTypeData,
       loanStatusData,
       investorCapitalData,
-      // Recent data
-      recentLoans,
-      recentTransactions,
+      // Upcoming data
+      upcomingPaymentsToSend,
+      upcomingPaymentsDue,
+      overdueLoansData,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
@@ -241,12 +325,13 @@ async function getDashboardData() {
       totalOutflow: 0,
       loanTransactions: 0,
       investmentTransactions: 0,
-      monthlyData: [],
+      weeklyData: [],
       loanTypeData: [],
       loanStatusData: [],
       investorCapitalData: [],
-      recentLoans: [],
-      recentTransactions: [],
+      upcomingPaymentsToSend: [],
+      upcomingPaymentsDue: [],
+      overdueLoansData: [],
     };
   }
 }
@@ -258,7 +343,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
           Dashboard
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground">
@@ -266,87 +351,261 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Overview Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Principal"
-          value={formatCurrency(data.totalPrincipal)}
-          icon={DollarSign}
-          subtitle={`${data.totalLoans} total loans`}
-        />
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Overview</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {/* Overview Stats */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total Principal"
+              value={formatCurrency(data.totalPrincipal)}
+              icon={PiggyBank}
+              subtitle={`${data.totalLoans} total loans`}
+              variant="primary"
+            />
 
-        <StatCard
-          title="Interest Earned"
-          value={formatCurrency(data.totalInterestEarned)}
-          icon={TrendingUp}
-          subtitle={`${data.completedLoans} completed loans`}
-        />
+            <StatCard
+              title="Interest Earned"
+              value={formatCurrency(data.totalInterestEarned)}
+              icon={HandCoins}
+              subtitle={`${data.completedLoans} completed loans`}
+              variant="primary"
+            />
 
-        <StatCard
-          title="Active Loans"
-          value={data.activeLoans}
-          icon={FileText}
-          subtitle="Currently in progress"
-        />
+            <StatCard
+              title="Active Loans"
+              value={data.activeLoans}
+              icon={FileText}
+              subtitle="Currently in progress"
+              variant="primary"
+            />
 
-        <StatCard
-          title="Overdue Loans"
-          value={<span className="text-red-600">{data.overdueLoans}</span>}
-          icon={AlertCircle}
-          subtitle="Needs attention"
-        />
-      </div>
+            <StatCard
+              title="Overdue Loans"
+              value={data.overdueLoans}
+              icon={TriangleAlert}
+              subtitle="Needs attention"
+              variant="primary"
+            />
+          </div>
 
-      {/* Transaction Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Inflow"
-          value={formatCurrency(data.totalInflow)}
-          icon={ArrowDownRight}
-          subtitle={`${data.investmentTransactions} transactions`}
-          className="border-green-200 dark:border-green-900"
-        />
+          {/* Transaction Stats */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total Inflow"
+              value={formatCurrency(data.totalInflow)}
+              icon={ArrowDownRight}
+              subtitle={`${data.investmentTransactions} transactions`}
+              variant="primary"
+            />
 
-        <StatCard
-          title="Total Outflow"
-          value={formatCurrency(data.totalOutflow)}
-          icon={ArrowUpRight}
-          subtitle={`${data.loanTransactions} transactions`}
-          className="border-orange-200 dark:border-orange-900"
-        />
+            <StatCard
+              title="Total Outflow"
+              value={formatCurrency(data.totalOutflow)}
+              icon={ArrowUpRight}
+              subtitle={`${data.loanTransactions} transactions`}
+              variant="primary"
+            />
 
-        <StatCard
-          title="Net Cashflow"
-          value={
-            <span
-              className={netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}
-            >
-              {formatCurrency(netCashflow)}
-            </span>
-          }
-          icon={Wallet}
-          subtitle="Total balance"
-        />
+            <StatCard
+              title="Net Cashflow"
+              value={
+                <span
+                  className={
+                    netCashflow >= 0
+                      ? 'text-emerald-600 dark:text-emerald-500'
+                      : 'text-rose-600 dark:text-rose-500'
+                  }
+                >
+                  {formatCurrency(netCashflow)}
+                </span>
+              }
+              icon={Wallet}
+              subtitle="Total balance"
+              variant="primary"
+            />
 
-        <StatCard
-          title="Active Investors"
-          value={`${data.activeInvestors} / ${data.totalInvestors}`}
-          icon={Users}
-          subtitle="Currently investing"
-        />
+            <StatCard
+              title="Active Investors"
+              value={`${data.activeInvestors} / ${data.totalInvestors}`}
+              icon={Users}
+              subtitle="Currently investing"
+              variant="primary"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Upcoming Activity */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Overdue Loans */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Past Due Loans</CardTitle>
+              <TriangleAlert className="h-5 w-5 text-rose-500" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Requires immediate attention
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {data.overdueLoansData.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                    All caught up! ✓
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    No overdue loans
+                  </p>
+                </div>
+              ) : (
+                data.overdueLoansData.map((loan) => (
+                  <Link
+                    key={loan.id}
+                    href={`/loans/${loan.id}`}
+                    className="flex flex-col p-3 border border-rose-500/20 bg-rose-500/5 rounded-lg hover:bg-rose-500/10 transition-colors gap-1"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-medium truncate flex-1">
+                        {loan.loanName}
+                      </p>
+                      <p className="text-sm font-semibold text-rose-600 dark:text-rose-400 flex-shrink-0">
+                        {formatCurrency(
+                          calculateTotalPrincipal(loan.loanInvestors)
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <Badge
+                        variant="destructive"
+                        className="text-[10px] px-1 py-0"
+                      >
+                        {loan.status}
+                      </Badge>
+                      <span className="text-muted-foreground flex-shrink-0 font-medium">
+                        Was: {format(new Date(loan.dueDate), 'MMM dd, yyyy')}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pending Disbursements */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Pending Disbursements</CardTitle>
+              <ArrowUpRight className="h-5 w-5 text-amber-500" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Unpaid transactions from partially funded loans
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {data.upcomingPaymentsToSend.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4 text-sm">
+                  No pending payments
+                </p>
+              ) : (
+                data.upcomingPaymentsToSend.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/loans/${item.loanId}`}
+                    className="flex flex-col p-3 border border-amber-500/20 bg-amber-500/5 rounded-lg hover:bg-amber-500/10 transition-colors gap-1"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-medium truncate flex-1">
+                        {item.loanName}
+                      </p>
+                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 flex-shrink-0">
+                        {formatCurrency(parseFloat(item.amount))}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="truncate">{item.investorName}</span>
+                      <span className="flex-shrink-0">
+                        {format(new Date(item.sentDate), 'MMM dd, yyyy')}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Payments Due */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Maturing Loans</CardTitle>
+              <ArrowDownRight className="h-5 w-5 text-emerald-500" />
+            </div>
+            <p className="text-xs text-muted-foreground">Due within 14 days</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {data.upcomingPaymentsDue.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4 text-sm">
+                  No upcoming due dates
+                </p>
+              ) : (
+                data.upcomingPaymentsDue.map((loan) => (
+                  <Link
+                    key={loan.id}
+                    href={`/loans/${loan.id}`}
+                    className="flex flex-col p-3 border border-emerald-500/20 bg-emerald-500/5 rounded-lg hover:bg-emerald-500/10 transition-colors gap-1"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-medium truncate flex-1">
+                        {loan.loanName}
+                      </p>
+                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                        {formatCurrency(
+                          calculateTotalPrincipal(loan.loanInvestors)
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <Badge
+                        variant={getLoanStatusBadge(loan.status).variant}
+                        className={`${
+                          getLoanStatusBadge(loan.status).className
+                        } text-[10px] px-1 py-0`}
+                      >
+                        {loan.type}
+                      </Badge>
+                      <span className="text-muted-foreground flex-shrink-0">
+                        Due: {format(new Date(loan.dueDate), 'MMM dd, yyyy')}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Charts Section */}
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* Monthly Cashflow Trend */}
+        {/* Weekly Cashflow Trend */}
         <CurrencyLineChart
-          data={data.monthlyData}
-          title="Monthly Cashflow Trend"
-          xAxisKey="month"
+          data={data.weeklyData}
+          title="Weekly Cashflow Trend"
+          xAxisKey="week"
           dataKeys={[
-            { key: 'inflow', label: 'Inflow', color: '#10b981' }, // Green
-            { key: 'outflow', label: 'Outflow', color: '#f59e0b' }, // Orange
-            { key: 'net', label: 'Net', color: '#3b82f6' }, // Blue
+            { key: 'inflow', label: 'Inflow', color: '#34d399' }, // Pastel Emerald
+            { key: 'outflow', label: 'Outflow', color: '#fcd34d' }, // Pastel Amber
+            { key: 'net', label: 'Net', color: '#5986f9' }, // Pastel Blue
           ]}
         />
 
@@ -360,12 +619,12 @@ export default async function DashboardPage() {
               {
                 key: 'capital',
                 label: 'Capital',
-                color: '#2563eb', // Dark Blue
+                color: '#5986f9', // Pastel Blue
               },
               {
                 key: 'interest',
                 label: 'Interest',
-                color: '#10b981', // Green
+                color: '#34d399', // Pastel Emerald
               },
             ]}
           />
@@ -389,142 +648,6 @@ export default async function DashboardPage() {
             title="Loan Status Distribution"
           />
         )}
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Recent Loans */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Recent Loans</CardTitle>
-              <Link
-                href="/transactions/loans"
-                className="text-sm text-primary hover:underline"
-              >
-                View all
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {data.recentLoans.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4 text-sm">
-                  No loans yet.{' '}
-                  <Link
-                    href="/transactions/loans/new"
-                    className="text-primary hover:underline"
-                  >
-                    Create your first loan
-                  </Link>
-                </p>
-              ) : (
-                data.recentLoans.map((loan) => (
-                  <Link
-                    key={loan.id}
-                    href={`/transactions/loans/${loan.id}`}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors gap-2"
-                  >
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {loan.loanName}
-                      </p>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <span>{loan.type}</span>
-                        <span>•</span>
-                        <span>
-                          {formatCurrency(
-                            calculateTotalPrincipal(loan.loanInvestors)
-                          )}
-                        </span>
-                        <span>•</span>
-                        <span>
-                          {
-                            new Set(
-                              loan.loanInvestors.map((li) => li.investor.id)
-                            ).size
-                          }{' '}
-                          investor(s)
-                        </span>
-                      </div>
-                    </div>
-                    <Badge
-                      variant={getLoanStatusBadge(loan.status).variant}
-                      className={getLoanStatusBadge(loan.status).className}
-                    >
-                      {loan.status}
-                    </Badge>
-                  </Link>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Transactions */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Recent Transactions</CardTitle>
-              <Link
-                href="/transactions"
-                className="text-sm text-primary hover:underline"
-              >
-                View all
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {data.recentTransactions.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4 text-sm">
-                  No transactions yet.
-                </p>
-              ) : (
-                data.recentTransactions.map((transaction) => (
-                  <Link
-                    key={transaction.id}
-                    href={`/transactions/${transaction.id}`}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div
-                        className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                          transaction.direction === 'In'
-                            ? 'bg-green-500'
-                            : 'bg-orange-500'
-                        }`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {transaction.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {transaction.investor.name}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p
-                        className={`text-sm font-semibold ${
-                          transaction.direction === 'In'
-                            ? 'text-green-600'
-                            : 'text-orange-600'
-                        }`}
-                      >
-                        {transaction.direction === 'In' ? '+' : '-'}
-                        {formatCurrency(parseFloat(transaction.amount))}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(transaction.date), 'MMM dd')}
-                      </p>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
