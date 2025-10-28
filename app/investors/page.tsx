@@ -31,6 +31,7 @@ import {
   SearchFilter,
   RangeFilter,
   CardPagination,
+  InlineLoader,
 } from '@/components/common';
 import { formatCurrency, isFutureDate } from '@/lib/format';
 import { getTodayAtMidnight, normalizeToMidnight } from '@/lib/date-utils';
@@ -55,7 +56,7 @@ export default function InvestorsPage() {
   const router = useRouter();
   const [investors, setInvestors] = useState<InvestorWithLoans[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const itemsPerPage = 10;
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedInvestors, setExpandedInvestors] = useState<Set<number>>(
@@ -216,14 +217,14 @@ export default function InvestorsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Investors</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Investors</h1>
           <p className="text-muted-foreground">
             Track investor portfolios and balances
           </p>
         </div>
         <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">Loading investors...</p>
+          <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+            <InlineLoader size="md" />
           </CardContent>
         </Card>
       </div>
@@ -234,7 +235,7 @@ export default function InvestorsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             Investors
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
@@ -244,20 +245,20 @@ export default function InvestorsPage() {
         <div className="flex items-center gap-2">
           <div className="flex items-center border rounded-lg p-1">
             <Button
-              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('cards')}
-              className="h-8 px-3"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
               variant={viewMode === 'table' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('table')}
               className="h-8 px-3"
             >
               <TableIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+              className="h-8 px-3"
+            >
+              <LayoutGrid className="h-4 w-4" />
             </Button>
           </div>
           <Link href="/investors/new">
@@ -484,7 +485,7 @@ export default function InvestorsPage() {
                       >
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between gap-2">
-                            <div className="space-y-1 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
                               <CardTitle className="text-sm sm:text-base truncate">
                                 {investor.name}
                               </CardTitle>
@@ -715,7 +716,7 @@ export default function InvestorsPage() {
                                             >
                                               <div className="flex items-start justify-between gap-2">
                                                 <Link
-                                                  href={`/transactions/loans/${loan.id}`}
+                                                  href={`/loans/${loan.id}`}
                                                   className="font-medium hover:underline text-xs"
                                                 >
                                                   {loan.loanName}
@@ -796,11 +797,11 @@ export default function InvestorsPage() {
                                                   </p>
                                                   <div className="flex flex-wrap gap-1">
                                                     <p
-                                                      className={`text-xs ${
+                                                      className={`text-[10px] ${
                                                         calculateLoanBalance(
                                                           transactions
                                                         ) > 0
-                                                          ? 'bg-yellow-200 p-1 rounded-md'
+                                                          ? 'bg-yellow-200 px-1.5 py-0.5 rounded'
                                                           : ''
                                                       }`}
                                                     >
@@ -825,18 +826,29 @@ export default function InvestorsPage() {
                                                   <div className="flex flex-col items-start gap-1">
                                                     {sentDates.map(
                                                       (date, idx) => {
-                                                        const checkDate =
-                                                          normalizeToMidnight(
-                                                            date
+                                                        const dateStr = date
+                                                          .toISOString()
+                                                          .split('T')[0];
+                                                        // Check if any transaction with this sent date is unpaid
+                                                        const hasUnpaidOnThisDate =
+                                                          transactions.some(
+                                                            (t) =>
+                                                              new Date(
+                                                                t.sentDate
+                                                              )
+                                                                .toISOString()
+                                                                .split(
+                                                                  'T'
+                                                                )[0] ===
+                                                                dateStr &&
+                                                              !t.isPaid
                                                           );
-                                                        const isFuture =
-                                                          checkDate > today;
 
                                                         return (
                                                           <span
                                                             key={idx}
                                                             className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                                              isFuture
+                                                              hasUnpaidOnThisDate
                                                                 ? 'bg-yellow-200'
                                                                 : 'bg-muted'
                                                             }`}
