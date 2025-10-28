@@ -55,6 +55,7 @@ import {
   SearchFilter,
   RangeFilter,
   CardPagination,
+  InlineLoader,
 } from '@/components/common';
 
 type SortField =
@@ -78,7 +79,7 @@ export default function LoansPage() {
   );
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'cards' | 'table' | 'calendar'>(
-    'cards'
+    'table'
   );
   const [sortField, setSortField] = useState<SortField>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -401,13 +402,13 @@ export default function LoansPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Loans</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Loans</h1>
             <p className="text-muted-foreground">Manage all your pawn loans</p>
           </div>
         </div>
         <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">Loading loans...</p>
+          <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+            <InlineLoader size="md" />
           </CardContent>
         </Card>
       </div>
@@ -418,7 +419,7 @@ export default function LoansPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             Loans
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
@@ -428,15 +429,6 @@ export default function LoansPage() {
         <div className="flex items-center gap-2">
           <div className="flex items-center border rounded-lg p-1">
             <Button
-              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('cards')}
-              className="h-8 px-3"
-              title="Card View"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
               variant={viewMode === 'table' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('table')}
@@ -444,6 +436,15 @@ export default function LoansPage() {
               title="Table View"
             >
               <TableIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+              className="h-8 px-3"
+              title="Card View"
+            >
+              <LayoutGrid className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
@@ -864,9 +865,6 @@ export default function LoansPage() {
                             </p>
                             <div className="flex flex-col gap-0.5 items-start">
                               {(() => {
-                                const today = new Date();
-                                today.setHours(0, 0, 0, 0);
-
                                 // Get unique sent dates
                                 const uniqueDates = Array.from(
                                   new Set(
@@ -882,9 +880,18 @@ export default function LoansPage() {
                                   .sort((a, b) => a.getTime() - b.getTime());
 
                                 return uniqueDates.map((date, index) => {
-                                  const sentDate = new Date(date);
-                                  sentDate.setHours(0, 0, 0, 0);
-                                  const isFuture = sentDate > today;
+                                  const dateStr = date
+                                    .toISOString()
+                                    .split('T')[0];
+                                  // Check if any transaction with this sent date is unpaid
+                                  const hasUnpaidOnThisDate =
+                                    loan.loanInvestors.some(
+                                      (li) =>
+                                        new Date(li.sentDate)
+                                          .toISOString()
+                                          .split('T')[0] === dateStr &&
+                                        !li.isPaid
+                                    );
 
                                   return (
                                     <span
@@ -894,7 +901,9 @@ export default function LoansPage() {
                                           ? 'text-[10px]'
                                           : 'text-xs'
                                       } px-2 py-0.5 rounded inline-block font-medium ${
-                                        isFuture ? 'bg-yellow-200' : ''
+                                        hasUnpaidOnThisDate
+                                          ? 'bg-yellow-200'
+                                          : ''
                                       }`}
                                     >
                                       {date.toLocaleDateString('en-US', {
@@ -976,7 +985,14 @@ export default function LoansPage() {
                             isExpanded={expandedInvestors.has(loan.id)}
                             onToggle={(e) => toggleInvestors(loan.id, e)}
                             viewHref={`/loans/${loan.id}`}
+                            onQuickView={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedLoan(loan);
+                              setIsModalOpen(true);
+                            }}
                             showToggle={true}
+                            showView={false}
                             size="md"
                           />
                         </div>
@@ -1061,9 +1077,23 @@ export default function LoansPage() {
                   return newSet;
                 });
               }}
+              onQuickView={(loan) => {
+                setSelectedLoan(loan);
+                setIsModalOpen(true);
+              }}
             />
           )}
         </>
+      )}
+
+      {/* Quick View Modal for Cards and Table */}
+      {(viewMode === 'cards' || viewMode === 'table') && (
+        <LoanDetailModal
+          loan={selectedLoan}
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          onUpdate={fetchLoans}
+        />
       )}
     </div>
   );
