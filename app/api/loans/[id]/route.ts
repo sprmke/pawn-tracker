@@ -109,6 +109,7 @@ export async function PUT(
         interestRate: String(inv.interestRate),
         interestType: inv.interestType || 'rate',
         sentDate: new Date(inv.sentDate),
+        isPaid: inv.isPaid ?? true, // Default to true for backward compatibility
         hasMultipleInterest: inv.hasMultipleInterest || false,
       }));
 
