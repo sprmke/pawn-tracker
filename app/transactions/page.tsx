@@ -30,9 +30,9 @@ import {
 import {
   SearchFilter,
   RangeFilter,
-  LoadingState,
   EmptyState,
   CardPagination,
+  InlineLoader,
 } from '@/components/common';
 import { DollarSign, TrendingUp, Users } from 'lucide-react';
 
@@ -46,7 +46,7 @@ export default function TransactionsPage() {
   );
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'cards' | 'table' | 'calendar'>(
-    'cards'
+    'table'
   );
   const itemsPerPage = 10;
 
@@ -228,15 +228,15 @@ export default function TransactionsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
             <p className="text-muted-foreground">
               View and manage all transactions
             </p>
           </div>
         </div>
         <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">Loading transactions...</p>
+          <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+            <InlineLoader size="md" />
           </CardContent>
         </Card>
       </div>
@@ -247,7 +247,7 @@ export default function TransactionsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             Transactions
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
@@ -257,15 +257,6 @@ export default function TransactionsPage() {
         <div className="flex items-center gap-2">
           <div className="flex items-center border rounded-lg p-1">
             <Button
-              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('cards')}
-              className="h-8 px-3"
-              title="Card View"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
               variant={viewMode === 'table' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('table')}
@@ -273,6 +264,15 @@ export default function TransactionsPage() {
               title="Table View"
             >
               <TableIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+              className="h-8 px-3"
+              title="Card View"
+            >
+              <LayoutGrid className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
