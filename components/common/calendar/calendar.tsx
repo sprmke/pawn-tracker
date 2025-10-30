@@ -38,6 +38,7 @@ export function Calendar({ events, config, showLegend = true }: CalendarProps) {
         onPrevious={goToPreviousPeriod}
         onNext={goToNextPeriod}
         showLegend={showLegend}
+        legendGroups={config.legendGroups}
       />
 
       {/* Mobile Scroll Hint */}

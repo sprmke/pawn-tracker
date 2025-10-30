@@ -11,6 +11,9 @@ export type {
   CalendarEventSent,
   CalendarEventDue,
   CalendarEventInterestDue,
+  CalendarEventTransaction,
   CalendarCell,
   CalendarConfig,
+  LegendItem,
+  LegendGroup,
 } from './types';
