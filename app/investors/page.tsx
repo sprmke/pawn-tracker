@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import {
@@ -32,17 +31,18 @@ import {
   RangeFilter,
   CardPagination,
   InlineLoader,
+  PastDueLoansCard,
+  PendingDisbursementsCard,
+  MaturingLoansCard,
 } from '@/components/common';
-import { formatCurrency, isFutureDate } from '@/lib/format';
+import { formatCurrency } from '@/lib/format';
 import { getTodayAtMidnight, normalizeToMidnight } from '@/lib/date-utils';
-import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import {
   calculateInvestorStats,
   calculateAverageRate,
-  calculateInterest,
-  calculateInvestmentTotal,
-  calculateLoanBalance,
 } from '@/lib/calculations';
+import { addDays, isAfter, isBefore, isPast } from 'date-fns';
+import type { LoanWithInvestors } from '@/lib/types';
 
 const getBalanceStatus = (balance: number) => {
   if (balance > 100000)
@@ -52,9 +52,88 @@ const getBalanceStatus = (balance: number) => {
   return { status: 'No funds', variant: 'destructive' as const };
 };
 
+// Helper function to calculate activity card data for an investor
+const getInvestorActivityData = (
+  investor: InvestorWithLoans,
+  allLoans: LoanWithInvestors[]
+) => {
+  const now = new Date();
+  const fourteenDaysFromNow = addDays(now, 14);
+
+  // Get investor's loan IDs
+  const investorLoanIds = new Set(
+    investor.loanInvestors.map((li) => li.loan.id)
+  );
+
+  // Filter loans to only those this investor is part of
+  const investorLoans = allLoans.filter((loan) => investorLoanIds.has(loan.id));
+
+  // Overdue loans
+  const overdueLoans = investorLoans
+    .filter(
+      (loan) =>
+        loan.status === 'Overdue' ||
+        (loan.status !== 'Completed' && isPast(new Date(loan.dueDate)))
+    )
+    .sort(
+      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
+
+  // Pending disbursements
+  const unpaidLoanTransactions: Array<{
+    id: number;
+    loanId: number;
+    loanName: string;
+    investorName: string;
+    amount: string;
+    sentDate: Date;
+  }> = [];
+
+  investorLoans.forEach((loan) => {
+    loan.loanInvestors
+      .filter((li) => !li.isPaid && li.investor.id === investor.id)
+      .forEach((li) => {
+        unpaidLoanTransactions.push({
+          id: li.id,
+          loanId: loan.id,
+          loanName: loan.loanName,
+          investorName: li.investor.name,
+          amount: li.amount,
+          sentDate: li.sentDate,
+        });
+      });
+  });
+
+  const pendingDisbursements = unpaidLoanTransactions.sort(
+    (a, b) => new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
+  );
+
+  // Maturing loans
+  const maturingLoans = investorLoans
+    .filter((loan) => {
+      const dueDate = new Date(loan.dueDate);
+      return (
+        (loan.status === 'Fully Funded' ||
+          loan.status === 'Partially Funded') &&
+        isAfter(dueDate, now) &&
+        isBefore(dueDate, fourteenDaysFromNow)
+      );
+    })
+    .sort(
+      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
+
+  return {
+    overdueLoans,
+    pendingDisbursements,
+    maturingLoans,
+  };
+};
+
 export default function InvestorsPage() {
   const router = useRouter();
   const [investors, setInvestors] = useState<InvestorWithLoans[]>([]);
+  const [allLoans, setAllLoans] = useState<LoanWithInvestors[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const itemsPerPage = 10;
@@ -84,11 +163,16 @@ export default function InvestorsPage() {
 
   const fetchInvestors = async () => {
     try {
-      const response = await fetch('/api/investors');
-      const data = await response.json();
-      setInvestors(data);
+      const [investorsResponse, loansResponse] = await Promise.all([
+        fetch('/api/investors'),
+        fetch('/api/loans'),
+      ]);
+      const investorsData = await investorsResponse.json();
+      const loansData = await loansResponse.json();
+      setInvestors(investorsData);
+      setAllLoans(loansData);
     } catch (error) {
-      console.error('Error fetching investors:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -456,28 +540,6 @@ export default function InvestorsPage() {
                       })
                       .sort((a, b) => a.getTime() - b.getTime());
 
-                    // Group loan investors by loan ID to get unique loans
-                    const loanMap = new Map<
-                      number,
-                      {
-                        loan: (typeof investor.loanInvestors)[0]['loan'];
-                        transactions: Array<(typeof investor.loanInvestors)[0]>;
-                      }
-                    >();
-
-                    investor.loanInvestors.forEach((li) => {
-                      const loanId = li.loan.id;
-                      if (!loanMap.has(loanId)) {
-                        loanMap.set(loanId, {
-                          loan: li.loan,
-                          transactions: [],
-                        });
-                      }
-                      loanMap.get(loanId)!.transactions.push(li);
-                    });
-
-                    const uniqueLoans = Array.from(loanMap.values());
-
                     return (
                       <Card
                         key={investor.id}
@@ -497,7 +559,7 @@ export default function InvestorsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4 px-4">
                           {/* Summary Section */}
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          <div className="grid grid-cols-2 gap-2">
                             <div className="p-3 bg-muted/50 rounded-lg">
                               <p className="text-[10px] text-muted-foreground mb-1">
                                 Total Capital
@@ -532,71 +594,6 @@ export default function InvestorsPage() {
                                 )}
                               </p>
                             </div>
-                            <div className="p-3 bg-muted/50 rounded-lg">
-                              <p className="text-[10px] text-muted-foreground mb-1">
-                                Upcoming Sent Dates
-                              </p>
-                              <div className="flex flex-col gap-0.5 items-start">
-                                {uniqueSentDates.length > 0 ? (
-                                  uniqueSentDates.map((date, index) => {
-                                    const checkDate = normalizeToMidnight(date);
-                                    const isFuture = checkDate > today;
-
-                                    return (
-                                      <span
-                                        key={index}
-                                        className={`${
-                                          uniqueSentDates.length > 1
-                                            ? 'text-[10px]'
-                                            : 'text-xs'
-                                        } px-2 py-0.5 rounded inline-block font-medium ${
-                                          isFuture ? 'bg-yellow-200' : ''
-                                        }`}
-                                      >
-                                        {date.toLocaleDateString('en-US', {
-                                          month: 'short',
-                                          day: 'numeric',
-                                          year: 'numeric',
-                                        })}
-                                      </span>
-                                    );
-                                  })
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">
-                                    -
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="p-3 bg-muted/50 rounded-lg">
-                              <p className="text-[10px] text-muted-foreground mb-1">
-                                Upcoming Due Dates
-                              </p>
-                              <div className="flex flex-col gap-0.5 items-start">
-                                {uniqueDueDates.length > 0 ? (
-                                  uniqueDueDates.map((date, index) => (
-                                    <span
-                                      key={index}
-                                      className={`${
-                                        uniqueDueDates.length > 1
-                                          ? 'text-[10px]'
-                                          : 'text-xs'
-                                      } px-2 py-0.5 rounded inline-block font-medium`}
-                                    >
-                                      {date.toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                      })}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">
-                                    -
-                                  </span>
-                                )}
-                              </div>
-                            </div>
                           </div>
 
                           {/* Action Buttons */}
@@ -610,305 +607,41 @@ export default function InvestorsPage() {
                             />
                           </div>
 
-                          {/* Loans Section - Only shown when expanded */}
+                          {/* Activity Cards - Only shown when expanded */}
                           {expandedInvestors.has(investor.id) && (
-                            <div className="space-y-3">
+                            <div className="pt-2 border-t">
                               {(() => {
-                                // Filter to only show active loans (not completed)
-                                const activeLoans = uniqueLoans.filter(
-                                  ({ loan }) => loan.status !== 'Completed'
-                                );
-
-                                if (activeLoans.length === 0) {
-                                  return (
-                                    <div className="pt-2 border-t">
-                                      <p className="text-xs text-muted-foreground text-center py-3">
-                                        No active loans
-                                      </p>
-                                    </div>
-                                  );
-                                }
+                                const activityData =
+                                  allLoans.length === 0
+                                    ? {
+                                        overdueLoans: [],
+                                        pendingDisbursements: [],
+                                        maturingLoans: [],
+                                      }
+                                    : getInvestorActivityData(
+                                        investor,
+                                        allLoans
+                                      );
 
                                 return (
-                                  <div className="pt-2 border-t">
-                                    <div className="space-y-2">
-                                      {activeLoans.map(
-                                        ({ loan, transactions }) => {
-                                          // Calculate totals for this loan
-                                          const totalPrincipal =
-                                            transactions.reduce(
-                                              (sum, t) =>
-                                                sum + parseFloat(t.amount),
-                                              0
-                                            );
-                                          const totalInterest =
-                                            transactions.reduce(
-                                              (sum, t) =>
-                                                sum +
-                                                calculateInterest(
-                                                  t.amount,
-                                                  t.interestRate,
-                                                  t.interestType
-                                                ),
-                                              0
-                                            );
-                                          const avgRate =
-                                            calculateAverageRate(transactions);
-                                          const total =
-                                            totalPrincipal + totalInterest;
-
-                                          // Get sent dates for this loan
-                                          const sentDates = Array.from(
-                                            new Set(
-                                              transactions.map(
-                                                (t) =>
-                                                  new Date(t.sentDate)
-                                                    .toISOString()
-                                                    .split('T')[0]
-                                              )
-                                            )
-                                          )
-                                            .map((dateStr) => new Date(dateStr))
-                                            .sort(
-                                              (a, b) =>
-                                                a.getTime() - b.getTime()
-                                            );
-
-                                          // Get due dates for this loan
-                                          const dueDateSet = new Set<string>();
-                                          dueDateSet.add(
-                                            new Date(loan.dueDate)
-                                              .toISOString()
-                                              .split('T')[0]
-                                          );
-
-                                          // Add interest period due dates
-                                          transactions.forEach((t) => {
-                                            if (
-                                              t.hasMultipleInterest &&
-                                              t.interestPeriods
-                                            ) {
-                                              t.interestPeriods.forEach(
-                                                (period) => {
-                                                  dueDateSet.add(
-                                                    new Date(period.dueDate)
-                                                      .toISOString()
-                                                      .split('T')[0]
-                                                  );
-                                                }
-                                              );
-                                            }
-                                          });
-
-                                          const dueDates = Array.from(
-                                            dueDateSet
-                                          )
-                                            .map((dateStr) => new Date(dateStr))
-                                            .sort(
-                                              (a, b) =>
-                                                a.getTime() - b.getTime()
-                                            );
-
-                                          return (
-                                            <div
-                                              key={loan.id}
-                                              className="p-3 bg-muted/30 rounded-lg space-y-2"
-                                            >
-                                              <div className="flex items-start justify-between gap-2">
-                                                <Link
-                                                  href={`/loans/${loan.id}`}
-                                                  className="font-medium hover:underline text-xs"
-                                                >
-                                                  {loan.loanName}
-                                                </Link>
-                                                <div className="flex items-center gap-1 flex-shrink-0">
-                                                  <Badge
-                                                    variant={
-                                                      getLoanTypeBadge(
-                                                        loan.type
-                                                      ).variant
-                                                    }
-                                                    className={`text-[9.5px] h-5 ${
-                                                      getLoanTypeBadge(
-                                                        loan.type
-                                                      ).className
-                                                    }`}
-                                                  >
-                                                    {loan.type}
-                                                  </Badge>
-                                                  <Badge
-                                                    variant={
-                                                      getLoanStatusBadge(
-                                                        loan.status
-                                                      ).variant
-                                                    }
-                                                    className={`text-[9.5px] h-5 ${
-                                                      getLoanStatusBadge(
-                                                        loan.status
-                                                      ).className
-                                                    }`}
-                                                  >
-                                                    {loan.status}
-                                                  </Badge>
-                                                </div>
-                                              </div>
-                                              <div className="grid grid-cols-4 gap-2 text-xs">
-                                                <div>
-                                                  <p className="text-muted-foreground text-[9px]">
-                                                    Principal
-                                                  </p>
-                                                  <p className="font-medium text-[11px]">
-                                                    {formatCurrency(
-                                                      totalPrincipal
-                                                    )}
-                                                  </p>
-                                                </div>
-                                                <div>
-                                                  <p className="text-muted-foreground text-[9px]">
-                                                    Avg. Rate
-                                                  </p>
-                                                  <p className="font-medium text-[11px]">
-                                                    {avgRate.toFixed(2)}%
-                                                  </p>
-                                                </div>
-                                                <div>
-                                                  <p className="text-muted-foreground text-[9px]">
-                                                    Interest
-                                                  </p>
-                                                  <p className="font-medium text-[11px]">
-                                                    {formatCurrency(
-                                                      totalInterest
-                                                    )}
-                                                  </p>
-                                                </div>
-                                                <div>
-                                                  <p className="text-muted-foreground text-[9px]">
-                                                    Total
-                                                  </p>
-                                                  <p className="font-medium text-[11px]">
-                                                    {formatCurrency(total)}
-                                                  </p>
-                                                </div>
-                                              </div>
-                                              <div className="grid grid-cols-4 gap-2 pt-2 text-xs">
-                                                <div>
-                                                  <p className="text-muted-foreground text-[9px] mb-1">
-                                                    Pending Balance
-                                                  </p>
-                                                  <div className="flex flex-wrap gap-1">
-                                                    <p
-                                                      className={`text-[10px] ${
-                                                        calculateLoanBalance(
-                                                          transactions
-                                                        ) > 0
-                                                          ? 'bg-yellow-200 px-1.5 py-0.5 rounded'
-                                                          : ''
-                                                      }`}
-                                                    >
-                                                      {(() => {
-                                                        const balance =
-                                                          calculateLoanBalance(
-                                                            transactions
-                                                          );
-                                                        return balance > 0
-                                                          ? formatCurrency(
-                                                              balance
-                                                            )
-                                                          : '-';
-                                                      })()}
-                                                    </p>
-                                                  </div>
-                                                </div>
-                                                <div>
-                                                  <p className="text-muted-foreground text-[9px] mb-1">
-                                                    Sent Dates
-                                                  </p>
-                                                  <div className="flex flex-col items-start gap-1">
-                                                    {sentDates.map(
-                                                      (date, idx) => {
-                                                        const dateStr = date
-                                                          .toISOString()
-                                                          .split('T')[0];
-                                                        // Check if any transaction with this sent date is unpaid
-                                                        const hasUnpaidOnThisDate =
-                                                          transactions.some(
-                                                            (t) =>
-                                                              new Date(
-                                                                t.sentDate
-                                                              )
-                                                                .toISOString()
-                                                                .split(
-                                                                  'T'
-                                                                )[0] ===
-                                                                dateStr &&
-                                                              !t.isPaid
-                                                          );
-
-                                                        return (
-                                                          <span
-                                                            key={idx}
-                                                            className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                                              hasUnpaidOnThisDate
-                                                                ? 'bg-yellow-200'
-                                                                : 'bg-muted'
-                                                            }`}
-                                                          >
-                                                            {date.toLocaleDateString(
-                                                              'en-US',
-                                                              {
-                                                                month: 'short',
-                                                                day: 'numeric',
-                                                                year: 'numeric',
-                                                              }
-                                                            )}
-                                                          </span>
-                                                        );
-                                                      }
-                                                    )}
-                                                  </div>
-                                                </div>
-                                                <div>
-                                                  <p className="text-muted-foreground text-[9px] mb-1">
-                                                    Due Dates
-                                                  </p>
-                                                  <div className="flex flex-wrap gap-1">
-                                                    {dueDates.map(
-                                                      (date, idx) => (
-                                                        <span
-                                                          key={idx}
-                                                          className="text-[10px] px-1.5 py-0.5 rounded bg-muted"
-                                                        >
-                                                          {date.toLocaleDateString(
-                                                            'en-US',
-                                                            {
-                                                              month: 'short',
-                                                              day: 'numeric',
-                                                              year: 'numeric',
-                                                            }
-                                                          )}
-                                                        </span>
-                                                      )
-                                                    )}
-                                                  </div>
-                                                </div>
-                                                <div>
-                                                  <p className="text-muted-foreground text-[9px] mb-1">
-                                                    Free Lot
-                                                  </p>
-                                                  <div className="flex flex-wrap gap-1">
-                                                    <p className="text-xs">
-                                                      {loan.freeLotSqm
-                                                        ? `${loan.freeLotSqm} sqm`
-                                                        : '-'}
-                                                    </p>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          );
-                                        }
-                                      )}
-                                    </div>
+                                  <div className="grid gap-2 grid-cols-1">
+                                    <PastDueLoansCard
+                                      loans={activityData.overdueLoans}
+                                      limit={3}
+                                      loading={allLoans.length === 0}
+                                    />
+                                    <PendingDisbursementsCard
+                                      disbursements={
+                                        activityData.pendingDisbursements
+                                      }
+                                      limit={3}
+                                      loading={allLoans.length === 0}
+                                    />
+                                    <MaturingLoansCard
+                                      loans={activityData.maturingLoans}
+                                      limit={3}
+                                      loading={allLoans.length === 0}
+                                    />
                                   </div>
                                 );
                               })()}
@@ -926,6 +659,7 @@ export default function InvestorsPage() {
           {viewMode === 'table' && (
             <InvestorsTable
               investors={filteredInvestors}
+              allLoans={allLoans}
               itemsPerPage={10}
               expandedRows={expandedTableRows}
               onToggleExpand={toggleTableRow}
