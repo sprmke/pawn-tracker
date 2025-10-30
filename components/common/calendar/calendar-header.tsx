@@ -51,7 +51,7 @@ export function CalendarHeader({
                             className="flex items-center gap-1 md:gap-1.5"
                           >
                             <div
-                              className={`flex items-center justify-center w-3 h-3 md:w-4 md:h-4 rounded-full ${item.color}`}
+                              className={`flex items-center justify-center w-2 h-2 md:w-3 md:h-3 rounded-full ${item.color}`}
                             ></div>
                             <span className="font-medium text-[10px] md:text-xs">
                               {item.label}
