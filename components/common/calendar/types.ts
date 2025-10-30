@@ -12,6 +12,7 @@ export interface CalendarEventSent extends CalendarEventBase {
     amount: number;
   }>;
   totalAmount: number;
+  hasUnpaidTransactions: boolean;
 }
 
 export interface CalendarEventDue extends CalendarEventBase {
@@ -32,15 +33,33 @@ export interface CalendarEventInterestDue extends CalendarEventBase {
   totalAmount: number;
 }
 
+export interface CalendarEventTransaction extends CalendarEventBase {
+  type: 'transaction';
+  transaction: any;
+  amount: number;
+  direction: 'In' | 'Out';
+}
+
 export type CalendarEvent =
   | CalendarEventSent
   | CalendarEventDue
-  | CalendarEventInterestDue;
+  | CalendarEventInterestDue
+  | CalendarEventTransaction;
 
 export interface CalendarCell {
   date: Date;
   isCurrentMonth: boolean;
   events: CalendarEvent[];
+}
+
+export interface LegendItem {
+  label: string;
+  color: string;
+}
+
+export interface LegendGroup {
+  title: string;
+  items: LegendItem[];
 }
 
 export interface CalendarConfig {
@@ -50,4 +69,7 @@ export interface CalendarConfig {
     event: CalendarEvent,
     eventIndex: number
   ) => React.ReactNode;
+  alwaysShowSummary?: boolean;
+  allEvents?: CalendarEvent[];
+  legendGroups?: LegendGroup[];
 }
