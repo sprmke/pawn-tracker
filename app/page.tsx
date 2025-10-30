@@ -1,30 +1,27 @@
 import { db } from '@/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
-  DollarSign,
-  TrendingUp,
   FileText,
-  AlertCircle,
   Users,
-  Activity,
   ArrowUpRight,
   ArrowDownRight,
   Wallet,
-  PhilippinePeso,
   HandCoins,
   TriangleAlert,
   PiggyBank,
 } from 'lucide-react';
-import Link from 'next/link';
-import { getLoanStatusBadge } from '@/lib/badge-config';
 import { formatCurrency } from '@/lib/format';
 import {
   calculateTotalPrincipal,
   calculateTotalInterest,
   calculateInvestorStats,
 } from '@/lib/calculations';
-import { StatCard } from '@/components/common';
+import {
+  StatCard,
+  PastDueLoansCard,
+  PendingDisbursementsCard,
+  MaturingLoansCard,
+} from '@/components/common';
 import {
   CurrencyLineChart,
   CurrencyBarChart,
@@ -440,159 +437,9 @@ export default async function DashboardPage() {
 
       {/* Upcoming Activity */}
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Overdue Loans */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Past Due Loans</CardTitle>
-              <TriangleAlert className="h-5 w-5 text-rose-500" />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Requires immediate attention
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {data.overdueLoansData.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
-                    All caught up! ✓
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    No overdue loans
-                  </p>
-                </div>
-              ) : (
-                data.overdueLoansData.map((loan) => (
-                  <Link
-                    key={loan.id}
-                    href={`/loans/${loan.id}`}
-                    className="flex flex-col p-3 border border-rose-500/20 bg-rose-500/5 rounded-lg hover:bg-rose-500/10 transition-colors gap-1"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium truncate flex-1">
-                        {loan.loanName}
-                      </p>
-                      <p className="text-sm font-semibold text-rose-600 dark:text-rose-400 flex-shrink-0">
-                        {formatCurrency(
-                          calculateTotalPrincipal(loan.loanInvestors)
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <Badge
-                        variant="destructive"
-                        className="text-[10px] px-1 py-0"
-                      >
-                        {loan.status}
-                      </Badge>
-                      <span className="text-muted-foreground flex-shrink-0 font-medium">
-                        Was: {format(new Date(loan.dueDate), 'MMM dd, yyyy')}
-                      </span>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pending Disbursements */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Pending Disbursements</CardTitle>
-              <ArrowUpRight className="h-5 w-5 text-amber-500" />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Unpaid transactions from partially funded loans
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {data.upcomingPaymentsToSend.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4 text-sm">
-                  No pending payments
-                </p>
-              ) : (
-                data.upcomingPaymentsToSend.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/loans/${item.loanId}`}
-                    className="flex flex-col p-3 border border-amber-500/20 bg-amber-500/5 rounded-lg hover:bg-amber-500/10 transition-colors gap-1"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium truncate flex-1">
-                        {item.loanName}
-                      </p>
-                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 flex-shrink-0">
-                        {formatCurrency(parseFloat(item.amount))}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="truncate">{item.investorName}</span>
-                      <span className="flex-shrink-0">
-                        {format(new Date(item.sentDate), 'MMM dd, yyyy')}
-                      </span>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Upcoming Payments Due */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Maturing Loans</CardTitle>
-              <ArrowDownRight className="h-5 w-5 text-emerald-500" />
-            </div>
-            <p className="text-xs text-muted-foreground">Due within 14 days</p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {data.upcomingPaymentsDue.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4 text-sm">
-                  No upcoming due dates
-                </p>
-              ) : (
-                data.upcomingPaymentsDue.map((loan) => (
-                  <Link
-                    key={loan.id}
-                    href={`/loans/${loan.id}`}
-                    className="flex flex-col p-3 border border-emerald-500/20 bg-emerald-500/5 rounded-lg hover:bg-emerald-500/10 transition-colors gap-1"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium truncate flex-1">
-                        {loan.loanName}
-                      </p>
-                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex-shrink-0">
-                        {formatCurrency(
-                          calculateTotalPrincipal(loan.loanInvestors)
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <Badge
-                        variant={getLoanStatusBadge(loan.status).variant}
-                        className={`${
-                          getLoanStatusBadge(loan.status).className
-                        } text-[10px] px-1 py-0`}
-                      >
-                        {loan.type}
-                      </Badge>
-                      <span className="text-muted-foreground flex-shrink-0">
-                        Due: {format(new Date(loan.dueDate), 'MMM dd, yyyy')}
-                      </span>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <PastDueLoansCard loans={data.overdueLoansData} />
+        <PendingDisbursementsCard disbursements={data.upcomingPaymentsToSend} />
+        <MaturingLoansCard loans={data.upcomingPaymentsDue} />
       </div>
 
       {/* Charts Section */}
