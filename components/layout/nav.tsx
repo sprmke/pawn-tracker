@@ -13,6 +13,8 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
+  ArrowLeftRight,
+  Coins,
 } from 'lucide-react';
 import { useState, ReactNode, useEffect } from 'react';
 
@@ -36,21 +38,13 @@ const navItems: NavItem[] = [
   },
   {
     title: 'Transactions',
-    icon: FileText,
-    subItems: [
-      {
-        title: 'All',
-        href: '/transactions/all',
-      },
-      {
-        title: 'General',
-        href: '/transactions/general',
-      },
-      {
-        title: 'Loans',
-        href: '/transactions/loans',
-      },
-    ],
+    href: '/transactions',
+    icon: ArrowLeftRight,
+  },
+  {
+    title: 'Loans',
+    href: '/loans',
+    icon: Coins,
   },
   {
     title: 'Investors',
@@ -117,12 +111,11 @@ export function Nav({ children }: { children: ReactNode }) {
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 border-b bg-background">
         <div className="flex h-full items-center justify-between px-4">
           <Link href="/" className="flex items-center space-x-2">
-            <FileText className="h-6 w-6" />
-            <span className="text-xl font-bold">Pawn Tracker</span>
+            <span className="text-lg font-semibold">Pawn Tracker</span>
           </Link>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 hover:bg-accent rounded-lg transition-colors"
+            className="p-2 hover:bg-accent rounded-md transition-colors"
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? (
@@ -236,8 +229,7 @@ export function Nav({ children }: { children: ReactNode }) {
           <div className="flex h-16 items-center justify-between border-b px-4">
             {!isCollapsed && (
               <Link href="/" className="flex items-center space-x-2">
-                <FileText className="h-6 w-6" />
-                <span className="text-xl font-bold">Pawn Tracker</span>
+                <span className="text-lg font-semibold">Pawn Tracker</span>
               </Link>
             )}
             {isCollapsed && (
@@ -245,7 +237,7 @@ export function Nav({ children }: { children: ReactNode }) {
                 href="/"
                 className="flex items-center justify-center w-full"
               >
-                <FileText className="h-6 w-6" />
+                <FileText className="h-5 w-5 text-primary" />
               </Link>
             )}
           </div>
@@ -315,7 +307,7 @@ export function Nav({ children }: { children: ReactNode }) {
                   key={item.href}
                   href={item.href!}
                   className={cn(
-                    'flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    'flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                     isActive
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
