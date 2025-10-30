@@ -86,7 +86,9 @@ export function LineChart({
             />
             <Tooltip
               content={<CustomTooltip formatValue={formatValue} />}
-              cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+              cursor={{
+                strokeWidth: 2,
+              }}
             />
             <Legend content={<CustomLegend />} />
             {dataKeys.map((dataKey) => (
