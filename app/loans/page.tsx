@@ -861,9 +861,9 @@ export default function LoansPage() {
                           </div>
                           <div className="p-2 bg-muted/50 rounded-lg">
                             <p className="text-[10px] text-muted-foreground mb-1">
-                              Sent Dates
+                              Sent Date
                             </p>
-                            <div className="flex flex-col gap-0.5 items-start">
+                            <div className="flex flex-col items-start">
                               {(() => {
                                 // Get unique sent dates
                                 const uniqueDates = Array.from(
@@ -920,13 +920,8 @@ export default function LoansPage() {
                           <div className="p-2 bg-muted/50 rounded-lg">
                             <p className="text-[10px] text-muted-foreground mb-1">
                               Due Date
-                              {loan.loanInvestors.some(
-                                (li) => li.hasMultipleInterest
-                              )
-                                ? 's'
-                                : ''}
                             </p>
-                            <div className="flex flex-col gap-0.5 items-start">
+                            <div className="flex flex-col items-start">
                               {(() => {
                                 // Collect all unique due dates
                                 const dueDateSet = new Set<string>();
