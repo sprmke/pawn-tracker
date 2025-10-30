@@ -22,7 +22,6 @@ import {
   Phone,
   Percent,
   Plus,
-  Edit,
   Filter,
   MapPin,
   X,
@@ -45,6 +44,9 @@ import {
   CollapsibleSection,
   CollapsibleContent,
   InlineLoader,
+  PastDueLoansCard,
+  PendingDisbursementsCard,
+  MaturingLoansCard,
 } from '@/components/common';
 import {
   TransactionsTable,
@@ -53,6 +55,7 @@ import {
 } from '@/components/transactions';
 import { LoanCreateModal, LoanDetailModal } from '@/components/loans';
 import type { TransactionWithInvestor } from '@/lib/types';
+import { addDays, isAfter, isBefore, isPast } from 'date-fns';
 
 interface InvestorDetailClientProps {
   investor: InvestorWithLoans;
@@ -366,6 +369,69 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     return true;
   });
 
+  // Calculate data for activity cards
+  const now = new Date();
+  const fourteenDaysFromNow = addDays(now, 14);
+
+  // Overdue loans (status overdue or past due date for this investor's loans)
+  const overdueLoans = loans
+    .filter(
+      (loan) =>
+        loan.status === 'Overdue' ||
+        (loan.status !== 'Completed' && isPast(new Date(loan.dueDate)))
+    )
+    .sort(
+      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    )
+    .slice(0, 5);
+
+  // Pending disbursements (unpaid loan investor transactions for this investor)
+  const unpaidLoanTransactions: Array<{
+    id: number;
+    loanId: number;
+    loanName: string;
+    investorName: string;
+    amount: string;
+    sentDate: Date;
+  }> = [];
+
+  loans.forEach((loan) => {
+    loan.loanInvestors
+      .filter((li) => !li.isPaid && li.investor.id === investor.id)
+      .forEach((li) => {
+        unpaidLoanTransactions.push({
+          id: li.id,
+          loanId: loan.id,
+          loanName: loan.loanName,
+          investorName: li.investor.name,
+          amount: li.amount,
+          sentDate: li.sentDate,
+        });
+      });
+  });
+
+  const pendingDisbursements = unpaidLoanTransactions
+    .sort(
+      (a, b) => new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
+    )
+    .slice(0, 5);
+
+  // Maturing loans (loans due within next 14 days for this investor)
+  const maturingLoans = loans
+    .filter((loan) => {
+      const dueDate = new Date(loan.dueDate);
+      return (
+        (loan.status === 'Fully Funded' ||
+          loan.status === 'Partially Funded') &&
+        isAfter(dueDate, now) &&
+        isBefore(dueDate, fourteenDaysFromNow)
+      );
+    })
+    .sort(
+      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    )
+    .slice(0, 5);
+
   if (isEditing) {
     return (
       <div className="max-w-2xl mx-auto">
@@ -397,6 +463,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         description="Investor portfolio and activity"
         backLabel="Back to Investors"
         onBack={() => router.push('/investors')}
+        onEdit={() => setIsEditing(true)}
         onDelete={handleDelete}
         deleteTitle="Delete Investor"
         deleteDescription={`Are you sure you want to delete ${investor.name}? This action cannot be undone.`}
@@ -407,39 +474,27 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
       {/* Contact Info Card */}
       <Card>
         <CardContent className="space-y-4 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Contact Information</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
-              onClick={() => setIsEditing(true)}
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
-          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <User className="h-4 w-4" />
-                <span>Full Name</span>
+                <User className="h-3 w-3" />
+                <span className="text-xs">Full Name</span>
               </div>
               <p className="font-medium">{investor.name}</p>
             </div>
 
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                <span>Email Address</span>
+                <Mail className="h-3 w-3" />
+                <span className="text-xs">Email Address</span>
               </div>
               <p className="font-medium">{investor.email}</p>
             </div>
 
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                <span>Contact Number</span>
+                <Phone className="h-3 w-3" />
+                <span className="text-xs">Contact Number</span>
               </div>
               <p className="font-medium">{investor.contactNumber || '-'}</p>
             </div>
@@ -459,6 +514,16 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         />
 
         <StatCard title="Total Amount" value={formatCurrency(totalGains)} />
+      </div>
+
+      {/* Activity Cards */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <PastDueLoansCard loans={overdueLoans} loading={loansLoading} />
+        <PendingDisbursementsCard
+          disbursements={pendingDisbursements}
+          loading={loansLoading}
+        />
+        <MaturingLoansCard loans={maturingLoans} loading={loansLoading} />
       </div>
 
       {/* Tabs */}
@@ -672,6 +737,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
               loans={filteredLoans}
               itemsPerPage={10}
               expandedRows={expandedLoans}
+              hideFields={['sentDates', 'dueDate', 'freeLotSqm']}
               onToggleExpand={(loanId) => {
                 setExpandedLoans((prev) => {
                   const newSet = new Set(prev);
