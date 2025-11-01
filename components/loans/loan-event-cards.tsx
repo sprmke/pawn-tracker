@@ -68,13 +68,13 @@ export function LoanSentEventCard({
 
   const classes = sizeClasses[size];
   const colorClasses = isFuture
-    ? 'from-yellow-50 to-yellow-100 border-yellow-500 bg-yellow-500 text-yellow-500'
-    : 'border-red-500 text-red-500';
+    ? 'border-amber-300 text-amber-500'
+    : 'border-rose-400 text-rose-500';
 
   return (
     <button
       onClick={onClick}
-      className={`cursor-pointer w-full text-left rounded-lg hover:shadow-lg transition-all bg-gradient-to-br border-l-4 shadow-md ${classes.container} ${colorClasses}`}
+      className={`cursor-pointer w-full text-left rounded-lg hover:shadow-lg transition-all border-l-4 shadow-md ${classes.container} ${colorClasses}`}
     >
       <div className="flex flex-col space-y-2">
         <div className="flex space-x-1">
@@ -104,7 +104,7 @@ export function LoanSentEventCard({
               <div key={idx} className="flex items-start gap-1">
                 <span
                   className={`font-bold ${
-                    isFuture ? 'text-yellow-500' : 'text-red-500'
+                    isFuture ? 'text-amber-500' : 'text-rose-500'
                   }`}
                 >
                   •
@@ -117,7 +117,9 @@ export function LoanSentEventCard({
             ))}
           </div>
         </div>
-        <div className={`font-bold text-red-600 ${classes.total}`}>
+        <div
+          className={`font-bold text-rose-600 dark:text-rose-400 pt-2 border-t ${classes.total}`}
+        >
           -{formatCurrency(totalAmount)}
         </div>
       </div>
@@ -163,7 +165,7 @@ export function LoanDueEventCard({
   return (
     <button
       onClick={onClick}
-      className={`cursor-pointer w-full text-left rounded-lg hover:shadow-lg transition-all bg-gradient-to-br border-l-4 border-green-600 shadow-md ${classes.container}`}
+      className={`cursor-pointer w-full text-left rounded-lg hover:shadow-lg transition-all bg-gradient-to-br border-l-4 border-emerald-400 shadow-md ${classes.container}`}
     >
       <div className="flex flex-col space-y-2">
         <div className="flex space-x-1">
@@ -211,7 +213,9 @@ export function LoanDueEventCard({
             </div>
           </div>
         </div>
-        <div className={`font-bold text-green-600 ${classes.total}`}>
+        <div
+          className={`font-bold text-emerald-600 dark:text-emerald-400 pt-2 border-t ${classes.total}`}
+        >
           +{formatCurrency(totalAmount)}
         </div>
       </div>
@@ -264,14 +268,16 @@ export function LoanInterestDueEventCard({
   return (
     <button
       onClick={onClick}
-      className={`cursor-pointer w-full text-left rounded-lg hover:shadow-lg transition-all bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-600 shadow-md ${classes.container}`}
+      className={`cursor-pointer w-full text-left rounded-lg hover:shadow-lg transition-all bg-gradient-to-br from-sky-50 to-sky-100 dark:from-sky-950 dark:to-sky-900 border-l-4 border-sky-400 shadow-md ${classes.container}`}
     >
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <div
-            className={`flex items-center justify-center rounded-full bg-blue-600 flex-shrink-0 ${classes.icon}`}
+            className={`flex items-center justify-center rounded-full bg-sky-400 flex-shrink-0 ${classes.icon}`}
           >
-            <ArrowDown className={`${classes.iconSize} text-white`} />
+            <ArrowDown
+              className={`${classes.iconSize} text-white dark:text-sky-950`}
+            />
           </div>
           <div className="flex-1 min-w-0 space-y-1">
             <div className={`font-bold text-gray-900 ${classes.title}`}>
