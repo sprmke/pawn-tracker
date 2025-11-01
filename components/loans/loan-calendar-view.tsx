@@ -41,13 +41,6 @@ export function LoanCalendarView({
     if (event.type === 'sent') {
       const sentEvent = event as CalendarEventSent;
 
-      // Check if sent date is in the future
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const eventDate = new Date(event.date);
-      eventDate.setHours(0, 0, 0, 0);
-      const isFutureSentDate = eventDate > today;
-
       return (
         <LoanSentEventCard
           key={`${sentEvent.loan.id}-sent-${eventIndex}`}
@@ -57,7 +50,7 @@ export function LoanCalendarView({
           investors={sentEvent.investors}
           totalAmount={sentEvent.totalAmount}
           size="sm"
-          isFuture={isFutureSentDate}
+          isFuture={sentEvent.hasUnpaidTransactions}
         />
       );
     } else if (event.type === 'due') {
@@ -110,15 +103,15 @@ export function LoanCalendarView({
         {
           title: 'Out',
           items: [
-            { label: 'Sent', color: 'bg-red-500' },
-            { label: 'Scheduled', color: 'bg-yellow-500' },
+            { label: 'Sent', color: 'bg-rose-400' },
+            { label: 'Scheduled', color: 'bg-amber-300' },
           ],
         },
         {
           title: 'In',
           items: [
-            { label: 'Interest Due', color: 'bg-blue-600' },
-            { label: 'Due Date', color: 'bg-green-600' },
+            { label: 'Interest Due', color: 'bg-sky-400' },
+            { label: 'Due Date', color: 'bg-emerald-400' },
           ],
         },
       ],
