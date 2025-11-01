@@ -1,26 +1,33 @@
 import { notFound } from 'next/navigation';
 import { db } from '@/db';
-import { transactions } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { transactions, investors } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { TransactionDetailClient } from './transaction-detail-client';
+import { auth } from '@/auth';
 
 interface TransactionPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function TransactionPage({
   params,
 }: TransactionPageProps) {
-  const id = parseInt(params.id);
+  const session = await auth();
+  if (!session?.user?.id) {
+    notFound();
+  }
+
+  const resolvedParams = await params;
+  const id = parseInt(resolvedParams.id);
 
   if (isNaN(id)) {
     notFound();
   }
 
   const transaction = await db.query.transactions.findFirst({
-    where: eq(transactions.id, id),
+    where: and(eq(transactions.id, id), eq(transactions.userId, session.user.id)),
     with: {
       investor: true,
     },
@@ -30,12 +37,13 @@ export default async function TransactionPage({
     notFound();
   }
 
-  // Fetch all investors for the edit form
-  const investors = await db.query.investors.findMany({
+  // Fetch all investors for the edit form (filtered by userId)
+  const allInvestors = await db.query.investors.findMany({
+    where: eq(investors.userId, session.user.id),
     orderBy: (investors, { asc }) => [asc(investors.name)],
   });
 
   return (
-    <TransactionDetailClient transaction={transaction} investors={investors} />
+    <TransactionDetailClient transaction={transaction} investors={allInvestors} />
   );
 }
