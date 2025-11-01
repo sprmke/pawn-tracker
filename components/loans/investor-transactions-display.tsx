@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
-import { formatCurrency, formatDate, isFutureDate } from '@/lib/format';
+import { formatCurrency, formatDate } from '@/lib/format';
 import {
   calculateInterest,
   calculateInvestmentTotal,
@@ -24,6 +24,7 @@ interface InvestorTransaction {
   interestRate: string;
   interestType?: string;
   sentDate: Date | string;
+  isPaid: boolean;
 }
 
 interface InvestorWithTransactions {
@@ -147,7 +148,7 @@ export function InvestorTransactionsDisplay({
                     Principal Payments
                   </p>
                   <Badge variant="secondary" className="text-xs w-fit">
-                    {transactions.length} Transactions
+                    {transactions.length} Payments
                   </Badge>
                 </div>
               )}
@@ -194,20 +195,22 @@ export function InvestorTransactionsDisplay({
                 }
 
                 const total = capital + interest;
-                const isDateInFuture = isFutureDate(transaction.sentDate);
+                const isUnpaid = !transaction.isPaid;
 
                 return (
                   <div
                     key={transaction.id || `transaction-${index}`}
                     className={`p-3 rounded-lg space-y-2 ${
-                      isDateInFuture ? 'bg-yellow-50' : 'bg-muted/30'
+                      isUnpaid
+                        ? 'bg-yellow-50 border border-yellow-400'
+                        : 'bg-muted/50'
                     }`}
                   >
                     <div className="flex items-center mb-2 space-x-2">
                       <span className="text-sm font-medium text-muted-foreground">
-                        Transaction {index + 1}
+                        Payment {index + 1}
                       </span>
-                      {isDateInFuture && (
+                      {isUnpaid && (
                         <Badge
                           variant="warning"
                           className="text-[10px] h-3.5 px-1 py-0 leading-none"
@@ -270,7 +273,7 @@ export function InvestorTransactionsDisplay({
                       </div>
                     )}
 
-                    {isDateInFuture &&
+                    {isUnpaid &&
                       loanId &&
                       typeof transaction.id === 'number' && (
                         <div className="mt-2 pt-2 border-t">
@@ -298,7 +301,7 @@ export function InvestorTransactionsDisplay({
             {item.interestPeriods && item.interestPeriods.length > 0 && (
               <div className="mt-3 pt-3 border-t space-y-3">
                 <p className="text-sm font-semibold text-foreground">
-                  Interest Breakdown
+                  Due Payments
                 </p>
                 <div className="space-y-2">
                   {item.interestPeriods.map((period, pIndex) => {
