@@ -36,13 +36,8 @@ export function LoanDetailContent({
   const duration = calculateLoanDuration(loan.dueDate);
 
   // Calculate funded amount and balance for partially funded loans
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   const fundedCapital = loan.loanInvestors.reduce((sum, li) => {
-    const sentDate = new Date(li.sentDate);
-    sentDate.setHours(0, 0, 0, 0);
-    return sentDate <= today ? sum + parseFloat(li.amount) : sum;
+    return li.isPaid ? sum + parseFloat(li.amount) : sum;
   }, 0);
 
   const balance = totalPrincipal - fundedCapital;
@@ -53,7 +48,7 @@ export function LoanDetailContent({
       {showHeader && (
         <div className="space-y-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
               {loan.loanName}
             </h2>
           </div>
