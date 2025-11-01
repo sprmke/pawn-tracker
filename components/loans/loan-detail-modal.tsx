@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { LoanWithInvestors, Investor } from '@/lib/types';
 import { LoanDetailContent } from './loan-detail-content';
 import { LoanForm } from './loan-form';
@@ -144,7 +145,11 @@ export function LoanDetailModal({
           className="max-w-4xl max-h-[90vh] overflow-y-auto"
           hideClose
         >
-          {!isEditing && (
+          {isEditing ? (
+            <VisuallyHidden>
+              <DialogTitle>Edit Loan - {loan.loanName}</DialogTitle>
+            </VisuallyHidden>
+          ) : (
             <DialogHeader>
               <div className="flex items-start justify-between gap-2">
                 <DialogTitle className="text-2xl font-bold">
