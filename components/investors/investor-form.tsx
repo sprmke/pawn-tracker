@@ -7,10 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import type { Investor } from '@/lib/types';
 import { FormHeader } from '@/components/common';
+import { InvestorFormFields, InvestorFormData } from './investor-form-fields';
 
 const investorSchema = z.object({
   name: z
@@ -41,7 +40,7 @@ export function InvestorForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({
+  } = useForm<InvestorFormData>({
     resolver: zodResolver(investorSchema),
     defaultValues: existingInvestor
       ? {
@@ -145,48 +144,11 @@ export function InvestorForm({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name *</Label>
-            <Input
-              id="name"
-              {...register('name')}
-              placeholder="e.g., Juan Dela Cruz"
-              disabled={isSubmitting}
-            />
-            {errors.name && (
-              <p className="text-sm text-red-600">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address *</Label>
-            <Input
-              id="email"
-              type="email"
-              {...register('email')}
-              placeholder="e.g., juan@example.com"
-              disabled={isSubmitting}
-            />
-            {errors.email && (
-              <p className="text-sm text-red-600">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="contactNumber">Contact Number</Label>
-            <Input
-              id="contactNumber"
-              type="tel"
-              {...register('contactNumber')}
-              placeholder="e.g., +63 912 345 6789"
-              disabled={isSubmitting}
-            />
-            {errors.contactNumber && (
-              <p className="text-sm text-red-600">
-                {errors.contactNumber.message}
-              </p>
-            )}
-          </div>
+          <InvestorFormFields
+            register={register}
+            errors={errors}
+            isSubmitting={isSubmitting}
+          />
 
           {isEditMode && (
             <div className="pt-4 border-t">
