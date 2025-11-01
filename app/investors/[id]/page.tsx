@@ -1,13 +1,14 @@
 import { db } from '@/db';
 import { investors } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { InvestorDetailClient } from './investor-detail-client';
+import { auth } from '@/auth';
 
-async function getInvestor(id: number) {
+async function getInvestor(id: number, userId: string) {
   try {
     const investor = await db.query.investors.findFirst({
-      where: eq(investors.id, id),
+      where: and(eq(investors.id, id), eq(investors.userId, userId)),
       with: {
         loanInvestors: {
           with: {
@@ -31,6 +32,11 @@ export default async function InvestorDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    notFound();
+  }
+
   const resolvedParams = await params;
   const investorId = parseInt(resolvedParams.id);
 
@@ -38,7 +44,7 @@ export default async function InvestorDetailPage({
     notFound();
   }
 
-  const investor = await getInvestor(investorId);
+  const investor = await getInvestor(investorId, session.user.id);
 
   if (!investor) {
     notFound();
