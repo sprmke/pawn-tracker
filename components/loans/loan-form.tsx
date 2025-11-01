@@ -21,7 +21,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { X, Plus, Eye, UserPlus } from 'lucide-react';
 import type { Investor, LoanWithInvestors } from '@/lib/types';
-import { toLocalDateString, isMoreThanOneMonth } from '@/lib/date-utils';
+import {
+  toLocalDateString,
+  isMoreThanOneMonth,
+  getTodayAtMidnight,
+  normalizeToMidnight,
+} from '@/lib/date-utils';
 import { InvestorFormModal } from '@/components/investors/investor-form-modal';
 import { LoanSummarySection } from './loan-summary-section';
 import { LoanInvestorsSection } from './loan-investors-section';
@@ -48,6 +53,7 @@ interface Transaction {
   interestAmount: string;
   interestType: 'rate' | 'fixed';
   sentDate: string;
+  isPaid: boolean;
 }
 
 interface InvestorAllocation {
@@ -104,6 +110,7 @@ export function LoanForm({
           interestAmount: interestAmount,
           interestType: li.interestType,
           sentDate: toLocalDateString(li.sentDate),
+          isPaid: li.isPaid,
         });
         investorMap.set(li.investor.id, transactions);
       });
@@ -164,6 +171,7 @@ export function LoanForm({
                 interestAmount: '',
                 interestType: 'rate',
                 sentDate: toLocalDateString(new Date()),
+                isPaid: true,
               },
             ],
             hasMultipleInterest: false,
@@ -175,7 +183,7 @@ export function LoanForm({
 
     return [];
   });
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [investorSelectValue, setInvestorSelectValue] = useState<string>('');
 
@@ -208,30 +216,23 @@ export function LoanForm({
     | 'Fully Funded'
     | 'Partially Funded'
     | 'Overdue' => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = getTodayAtMidnight();
 
-    // Check if any transaction has a future sent date
-    const hasFutureSentDate = selectedInvestors.some((si) =>
-      si.transactions.some((t) => {
-        if (!t.sentDate) return false;
-        const sentDate = new Date(t.sentDate);
-        sentDate.setHours(0, 0, 0, 0);
-        return sentDate > today;
-      })
+    // Check if any transaction is unpaid
+    const hasUnpaidTransactions = selectedInvestors.some((si) =>
+      si.transactions.some((t) => !t.isPaid)
     );
 
     // Check if loan is overdue
     if (watchDueDate) {
-      const dueDate = new Date(watchDueDate);
-      dueDate.setHours(0, 0, 0, 0);
+      const dueDate = normalizeToMidnight(watchDueDate);
       if (today >= dueDate) {
         return 'Overdue';
       }
     }
 
-    // If there's a future sent date, mark as Partially Funded
-    if (hasFutureSentDate) {
+    // If there are unpaid transactions, mark as Partially Funded
+    if (hasUnpaidTransactions) {
       return 'Partially Funded';
     }
 
@@ -239,16 +240,9 @@ export function LoanForm({
     return 'Fully Funded';
   };
 
-  // Check if there's a future sent date for displaying warning
-  const hasFutureSentDate = selectedInvestors.some((si) =>
-    si.transactions.some((t) => {
-      if (!t.sentDate) return false;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const sentDate = new Date(t.sentDate);
-      sentDate.setHours(0, 0, 0, 0);
-      return sentDate > today;
-    })
+  // Check if there are unpaid transactions for displaying warning
+  const hasUnpaidTransactions = selectedInvestors.some((si) =>
+    si.transactions.some((t) => !t.isPaid)
   );
 
   const addInvestor = (investorId: string) => {
@@ -276,6 +270,7 @@ export function LoanForm({
               interestAmount: '',
               interestType: 'rate',
               sentDate: toLocalDateString(new Date()),
+              isPaid: true,
             },
           ],
           hasMultipleInterest: false,
@@ -295,6 +290,7 @@ export function LoanForm({
     // Convert to full Investor type with dates
     const fullInvestor: Investor = {
       ...newInvestor,
+      contactNumber: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -315,6 +311,7 @@ export function LoanForm({
             interestAmount: '',
             interestType: 'rate',
             sentDate: toLocalDateString(new Date()),
+            isPaid: true,
           },
         ],
         hasMultipleInterest: false,
@@ -344,6 +341,7 @@ export function LoanForm({
                   interestAmount: '',
                   interestType: 'rate',
                   sentDate: toLocalDateString(new Date()),
+                  isPaid: true,
                 },
               ],
             }
@@ -382,6 +380,13 @@ export function LoanForm({
                 if (t.id !== transactionId) return t;
 
                 const updatedTransaction = { ...t, [field]: value };
+
+                // When sentDate changes, update isPaid automatically
+                if (field === 'sentDate') {
+                  const today = getTodayAtMidnight();
+                  const sentDate = normalizeToMidnight(value);
+                  updatedTransaction.isPaid = sentDate <= today;
+                }
 
                 // When amount, interestRate, or interestAmount changes, update the corresponding field
                 const amount =
@@ -422,6 +427,7 @@ export function LoanForm({
     const result: Array<{
       investor: Investor;
       sentDate: string;
+      isPaid: boolean;
       capital: number;
       interest: number;
       interestRate: number;
@@ -469,6 +475,7 @@ export function LoanForm({
         result.push({
           investor: si.investor,
           sentDate: transaction.sentDate,
+          isPaid: transaction.isPaid,
           capital,
           interest,
           interestRate,
@@ -497,14 +504,9 @@ export function LoanForm({
     // Calculate loan status
     const status = calculateLoanStatus();
 
-    // Calculate funded amount (only count transactions with sent date <= today)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
+    // Calculate funded amount (only count paid transactions)
     const fundedCapital = preview.reduce((sum, p) => {
-      const sentDate = new Date(p.sentDate);
-      sentDate.setHours(0, 0, 0, 0);
-      return sentDate <= today ? sum + p.capital : sum;
+      return p.isPaid ? sum + p.capital : sum;
     }, 0);
 
     const balance = totalCapital - fundedCapital;
@@ -566,6 +568,7 @@ export function LoanForm({
         interestRate: string;
         interestType: 'rate' | 'fixed';
         sentDate: Date;
+        isPaid: boolean;
         hasMultipleInterest: boolean;
         interestPeriods?: Array<{
           dueDate: Date;
@@ -603,6 +606,7 @@ export function LoanForm({
             interestRate: interestRate,
             interestType: interestType,
             sentDate: new Date(transaction.sentDate),
+            isPaid: transaction.isPaid,
             hasMultipleInterest: si.hasMultipleInterest,
             interestPeriods: interestPeriods,
           });
@@ -624,7 +628,7 @@ export function LoanForm({
       if (onSuccess) {
         onSuccess();
       } else {
-        router.push('/transactions/loans');
+        router.push('/loans');
         router.refresh();
       }
     } catch (error) {
@@ -815,7 +819,7 @@ export function LoanForm({
                             t.sentDate &&
                             isMoreThanOneMonth(t.sentDate, watchDueDate)
                         ) && (
-                          <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                          <div className="space-y-3 p-4 border rounded-lg bg-muted/30 border-blue-400">
                             <Label className="text-sm font-semibold inline-flex">
                               Interest Configuration
                             </Label>
@@ -905,28 +909,24 @@ export function LoanForm({
                       {/* Transactions */}
                       <div className="space-y-3">
                         {si.transactions.map((transaction, index) => {
-                          // Check if this transaction's sent date is in the future
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
-                          const sentDate = new Date(transaction.sentDate);
-                          sentDate.setHours(0, 0, 0, 0);
-                          const isFutureSentDate = sentDate > today;
+                          // Check if this transaction is unpaid
+                          const isUnpaid = !transaction.isPaid;
 
                           return (
                             <div
                               key={transaction.id}
                               className={`p-3 border rounded-lg space-y-3 ${
-                                isFutureSentDate
-                                  ? 'bg-yellow-50'
-                                  : 'bg-muted/30'
+                                isUnpaid
+                                  ? 'bg-yellow-50 border-yellow-400'
+                                  : 'bg-muted/50'
                               }`}
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-medium text-muted-foreground">
-                                    Transaction {index + 1}
+                                    Payment {index + 1}
                                   </span>
-                                  {isFutureSentDate && (
+                                  {isUnpaid && (
                                     <Badge
                                       variant="warning"
                                       className="text-[10px] h-3.5 px-1 py-0 leading-none"
@@ -1069,12 +1069,12 @@ export function LoanForm({
                                 </div>
                               )}
 
-                              {isFutureSentDate && (
+                              {isUnpaid && (
                                 <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                                  <strong>Note:</strong> This transaction has a
-                                  future sent date. This loan will be marked as{' '}
+                                  <strong>Note:</strong> This transaction is
+                                  marked as unpaid. This loan will be marked as{' '}
                                   <strong>Partially Funded</strong> until all
-                                  funds are received.
+                                  transactions are paid.
                                 </div>
                               )}
                             </div>
@@ -1144,6 +1144,7 @@ export function LoanForm({
                           interestRate: t.interestRate.toString(),
                           interestType: 'rate' as const,
                           sentDate: t.sentDate,
+                          isPaid: t.isPaid,
                         })),
                         hasMultipleInterest:
                           investorData?.hasMultipleInterest || false,
