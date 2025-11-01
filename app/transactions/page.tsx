@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import {
   PlusCircle,
   LayoutGrid,
@@ -12,6 +12,9 @@ import {
   X,
   Filter,
   CalendarDays,
+  ChevronDown,
+  ArrowLeftRight,
+  Coins,
 } from 'lucide-react';
 import {
   Select,
@@ -284,12 +287,28 @@ export default function TransactionsPage() {
               <CalendarDays className="h-4 w-4" />
             </Button>
           </div>
-          <Link href="/transactions/new">
-            <Button className="w-full sm:w-auto">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Transaction
-            </Button>
-          </Link>
+          <DropdownMenu
+            trigger={
+              <Button className="w-full sm:w-auto">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Transaction
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            }
+            items={[
+              {
+                label: 'Investment',
+                icon: <ArrowLeftRight className="h-4 w-4" />,
+                onClick: () => router.push('/transactions/new'),
+              },
+              {
+                label: 'Loan',
+                icon: <Coins className="h-4 w-4" />,
+                onClick: () => router.push('/loans/new'),
+              },
+            ]}
+            align="end"
+          />
         </div>
       </div>
 
