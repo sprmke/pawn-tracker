@@ -537,7 +537,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
         <TabsContent value="loans" className="mt-6 space-y-4">
           {/* Search and Filters Section */}
-          {!loansLoading && loans.length > 0 && (
+          {!loansLoading && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-3">
                 {/* Search and Basic Filters Row */}
