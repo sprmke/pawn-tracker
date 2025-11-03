@@ -101,22 +101,32 @@ export function InvestorTransactionCard({
                   <div
                     key={tIndex}
                     className={cn(
-                      'flex justify-between items-center text-[10px] p-1.5 rounded',
+                      'flex flex-col text-[10px] p-1.5 rounded',
                       isUnpaid
                         ? 'bg-yellow-100 border border-yellow-200'
                         : 'bg-gray-50'
                     )}
                   >
-                    <span className="text-muted-foreground">
+                    <p className="text-[9px] font-semibold text-muted-foreground mb-1">
                       Payment {tIndex + 1}
-                    </span>
-                    <div className="flex gap-3">
-                      <span className="font-medium">
-                        {formatCurrency(transaction.amount)}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {formatDate(transaction.sentDate)}
-                      </span>
+                    </p>
+                    <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                      <div>
+                        <span className="text-muted-foreground block text-[9px]">
+                          Sent Date
+                        </span>
+                        <span className="font-medium text-[10px]">
+                          {formatDate(transaction.sentDate)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-[9px]">
+                          Principal
+                        </span>
+                        <span className="text-[10px]">
+                          {formatCurrency(transaction.amount)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
