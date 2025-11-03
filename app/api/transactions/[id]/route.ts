@@ -1,18 +1,27 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { transactions } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+import { auth } from '@/auth';
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id: paramId } = await params;
     const id = parseInt(paramId);
 
     const transaction = await db.query.transactions.findFirst({
-      where: eq(transactions.id, id),
+      where: and(
+        eq(transactions.id, id),
+        eq(transactions.userId, session.user.id)
+      ),
       with: {
         investor: true,
       },
@@ -40,13 +49,21 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id: paramId } = await params;
     const id = parseInt(paramId);
     const body = await request.json();
 
     // Check if transaction exists and get its type
     const existingTransaction = await db.query.transactions.findFirst({
-      where: eq(transactions.id, id),
+      where: and(
+        eq(transactions.id, id),
+        eq(transactions.userId, session.user.id)
+      ),
     });
 
     if (!existingTransaction) {
@@ -80,7 +97,9 @@ export async function PUT(
     const updatedTransaction = await db
       .update(transactions)
       .set(transactionData)
-      .where(eq(transactions.id, id))
+      .where(
+        and(eq(transactions.id, id), eq(transactions.userId, session.user.id))
+      )
       .returning();
 
     if (updatedTransaction.length === 0) {
@@ -105,12 +124,19 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id: paramId } = await params;
     const id = parseInt(paramId);
 
     const deletedTransaction = await db
       .delete(transactions)
-      .where(eq(transactions.id, id))
+      .where(
+        and(eq(transactions.id, id), eq(transactions.userId, session.user.id))
+      )
       .returning();
 
     if (deletedTransaction.length === 0) {
