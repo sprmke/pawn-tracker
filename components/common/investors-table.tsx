@@ -133,111 +133,94 @@ export function InvestorsTable({
   ];
 
   const expandedContent = (investor: InvestorWithLoans) => {
-    const loading = allLoans.length === 0;
-
     // Calculate activity data for this investor
-    const activityData = loading
-      ? {
-          overdueLoans: [],
-          pendingDisbursements: [],
-          maturingLoans: [],
-        }
-      : (() => {
-          const now = new Date();
-          const fourteenDaysFromNow = addDays(now, 14);
+    const activityData = (() => {
+      const now = new Date();
+      const fourteenDaysFromNow = addDays(now, 14);
 
-          // Get investor's loan IDs
-          const investorLoanIds = new Set(
-            investor.loanInvestors.map((li) => li.loan.id)
-          );
+      // Get investor's loan IDs
+      const investorLoanIds = new Set(
+        investor.loanInvestors.map((li) => li.loan.id)
+      );
 
-          // Filter loans to only those this investor is part of
-          const investorLoans = allLoans.filter((loan) =>
-            investorLoanIds.has(loan.id)
-          );
+      // Filter loans to only those this investor is part of
+      const investorLoans = allLoans.filter((loan) =>
+        investorLoanIds.has(loan.id)
+      );
 
-          // Overdue loans
-          const overdueLoans = investorLoans
-            .filter(
-              (loan) =>
-                loan.status === 'Overdue' ||
-                (loan.status !== 'Completed' && isPast(new Date(loan.dueDate)))
-            )
-            .sort(
-              (a, b) =>
-                new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-            );
+      // Overdue loans
+      const overdueLoans = investorLoans
+        .filter(
+          (loan) =>
+            loan.status === 'Overdue' ||
+            (loan.status !== 'Completed' && isPast(new Date(loan.dueDate)))
+        )
+        .sort(
+          (a, b) =>
+            new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+        );
 
-          // Pending disbursements
-          const unpaidLoanTransactions: Array<{
-            id: number;
-            loanId: number;
-            loanName: string;
-            investorName: string;
-            amount: string;
-            sentDate: Date;
-          }> = [];
+      // Pending disbursements
+      const unpaidLoanTransactions: Array<{
+        id: number;
+        loanId: number;
+        loanName: string;
+        investorName: string;
+        amount: string;
+        sentDate: Date;
+      }> = [];
 
-          investorLoans.forEach((loan) => {
-            loan.loanInvestors
-              .filter((li) => !li.isPaid && li.investor.id === investor.id)
-              .forEach((li) => {
-                unpaidLoanTransactions.push({
-                  id: li.id,
-                  loanId: loan.id,
-                  loanName: loan.loanName,
-                  investorName: li.investor.name,
-                  amount: li.amount,
-                  sentDate: li.sentDate,
-                });
-              });
+      investorLoans.forEach((loan) => {
+        loan.loanInvestors
+          .filter((li) => !li.isPaid && li.investor.id === investor.id)
+          .forEach((li) => {
+            unpaidLoanTransactions.push({
+              id: li.id,
+              loanId: loan.id,
+              loanName: loan.loanName,
+              investorName: li.investor.name,
+              amount: li.amount,
+              sentDate: li.sentDate,
+            });
           });
+      });
 
-          const pendingDisbursements = unpaidLoanTransactions.sort(
-            (a, b) =>
-              new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
+      const pendingDisbursements = unpaidLoanTransactions.sort(
+        (a, b) =>
+          new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
+      );
+
+      // Maturing loans
+      const maturingLoans = investorLoans
+        .filter((loan) => {
+          const dueDate = new Date(loan.dueDate);
+          return (
+            (loan.status === 'Fully Funded' ||
+              loan.status === 'Partially Funded') &&
+            isAfter(dueDate, now) &&
+            isBefore(dueDate, fourteenDaysFromNow)
           );
+        })
+        .sort(
+          (a, b) =>
+            new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+        );
 
-          // Maturing loans
-          const maturingLoans = investorLoans
-            .filter((loan) => {
-              const dueDate = new Date(loan.dueDate);
-              return (
-                (loan.status === 'Fully Funded' ||
-                  loan.status === 'Partially Funded') &&
-                isAfter(dueDate, now) &&
-                isBefore(dueDate, fourteenDaysFromNow)
-              );
-            })
-            .sort(
-              (a, b) =>
-                new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-            );
-
-          return {
-            overdueLoans,
-            pendingDisbursements,
-            maturingLoans,
-          };
-        })();
+      return {
+        overdueLoans,
+        pendingDisbursements,
+        maturingLoans,
+      };
+    })();
 
     return (
       <div className="grid gap-2 grid-cols-1 lg:grid-cols-3">
-        <PastDueLoansCard
-          loans={activityData.overdueLoans}
-          limit={3}
-          loading={loading}
-        />
+        <PastDueLoansCard loans={activityData.overdueLoans} limit={3} />
         <PendingDisbursementsCard
           disbursements={activityData.pendingDisbursements}
           limit={3}
-          loading={loading}
         />
-        <MaturingLoansCard
-          loans={activityData.maturingLoans}
-          limit={3}
-          loading={loading}
-        />
+        <MaturingLoansCard loans={activityData.maturingLoans} limit={3} />
       </div>
     );
   };
