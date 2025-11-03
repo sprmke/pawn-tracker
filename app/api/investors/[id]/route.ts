@@ -1,18 +1,27 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { investors } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+import { auth } from '@/auth';
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const investorId = parseInt(id);
 
     const investor = await db.query.investors.findFirst({
-      where: eq(investors.id, investorId),
+      where: and(
+        eq(investors.id, investorId),
+        eq(investors.userId, session.user.id)
+      ),
       with: {
         loanInvestors: {
           with: {
@@ -47,22 +56,28 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const investorId = parseInt(id);
     const body = await request.json();
 
-    // Check if email is being changed and if it's already in use
-    if (body.email) {
-      const existingInvestor = await db.query.investors.findFirst({
-        where: eq(investors.email, body.email),
-      });
+    // Verify ownership
+    const existingInvestor = await db.query.investors.findFirst({
+      where: and(
+        eq(investors.id, investorId),
+        eq(investors.userId, session.user.id)
+      ),
+    });
 
-      if (existingInvestor && existingInvestor.id !== investorId) {
-        return NextResponse.json(
-          { error: 'Email address is already in use by another investor' },
-          { status: 400 }
-        );
-      }
+    if (!existingInvestor) {
+      return NextResponse.json(
+        { error: 'Investor not found' },
+        { status: 404 }
+      );
     }
 
     const updatedInvestor = await db
@@ -73,15 +88,10 @@ export async function PUT(
         contactNumber: body.contactNumber || null,
         updatedAt: new Date(),
       })
-      .where(eq(investors.id, investorId))
+      .where(
+        and(eq(investors.id, investorId), eq(investors.userId, session.user.id))
+      )
       .returning();
-
-    if (updatedInvestor.length === 0) {
-      return NextResponse.json(
-        { error: 'Investor not found' },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json(updatedInvestor[0]);
   } catch (error) {
@@ -98,12 +108,20 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const investorId = parseInt(id);
 
-    // Check if investor has any loans or transactions
+    // Check if investor has any loans or transactions and verify ownership
     const investor = await db.query.investors.findFirst({
-      where: eq(investors.id, investorId),
+      where: and(
+        eq(investors.id, investorId),
+        eq(investors.userId, session.user.id)
+      ),
       with: {
         loanInvestors: true,
         transactions: true,
@@ -128,7 +146,11 @@ export async function DELETE(
     }
 
     // Delete investor
-    await db.delete(investors).where(eq(investors.id, investorId));
+    await db
+      .delete(investors)
+      .where(
+        and(eq(investors.id, investorId), eq(investors.userId, session.user.id))
+      );
 
     return NextResponse.json({ success: true });
   } catch (error) {
