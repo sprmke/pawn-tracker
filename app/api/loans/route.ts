@@ -3,10 +3,17 @@ import { db } from '@/db';
 import { loans, loanInvestors, investors, interestPeriods } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateLoanTransactions } from '@/lib/loan-transactions';
+import { auth } from '@/auth';
 
 export async function GET() {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const allLoans = await db.query.loans.findMany({
+      where: eq(loans.userId, session.user.id),
       with: {
         loanInvestors: {
           with: {
@@ -32,6 +39,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { loanData, investorData } = body;
 
@@ -40,6 +52,7 @@ export async function POST(request: Request) {
 
     // Convert date strings to Date objects and ensure proper types
     const processedLoanData = {
+      userId: session.user.id,
       loanName: loanData.loanName,
       type: loanData.type,
       status: loanData.status,
@@ -146,7 +159,8 @@ export async function POST(request: Request) {
             interestType: period.interestType || 'rate',
           })),
         })),
-        loanId
+        loanId,
+        session.user.id
       );
       console.log('Transactions created for loan');
     } catch (error) {
