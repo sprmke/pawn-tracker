@@ -27,7 +27,10 @@ export default async function TransactionPage({
   }
 
   const transaction = await db.query.transactions.findFirst({
-    where: and(eq(transactions.id, id), eq(transactions.userId, session.user.id)),
+    where: and(
+      eq(transactions.id, id),
+      eq(transactions.userId, session.user.id)
+    ),
     with: {
       investor: true,
     },
@@ -44,6 +47,9 @@ export default async function TransactionPage({
   });
 
   return (
-    <TransactionDetailClient transaction={transaction} investors={allInvestors} />
+    <TransactionDetailClient
+      transaction={transaction}
+      investors={allInvestors}
+    />
   );
 }
