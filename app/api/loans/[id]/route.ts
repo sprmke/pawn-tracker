@@ -7,6 +7,7 @@ import {
   generateLoanTransactions,
   deleteLoanTransactions,
   recalculateInvestorBalances,
+  updateLoanTransactionCounters,
 } from '@/lib/loan-transactions';
 
 export async function GET(
