@@ -558,9 +558,9 @@ export default function TransactionsPage() {
       {transactions.length === 0 ? (
         <EmptyState
           title="No transactions found"
-          description="Create your first transaction"
           action={{
-            label: 'New Transaction',
+            label: 'Create your first transaction',
+            icon: PlusCircle,
             onClick: () => router.push('/transactions/new'),
           }}
         />
