@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { loans, loanInvestors, interestPeriods } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+import { auth } from '@/auth';
 import {
   generateLoanTransactions,
   deleteLoanTransactions,
@@ -13,11 +14,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const loanId = parseInt(id);
 
     const loan = await db.query.loans.findFirst({
-      where: eq(loans.id, loanId),
+      where: and(eq(loans.id, loanId), eq(loans.userId, session.user.id)),
       with: {
         loanInvestors: {
           with: {
@@ -50,6 +56,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const loanId = parseInt(id);
     const body = await request.json();
@@ -58,6 +69,15 @@ export async function PUT(
     console.log('Updating loan:', loanId);
     console.log('Received loan data:', loanData);
     console.log('Received investor data:', investorData);
+
+    // Verify ownership
+    const existingLoan = await db.query.loans.findFirst({
+      where: and(eq(loans.id, loanId), eq(loans.userId, session.user.id)),
+    });
+
+    if (!existingLoan) {
+      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
+    }
 
     // Convert date strings to Date objects and ensure proper types
     const processedLoanData = {
@@ -71,7 +91,10 @@ export async function PUT(
     };
 
     // Update loan
-    await db.update(loans).set(processedLoanData).where(eq(loans.id, loanId));
+    await db
+      .update(loans)
+      .set(processedLoanData)
+      .where(and(eq(loans.id, loanId), eq(loans.userId, session.user.id)));
 
     // Delete existing transactions for this loan and get affected investors
     let affectedInvestorIds: number[] = [];
@@ -196,7 +219,8 @@ export async function PUT(
             interestType: period.interestType || 'rate',
           })),
         })),
-        loanId
+        loanId,
+        session.user.id
       );
       console.log('New transactions created for updated loan');
     } catch (error) {
@@ -225,8 +249,22 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const loanId = parseInt(id);
+
+    // Verify ownership
+    const existingLoan = await db.query.loans.findFirst({
+      where: and(eq(loans.id, loanId), eq(loans.userId, session.user.id)),
+    });
+
+    if (!existingLoan) {
+      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
+    }
 
     // Delete associated transactions first and get affected investors
     let affectedInvestorIds: number[] = [];
@@ -253,7 +291,9 @@ export async function DELETE(
     }
 
     // Delete loan (cascade will handle loan_investors)
-    await db.delete(loans).where(eq(loans.id, loanId));
+    await db
+      .delete(loans)
+      .where(and(eq(loans.id, loanId), eq(loans.userId, session.user.id)));
 
     return NextResponse.json({ success: true });
   } catch (error) {
