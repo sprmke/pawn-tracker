@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { TransactionWithInvestor, Investor } from '@/lib/types';
@@ -56,7 +57,7 @@ export function TransactionDetailClient({
 
   const handleViewLoan = () => {
     if (!transaction.loanId) {
-      alert('This transaction is not linked to a loan.');
+      toast.error('This transaction is not linked to a loan.');
       return;
     }
 
@@ -93,7 +94,7 @@ export function TransactionDetailClient({
       router.refresh();
     } catch (error) {
       console.error('Error updating transaction:', error);
-      alert(
+      toast.error(
         error instanceof Error
           ? error.message
           : 'Failed to update transaction. Please try again.'
