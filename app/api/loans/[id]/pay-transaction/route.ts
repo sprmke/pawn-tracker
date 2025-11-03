@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { loanInvestors, loans } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { auth } from '@/auth';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const loanId = parseInt(id);
     const { transactionId } = await request.json();
@@ -17,6 +23,15 @@ export async function POST(
         { error: 'Invalid loan ID or transaction ID' },
         { status: 400 }
       );
+    }
+
+    // Verify loan ownership
+    const loan = await db.query.loans.findFirst({
+      where: and(eq(loans.id, loanId), eq(loans.userId, session.user.id)),
+    });
+
+    if (!loan) {
+      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
     }
 
     // Update the transaction's sent date to today and mark as paid
