@@ -628,19 +628,19 @@ export default function InvestorsPage() {
                                     <PastDueLoansCard
                                       loans={activityData.overdueLoans}
                                       limit={3}
-                                      loading={allLoans.length === 0}
+                                      loading={loading}
                                     />
                                     <PendingDisbursementsCard
                                       disbursements={
                                         activityData.pendingDisbursements
                                       }
                                       limit={3}
-                                      loading={allLoans.length === 0}
+                                      loading={loading}
                                     />
                                     <MaturingLoansCard
                                       loans={activityData.maturingLoans}
                                       limit={3}
-                                      loading={allLoans.length === 0}
+                                      loading={loading}
                                     />
                                   </div>
                                 );
