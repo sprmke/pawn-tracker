@@ -13,9 +13,9 @@ interface CurrencyBarChartProps {
     color: string;
   }>;
   layout?: 'horizontal' | 'vertical';
+  emptyMessage?: string;
 }
 
 export function CurrencyBarChart(props: CurrencyBarChartProps) {
   return <BarChart {...props} formatValue={formatCurrency} />;
 }
-

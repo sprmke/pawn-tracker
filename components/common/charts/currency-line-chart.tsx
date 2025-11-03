@@ -12,9 +12,9 @@ interface CurrencyLineChartProps {
     label: string;
     color: string;
   }>;
+  emptyMessage?: string;
 }
 
 export function CurrencyLineChart(props: CurrencyLineChartProps) {
   return <LineChart {...props} formatValue={formatCurrency} />;
 }
-
