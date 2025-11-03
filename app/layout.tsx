@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Nav } from '@/components/layout/nav';
+import { auth } from '@/auth';
+import { Toaster } from '@/components/ui/sonner';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -18,21 +20,24 @@ export const metadata: Metadata = {
   description: 'Track pawn business loans and investor transactions',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Nav>
+        <Nav user={session?.user}>
           <main className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-background via-background to-muted/20">
             <div className="mx-auto max-w-[1600px]">{children}</div>
           </main>
         </Nav>
+        <Toaster />
       </body>
     </html>
   );
