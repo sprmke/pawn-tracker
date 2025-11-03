@@ -1,17 +1,27 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { transactions } from '@/db/schema';
+import { auth } from '@/auth';
+import { eq, and } from 'drizzle-orm';
 
 export async function GET(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const investorId = searchParams.get('investorId');
 
     let allTransactions;
     if (investorId) {
       allTransactions = await db.query.transactions.findMany({
-        where: (transactions, { eq }) =>
-          eq(transactions.investorId, parseInt(investorId)),
+        where: (transactions, { eq, and }) =>
+          and(
+            eq(transactions.userId, session.user.id),
+            eq(transactions.investorId, parseInt(investorId))
+          ),
         orderBy: (transactions, { desc }) => [desc(transactions.date)],
         with: {
           investor: true,
@@ -19,6 +29,8 @@ export async function GET(request: Request) {
       });
     } else {
       allTransactions = await db.query.transactions.findMany({
+        where: (transactions, { eq }) =>
+          eq(transactions.userId, session.user.id),
         orderBy: (transactions, { desc }) => [desc(transactions.date)],
         with: {
           investor: true,
@@ -38,11 +50,17 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
 
     // Convert ISO string date to Date object for Drizzle
     const transactionData = {
       ...body,
+      userId: session.user.id,
       date: new Date(body.date),
     };
 
