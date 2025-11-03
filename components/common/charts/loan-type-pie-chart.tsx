@@ -6,6 +6,7 @@ interface LoanTypePieChartProps {
   data: Array<{ name: string; value: number; color?: string }>;
   title: string;
   colors?: string[];
+  emptyMessage?: string;
 }
 
 export function LoanTypePieChart(props: LoanTypePieChartProps) {
