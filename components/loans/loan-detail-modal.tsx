@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from '@/lib/toast';
 import {
   Dialog,
   DialogContent,
@@ -79,7 +80,7 @@ export function LoanDetailModal({
       onUpdate?.();
     } catch (error) {
       console.error('Error deleting loan:', error);
-      alert('Failed to delete loan');
+      toast.error('Failed to delete loan');
     } finally {
       setIsDeleting(false);
     }
@@ -117,7 +118,7 @@ export function LoanDetailModal({
       onUpdate?.();
     } catch (error) {
       console.error('Error completing loan:', error);
-      alert('Failed to complete loan');
+      toast.error('Failed to complete loan');
     } finally {
       setIsCompleting(false);
     }
