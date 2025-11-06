@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from '@/lib/toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -285,6 +286,16 @@ export function MultipleInterestManager({
 
         <TabsContent value="multiple" className="space-y-3 mt-4">
           <div className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addPeriod}
+              className="w-full"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Period
+            </Button>
             {periods.map((period, index) => {
               const isLastPeriod = index === periods.length - 1;
               return (
@@ -325,7 +336,7 @@ export function MultipleInterestManager({
                         );
 
                         if (isDateUsed) {
-                          alert(
+                          toast.error(
                             'This date is already used by another period. Please select a different date.'
                           );
                           return;
@@ -395,17 +406,6 @@ export function MultipleInterestManager({
                 </div>
               );
             })}
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addPeriod}
-              className="w-full"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Period
-            </Button>
           </div>
 
           {totals && (
