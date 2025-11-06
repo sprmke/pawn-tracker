@@ -39,7 +39,7 @@ interface LoanInvestorsSectionProps {
 
 export function LoanInvestorsSection({
   investorsWithTransactions,
-  title = 'Investors',
+  title,
   showEmail = true,
   loanId,
   onRefresh,
@@ -48,11 +48,13 @@ export function LoanInvestorsSection({
     investorsWithTransactions && investorsWithTransactions.length > 0;
 
   return (
-    <Card id="investors-section">
-      <CardHeader>
-        <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Card id="investors-section" className={title ? '' : 'p-0 border-0'}>
+      {title && (
+        <CardHeader>
+          <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
+        </CardHeader>
+      )}
+      <CardContent className={title ? '' : 'p-0'}>
         {!hasInvestors ? (
           <div className="flex flex-col items-center justify-center py-8">
             <Users className="h-12 w-12 text-muted-foreground mb-4" />
