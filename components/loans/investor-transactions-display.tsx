@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
@@ -74,7 +75,7 @@ export function InvestorTransactionsDisplay({
       onRefresh?.();
     } catch (error) {
       console.error('Error paying transaction:', error);
-      alert('Failed to pay transaction. Please try again.');
+      toast.error('Failed to pay transaction. Please try again.');
     } finally {
       setPayingTransactions((prev) => {
         const newSet = new Set(prev);
@@ -101,7 +102,7 @@ export function InvestorTransactionsDisplay({
         if (
           item.hasMultipleInterest &&
           item.interestPeriods &&
-          item.interestPeriods.length > 0
+          item.interestPeriods.length > 1
         ) {
           // For multiple interest: apply periods to TOTAL capital (not per transaction)
           totalInterest = item.interestPeriods.reduce((sum, period) => {
@@ -142,7 +143,10 @@ export function InvestorTransactionsDisplay({
 
             {/* Individual Transactions */}
             <div className="space-y-2">
-              {transactions.length > 1 && (
+              {((item.hasMultipleInterest &&
+                item.interestPeriods &&
+                item.interestPeriods.length > 1) ||
+                transactions.length > 1) && (
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-foreground">
                     Principal Payments
@@ -163,7 +167,7 @@ export function InvestorTransactionsDisplay({
                 if (
                   item.hasMultipleInterest &&
                   item.interestPeriods &&
-                  item.interestPeriods.length > 0
+                  item.interestPeriods.length > 1
                 ) {
                   // Calculate total interest from all periods for this transaction
                   interest = item.interestPeriods.reduce((sum, period) => {
@@ -206,22 +210,32 @@ export function InvestorTransactionsDisplay({
                         : 'bg-muted/50'
                     }`}
                   >
-                    <div className="flex items-center mb-2 space-x-2">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        Payment {index + 1}
-                      </span>
-                      {isUnpaid && (
-                        <Badge
-                          variant="warning"
-                          className="text-[10px] h-3.5 px-1 py-0 leading-none"
-                        >
-                          To be paid
-                        </Badge>
-                      )}
-                    </div>
-                    {item.hasMultipleInterest ? (
+                    {transactions.length > 1 && (
+                      <div className="flex items-center mb-2 space-x-2">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Payment {index + 1}
+                        </span>
+                        {isUnpaid && (
+                          <Badge
+                            variant="warning"
+                            className="text-[10px] h-3.5 px-1 py-0 leading-none"
+                          >
+                            To be paid
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    {item.hasMultipleInterest &&
+                    item.interestPeriods &&
+                    item.interestPeriods.length > 1 ? (
                       // For multiple interest: show only Principal and Sent Date
-                      <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Sent Date</p>
+                          <p className="font-medium">
+                            {formatDate(transaction.sentDate)}
+                          </p>
+                        </div>
                         <div>
                           <p className="text-muted-foreground">
                             {transactions.length > 1 ? 'Principal' : 'Capital'}
@@ -230,16 +244,16 @@ export function InvestorTransactionsDisplay({
                             {formatCurrency(capital)}
                           </p>
                         </div>
+                      </div>
+                    ) : (
+                      // For single interest: show all fields
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
                         <div>
                           <p className="text-muted-foreground">Sent Date</p>
                           <p className="font-medium">
                             {formatDate(transaction.sentDate)}
                           </p>
                         </div>
-                      </div>
-                    ) : (
-                      // For single interest: show all fields
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
                         <div>
                           <p className="text-muted-foreground">
                             {transactions.length > 1 ? 'Principal' : 'Capital'}
@@ -262,12 +276,6 @@ export function InvestorTransactionsDisplay({
                           <p className="text-muted-foreground">Total</p>
                           <p className="font-semibold">
                             {formatCurrency(total)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Sent Date</p>
-                          <p className="font-medium">
-                            {formatDate(transaction.sentDate)}
                           </p>
                         </div>
                       </div>
@@ -298,11 +306,16 @@ export function InvestorTransactionsDisplay({
             </div>
 
             {/* Show interest periods breakdown below all transactions */}
-            {item.interestPeriods && item.interestPeriods.length > 0 && (
-              <div className="mt-3 pt-3 border-t space-y-3">
-                <p className="text-sm font-semibold text-foreground">
-                  Due Payments
-                </p>
+            {item.interestPeriods && item.interestPeriods.length > 1 && (
+              <div className="mt-3 pt-3 border-t space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-foreground">
+                    Due Payments
+                  </p>
+                  <Badge variant="secondary" className="text-xs w-fit">
+                    {item.interestPeriods.length} Periods
+                  </Badge>
+                </div>
                 <div className="space-y-2">
                   {item.interestPeriods.map((period, pIndex) => {
                     // Use total capital (sum of all transactions) for interest calculation
