@@ -268,21 +268,11 @@ export function LoanInterestDueEventCard({
   return (
     <button
       onClick={onClick}
-      className={`cursor-pointer w-full text-left rounded-lg hover:shadow-lg transition-all bg-gradient-to-br from-sky-50 to-sky-100 dark:from-sky-950 dark:to-sky-900 border-l-4 border-sky-400 shadow-md ${classes.container}`}
+      className={`cursor-pointer w-full text-left rounded-lg hover:shadow-lg transition-all border-l-4 border-sky-400 shadow-md ${classes.container}`}
     >
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <div
-            className={`flex items-center justify-center rounded-full bg-sky-400 flex-shrink-0 ${classes.icon}`}
-          >
-            <ArrowDown
-              className={`${classes.iconSize} text-white dark:text-sky-950`}
-            />
-          </div>
           <div className="flex-1 min-w-0 space-y-1">
-            <div className={`font-bold text-gray-900 ${classes.title}`}>
-              {loan.loanName}
-            </div>
             <div className="flex flex-wrap gap-1">
               <Badge
                 variant={getLoanTypeBadge(loan.type).variant}
@@ -300,6 +290,9 @@ export function LoanInterestDueEventCard({
               >
                 {loan.status}
               </Badge>
+            </div>
+            <div className={`font-bold text-gray-900 ${classes.title}`}>
+              {loan.loanName}
             </div>
           </div>
         </div>
