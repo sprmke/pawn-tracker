@@ -33,36 +33,34 @@ export function LoanSummarySection({
         <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <div className="p-4 bg-muted rounded-lg">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+          <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               Total Principal
             </p>
-            <p className="text-base sm:text-lg font-bold">
+            <p className="text-base font-semibold">
               {formatCurrency(totalPrincipal)}
             </p>
           </div>
-          <div className="p-4 bg-muted rounded-lg">
+          <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               Avg. Rate
             </p>
-            <p className="text-base sm:text-lg font-bold">
-              {averageRate.toFixed(2)}%
-            </p>
+            <p className="text-base font-semibold">{averageRate.toFixed(2)}%</p>
           </div>
-          <div className="p-4 bg-muted rounded-lg">
+          <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               Total Interest
             </p>
-            <p className="text-base sm:text-lg font-bold">
+            <p className="text-base font-semibold">
               {formatCurrency(totalInterest)}
             </p>
           </div>
-          <div className="p-4 bg-muted rounded-lg">
+          <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               Total Amount
             </p>
-            <p className="text-base sm:text-lg font-bold">
+            <p className="text-base font-semibold">
               {formatCurrency(totalAmount)}
             </p>
           </div>
@@ -73,13 +71,13 @@ export function LoanSummarySection({
                 <p className="text-xs sm:text-sm text-yellow-800 font-semibold mb-1">
                   Pending Balance
                 </p>
-                <p className="text-base sm:text-lg font-bold text-yellow-900">
+                <p className="text-base font-semibold text-yellow-900">
                   {formatCurrency(balance)}
                 </p>
               </div>
             )}
           {showStatus && status && (
-            <div className="p-4 bg-muted rounded-lg">
+            <div className="p-3 bg-muted rounded-lg">
               <p className="text-xs sm:text-sm text-muted-foreground mb-1">
                 Status
               </p>
@@ -93,12 +91,19 @@ export function LoanSummarySection({
               </div>
             </div>
           )}
-          <div className="p-4 bg-muted rounded-lg">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
-              Investors
-            </p>
-            <p className="text-base sm:text-lg font-bold">{uniqueInvestors}</p>
-          </div>
+          {!(
+            status === 'Partially Funded' &&
+            balance !== undefined &&
+            balance > 0
+          ) &&
+            !showStatus && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+                  Investors
+                </p>
+                <p className="text-base font-semibold">{uniqueInvestors}</p>
+              </div>
+            )}
         </div>
       </CardContent>
     </Card>
