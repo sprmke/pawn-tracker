@@ -37,7 +37,7 @@ export function PastDueLoansCard({
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center py-4">
-            <InlineLoader size="sm" />
+            <InlineLoader size="md" />
           </div>
         ) : (
           <div className="space-y-2">

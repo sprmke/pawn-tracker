@@ -1,13 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import {
-  Pencil,
-  Trash2,
-  CheckCircle,
-  Wallet,
-  ExternalLink,
-} from 'lucide-react';
+import { Pencil, Trash2, CheckCircle, Wallet, Eye } from 'lucide-react';
 
 interface DetailModalHeaderProps {
   onEdit: () => void;
@@ -66,7 +60,7 @@ export function DetailModalHeader({
       )}
       {showViewLoan && onViewLoan && (
         <Button variant="outline" size="sm" onClick={onViewLoan}>
-          <ExternalLink className="h-4 w-4 mr-2" />
+          <Eye className="h-4 w-4 mr-2" />
           View Loan
         </Button>
       )}
