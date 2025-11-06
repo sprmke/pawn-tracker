@@ -123,7 +123,9 @@ export function LoanDetailContent({
 
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Notes</p>
-            <p className="text-sm whitespace-pre-wrap">{loan.notes || '-'}</p>
+            <p className="font-medium whitespace-pre-wrap">
+              {loan.notes || '-'}
+            </p>
           </div>
         </CardContent>
       </Card>
