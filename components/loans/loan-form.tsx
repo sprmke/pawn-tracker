@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,7 +37,13 @@ import {
   InterestPeriodData,
 } from './multiple-interest-manager';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronDown } from 'lucide-react';
+import { LoanInvestorCard } from './loan-investor-card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 const loanSchema = z.object({
   loanName: z.string().min(1, 'Loan name is required'),
@@ -183,7 +190,6 @@ export function LoanForm({
 
     return [];
   });
-  const [showPreview, setShowPreview] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [investorSelectValue, setInvestorSelectValue] = useState<string>('');
 
@@ -532,7 +538,7 @@ export function LoanForm({
 
   const onSubmit = async (data: z.infer<typeof loanSchema>) => {
     if (selectedInvestors.length === 0) {
-      alert('Please add at least one investor');
+      toast.error('Please add at least one investor');
       return;
     }
 
@@ -542,7 +548,7 @@ export function LoanForm({
     );
 
     if (hasInvalidTransactions) {
-      alert('Please enter valid amounts for all transactions');
+      toast.error('Please enter valid amounts for all transactions');
       return;
     }
 
@@ -636,7 +642,7 @@ export function LoanForm({
         `Error ${isEditMode ? 'updating' : 'creating'} loan:`,
         error
       );
-      alert(
+      toast.error(
         `Failed to ${isEditMode ? 'update' : 'create'} loan. Please try again.`
       );
     } finally {
@@ -648,8 +654,8 @@ export function LoanForm({
     (inv) => !selectedInvestors.find((si) => si.investor.id === inv.id)
   );
 
-  const preview = showPreview ? calculatePreview() : [];
-  const summary = showPreview ? calculateSummary() : null;
+  const preview = calculatePreview();
+  const summary = calculateSummary();
 
   const handleFormSubmit = () => {
     formRef.current?.requestSubmit();
@@ -698,7 +704,7 @@ export function LoanForm({
               <Input
                 id="loanName"
                 {...register('loanName')}
-                placeholder="e.g., Title 1 - Mexico"
+                placeholder="e.g., Mexico, Pampanga"
               />
               {errors.loanName && (
                 <p className="text-sm text-red-600">
@@ -762,7 +768,7 @@ export function LoanForm({
           <CardTitle className="text-lg sm:text-xl">Investors</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>Add Investor</Label>
             <Select value={investorSelectValue} onValueChange={addInvestor}>
               <SelectTrigger>
@@ -794,307 +800,36 @@ export function LoanForm({
           ) : (
             <div className="space-y-4">
               {selectedInvestors.map((si) => (
-                <Card key={si.investor.id}>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="font-semibold text-sm sm:text-base truncate">
-                          {si.investor.name}
-                        </h4>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeInvestor(si.investor.id)}
-                          className="flex-shrink-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-
-                      {/* Multiple Interest Manager - at investor level */}
-                      {watchDueDate &&
-                        si.transactions.some(
-                          (t) =>
-                            t.sentDate &&
-                            isMoreThanOneMonth(t.sentDate, watchDueDate)
-                        ) && (
-                          <div className="space-y-3 p-4 border rounded-lg bg-muted/30 border-blue-400">
-                            <Label className="text-sm font-semibold inline-flex">
-                              Interest Configuration
-                            </Label>
-                            <Alert className="bg-blue-50 border-blue-200">
-                              <AlertCircle className="h-4 w-4 text-blue-600" />
-                              <AlertDescription className="text-xs text-blue-800">
-                                <strong>Notice:</strong> We detected that this
-                                investor has a transaction spanning multiple
-                                months. You can manage interest for each month
-                                separately using the "Multiple Interest" option
-                                below.
-                              </AlertDescription>
-                            </Alert>
-                            <MultipleInterestManager
-                              sentDate={(() => {
-                                // Get the earliest sent date from all transactions
-                                const dates = si.transactions
-                                  .map((t) => t.sentDate)
-                                  .filter((d) => d)
-                                  .sort();
-                                return dates[0] || '';
-                              })()}
-                              loanDueDate={watchDueDate || ''}
-                              amount={si.transactions
-                                .reduce(
-                                  (sum, t) => sum + (parseFloat(t.amount) || 0),
-                                  0
-                                )
-                                .toString()}
-                              defaultInterestRate={(() => {
-                                // Calculate weighted average rate from all transactions
-                                const totalAmount = si.transactions.reduce(
-                                  (sum, t) => sum + (parseFloat(t.amount) || 0),
-                                  0
-                                );
-                                if (totalAmount === 0) return '10';
-
-                                const weightedRate = si.transactions.reduce(
-                                  (sum, t) => {
-                                    const amount = parseFloat(t.amount) || 0;
-                                    const rate =
-                                      t.interestType === 'rate'
-                                        ? parseFloat(t.interestRate) || 0
-                                        : amount > 0
-                                        ? ((parseFloat(t.interestAmount) || 0) /
-                                            amount) *
-                                          100
-                                        : 0;
-                                    return sum + amount * rate;
-                                  },
-                                  0
-                                );
-
-                                return (weightedRate / totalAmount).toFixed(2);
-                              })()}
-                              defaultInterestType="rate"
-                              initialMode={
-                                si.hasMultipleInterest ? 'multiple' : 'single'
-                              }
-                              initialPeriods={si.interestPeriods}
-                              onPeriodsChange={(periods) => {
-                                setSelectedInvestors(
-                                  selectedInvestors.map((inv) =>
-                                    inv.investor.id === si.investor.id
-                                      ? { ...inv, interestPeriods: periods }
-                                      : inv
-                                  )
-                                );
-                              }}
-                              onModeChange={(mode) => {
-                                setSelectedInvestors(
-                                  selectedInvestors.map((inv) =>
-                                    inv.investor.id === si.investor.id
-                                      ? {
-                                          ...inv,
-                                          hasMultipleInterest:
-                                            mode === 'multiple',
-                                        }
-                                      : inv
-                                  )
-                                );
-                              }}
-                            />
-                          </div>
-                        )}
-
-                      {/* Transactions */}
-                      <div className="space-y-3">
-                        {si.transactions.map((transaction, index) => {
-                          // Check if this transaction is unpaid
-                          const isUnpaid = !transaction.isPaid;
-
-                          return (
-                            <div
-                              key={transaction.id}
-                              className={`p-3 border rounded-lg space-y-3 ${
-                                isUnpaid
-                                  ? 'bg-yellow-50 border-yellow-400'
-                                  : 'bg-muted/50'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-muted-foreground">
-                                    Payment {index + 1}
-                                  </span>
-                                  {isUnpaid && (
-                                    <Badge
-                                      variant="warning"
-                                      className="text-[10px] h-3.5 px-1 py-0 leading-none"
-                                    >
-                                      To be paid
-                                    </Badge>
-                                  )}
-                                </div>
-                                {si.transactions.length > 1 && (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      removeTransaction(
-                                        si.investor.id,
-                                        transaction.id
-                                      )
-                                    }
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                )}
-                              </div>
-
-                              <div className="grid gap-3 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                  <Label className="text-xs">Amount *</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={transaction.amount}
-                                    onChange={(e) =>
-                                      updateTransaction(
-                                        si.investor.id,
-                                        transaction.id,
-                                        'amount',
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="0.00"
-                                  />
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label className="text-xs">Sent Date</Label>
-                                  <Input
-                                    type="date"
-                                    value={transaction.sentDate}
-                                    max={watchDueDate || undefined}
-                                    onChange={(e) => {
-                                      const newDate = e.target.value;
-                                      // Check if date is already used by another transaction
-                                      const isDateUsed = si.transactions.some(
-                                        (t) =>
-                                          t.id !== transaction.id &&
-                                          t.sentDate === newDate
-                                      );
-
-                                      if (isDateUsed) {
-                                        alert(
-                                          'This date is already used by another transaction for this investor. Please select a different date.'
-                                        );
-                                        return;
-                                      }
-
-                                      updateTransaction(
-                                        si.investor.id,
-                                        transaction.id,
-                                        'sentDate',
-                                        newDate
-                                      );
-                                    }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Interest input - only show if NOT using multiple interest */}
-                              {!si.hasMultipleInterest && (
-                                <div className="space-y-2">
-                                  <Label className="text-xs">Interest</Label>
-                                  <Tabs
-                                    value={transaction.interestType}
-                                    onValueChange={(value) =>
-                                      updateTransaction(
-                                        si.investor.id,
-                                        transaction.id,
-                                        'interestType',
-                                        value as 'rate' | 'fixed'
-                                      )
-                                    }
-                                  >
-                                    <TabsList className="grid w-full grid-cols-2 h-8">
-                                      <TabsTrigger
-                                        value="rate"
-                                        className="text-xs"
-                                      >
-                                        Rate (%)
-                                      </TabsTrigger>
-                                      <TabsTrigger
-                                        value="fixed"
-                                        className="text-xs"
-                                      >
-                                        Fixed (₱)
-                                      </TabsTrigger>
-                                    </TabsList>
-                                    <TabsContent value="rate" className="mt-2">
-                                      <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={transaction.interestRate}
-                                        onChange={(e) =>
-                                          updateTransaction(
-                                            si.investor.id,
-                                            transaction.id,
-                                            'interestRate',
-                                            e.target.value
-                                          )
-                                        }
-                                        placeholder="10"
-                                      />
-                                    </TabsContent>
-                                    <TabsContent value="fixed" className="mt-2">
-                                      <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={transaction.interestAmount}
-                                        onChange={(e) =>
-                                          updateTransaction(
-                                            si.investor.id,
-                                            transaction.id,
-                                            'interestAmount',
-                                            e.target.value
-                                          )
-                                        }
-                                        placeholder="0.00"
-                                      />
-                                    </TabsContent>
-                                  </Tabs>
-                                </div>
-                              )}
-
-                              {isUnpaid && (
-                                <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                                  <strong>Note:</strong> This transaction is
-                                  marked as unpaid. This loan will be marked as{' '}
-                                  <strong>Partially Funded</strong> until all
-                                  transactions are paid.
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addTransaction(si.investor.id)}
-                          className="w-full"
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add Transaction
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <LoanInvestorCard
+                  key={si.investor.id}
+                  selectedInvestor={si}
+                  watchDueDate={watchDueDate}
+                  onRemoveInvestor={removeInvestor}
+                  onAddTransaction={addTransaction}
+                  onRemoveTransaction={removeTransaction}
+                  onUpdateTransaction={updateTransaction}
+                  onPeriodsChange={(periods) => {
+                    setSelectedInvestors(
+                      selectedInvestors.map((inv) =>
+                        inv.investor.id === si.investor.id
+                          ? { ...inv, interestPeriods: periods }
+                          : inv
+                      )
+                    );
+                  }}
+                  onModeChange={(mode) => {
+                    setSelectedInvestors(
+                      selectedInvestors.map((inv) =>
+                        inv.investor.id === si.investor.id
+                          ? {
+                              ...inv,
+                              hasMultipleInterest: mode === 'multiple',
+                            }
+                          : inv
+                      )
+                    );
+                  }}
+                />
               ))}
             </div>
           )}
@@ -1102,87 +837,93 @@ export function LoanForm({
       </Card>
 
       {selectedInvestors.length > 0 && (
-        <>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setShowPreview(!showPreview)}
-            className="w-full"
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            {showPreview ? 'Hide' : 'Show'} Preview
-          </Button>
+        <Collapsible defaultOpen={true}>
+          <Card>
+            <CardContent className="p-6">
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="group w-full justify-between p-0 hover:bg-transparent"
+                >
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-bold tracking-tight text-lg sm:text-xl">
+                      Loan Preview
+                    </h4>
+                  </div>
+                  <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </Button>
+              </CollapsibleTrigger>
 
-          {showPreview && (
-            <div className="space-y-6">
-              <LoanInvestorsSection
-                investorsWithTransactions={(() => {
-                  // Group preview by investor and transform to match component format
-                  const investorMap = new Map<
-                    number,
-                    Array<(typeof preview)[0]>
-                  >();
+              <CollapsibleContent className="mt-2">
+                <LoanInvestorsSection
+                  investorsWithTransactions={(() => {
+                    // Group preview by investor and transform to match component format
+                    const investorMap = new Map<
+                      number,
+                      Array<(typeof preview)[0]>
+                    >();
 
-                  preview.forEach((p) => {
-                    const existing = investorMap.get(p.investor.id) || [];
-                    existing.push(p);
-                    investorMap.set(p.investor.id, existing);
-                  });
+                    preview.forEach((p) => {
+                      const existing = investorMap.get(p.investor.id) || [];
+                      existing.push(p);
+                      investorMap.set(p.investor.id, existing);
+                    });
 
-                  return Array.from(investorMap.values()).map(
-                    (transactions) => {
-                      const investorId = transactions[0].investor.id;
-                      const investorData = selectedInvestors.find(
-                        (si) => si.investor.id === investorId
-                      );
+                    return Array.from(investorMap.values()).map(
+                      (transactions) => {
+                        const investorId = transactions[0].investor.id;
+                        const investorData = selectedInvestors.find(
+                          (si) => si.investor.id === investorId
+                        );
 
-                      return {
-                        investor: transactions[0].investor,
-                        transactions: transactions.map((t, index) => ({
-                          id: `preview-${t.investor.id}-${index}`,
-                          amount: t.capital.toString(),
-                          interestRate: t.interestRate.toString(),
-                          interestType: 'rate' as const,
-                          sentDate: t.sentDate,
-                          isPaid: t.isPaid,
-                        })),
-                        hasMultipleInterest:
-                          investorData?.hasMultipleInterest || false,
-                        interestPeriods: investorData?.interestPeriods
-                          ? investorData.interestPeriods.map((period) => ({
-                              id: period.id,
-                              dueDate: period.dueDate,
-                              // For fixed type, use interestAmount; for rate type, use interestRate
-                              interestRate:
-                                period.interestType === 'fixed'
-                                  ? period.interestAmount
-                                  : period.interestRate,
-                              interestType: period.interestType,
-                            }))
-                          : [],
-                      };
-                    }
-                  );
-                })()}
-                title="Loan Preview"
-                showEmail={false}
-              />
-
-              {summary && (
-                <LoanSummarySection
-                  totalPrincipal={summary.totalCapital}
-                  averageRate={summary.averageRate}
-                  totalInterest={summary.totalInterest}
-                  totalAmount={summary.totalAmount}
-                  uniqueInvestors={summary.uniqueInvestors}
-                  status={summary.status}
-                  balance={summary.balance}
-                  showStatus={true}
+                        return {
+                          investor: transactions[0].investor,
+                          transactions: transactions.map((t, index) => ({
+                            id: `preview-${t.investor.id}-${index}`,
+                            amount: t.capital.toString(),
+                            interestRate: t.interestRate.toString(),
+                            interestType: 'rate' as const,
+                            sentDate: t.sentDate,
+                            isPaid: t.isPaid,
+                          })),
+                          hasMultipleInterest:
+                            investorData?.hasMultipleInterest || false,
+                          interestPeriods: investorData?.interestPeriods
+                            ? investorData.interestPeriods.map((period) => ({
+                                id: period.id,
+                                dueDate: period.dueDate,
+                                // For fixed type, use interestAmount; for rate type, use interestRate
+                                interestRate:
+                                  period.interestType === 'fixed'
+                                    ? period.interestAmount
+                                    : period.interestRate,
+                                interestType: period.interestType,
+                              }))
+                            : [],
+                        };
+                      }
+                    );
+                  })()}
+                  showEmail={false}
                 />
-              )}
-            </div>
-          )}
-        </>
+              </CollapsibleContent>
+            </CardContent>
+          </Card>
+        </Collapsible>
+      )}
+
+      {summary && (
+        <LoanSummarySection
+          totalPrincipal={summary.totalCapital}
+          averageRate={summary.averageRate}
+          totalInterest={summary.totalInterest}
+          totalAmount={summary.totalAmount}
+          uniqueInvestors={summary.uniqueInvestors}
+          status={summary.status}
+          balance={summary.balance}
+          showStatus={true}
+        />
       )}
 
       <div className="flex flex-col sm:flex-row gap-4">
