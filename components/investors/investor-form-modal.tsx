@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { toast } from '@/lib/toast';
 import {
   Dialog,
   DialogContent,
@@ -12,8 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { InvestorFormFields, InvestorFormData } from './investor-form-fields';
 
 const investorSchema = z.object({
   name: z
@@ -21,12 +21,18 @@ const investorSchema = z.object({
     .min(1, 'Name is required')
     .min(2, 'Name must be at least 2 characters'),
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  contactNumber: z.string().optional(),
 });
 
 interface InvestorFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: (investor: { id: number; name: string; email: string }) => void;
+  onSuccess: (investor: {
+    id: number;
+    name: string;
+    email: string;
+    contactNumber?: string;
+  }) => void;
 }
 
 export function InvestorFormModal({
@@ -41,11 +47,12 @@ export function InvestorFormModal({
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm({
+  } = useForm<InvestorFormData>({
     resolver: zodResolver(investorSchema),
     defaultValues: {
       name: '',
       email: '',
+      contactNumber: '',
     },
   });
 
@@ -74,7 +81,7 @@ export function InvestorFormModal({
       onSuccess(newInvestor);
     } catch (error) {
       console.error('Error creating investor:', error);
-      alert(
+      toast.error(
         error instanceof Error
           ? error.message
           : 'Failed to create investor. Please try again.'
@@ -100,32 +107,11 @@ export function InvestorFormModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="modal-name">Full Name *</Label>
-            <Input
-              id="modal-name"
-              {...register('name')}
-              placeholder="e.g., Juan Dela Cruz"
-              disabled={isSubmitting}
-            />
-            {errors.name && (
-              <p className="text-sm text-red-600">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="modal-email">Email Address *</Label>
-            <Input
-              id="modal-email"
-              type="email"
-              {...register('email')}
-              placeholder="e.g., juan@example.com"
-              disabled={isSubmitting}
-            />
-            {errors.email && (
-              <p className="text-sm text-red-600">{errors.email.message}</p>
-            )}
-          </div>
+          <InvestorFormFields
+            register={register}
+            errors={errors}
+            isSubmitting={isSubmitting}
+          />
 
           <div className="flex flex-col-reverse sm:flex-row gap-2 pt-4">
             <Button
