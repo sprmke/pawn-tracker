@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CustomTooltip } from './custom-tooltip';
+import { PieChartIcon } from 'lucide-react';
 
 interface PieChartProps {
   data: Array<{
@@ -20,6 +21,7 @@ interface PieChartProps {
   title: string;
   formatValue?: (value: number) => string;
   colors?: string[];
+  emptyMessage?: string;
 }
 
 const DEFAULT_COLORS = [
@@ -82,40 +84,56 @@ export function PieChart({
   title,
   formatValue = (value) => value.toString(),
   colors = DEFAULT_COLORS,
+  emptyMessage,
 }: PieChartProps) {
+  // Check if data is empty or if all values are zero/null
+  const isEmpty =
+    !data ||
+    data.length === 0 ||
+    data.every((item) => !item.value || item.value === 0);
+
   return (
     <Card>
       <CardHeader className="pb-4">
         <CardTitle className="text-lg font-semibold">{title}</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
-        <ResponsiveContainer width="100%" height={320}>
-          <RechartsPieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
-              label={renderCustomLabel}
-              outerRadius={90}
-              innerRadius={0}
-              fill="#8884d8"
-              dataKey="value"
-              paddingAngle={2}
-            >
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={entry.color || colors[index % colors.length]}
-                  stroke="hsl(var(--background))"
-                  strokeWidth={2}
-                />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip formatValue={formatValue} />} />
-            <Legend content={<CustomLegend />} />
-          </RechartsPieChart>
-        </ResponsiveContainer>
+        {isEmpty ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <PieChartIcon className="h-12 w-12 text-muted-foreground/40 mb-4" />
+            <p className="text-sm text-muted-foreground">
+              {emptyMessage || 'No data available'}
+            </p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={320}>
+            <RechartsPieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+                label={renderCustomLabel}
+                outerRadius={90}
+                innerRadius={0}
+                fill="#8884d8"
+                dataKey="value"
+                paddingAngle={2}
+              >
+                {data.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.color || colors[index % colors.length]}
+                    stroke="hsl(var(--background))"
+                    strokeWidth={2}
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip formatValue={formatValue} />} />
+              <Legend content={<CustomLegend />} />
+            </RechartsPieChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );
