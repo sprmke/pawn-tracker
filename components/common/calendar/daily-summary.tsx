@@ -165,6 +165,7 @@ export function DailySummary({
               size === 'lg' ? 'text-lg' : ''
             }`}
           >
+            {totalOut >= 0 ? '-' : '+'}
             {formatCurrency(totalOut)}
           </span>
         </div>
@@ -179,6 +180,7 @@ export function DailySummary({
               size === 'lg' ? 'text-lg' : ''
             }`}
           >
+            {totalIn >= 0 ? '+' : '-'}
             {formatCurrency(totalIn)}
           </span>
         </div>
