@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Investor } from '@/lib/types';
@@ -89,7 +90,7 @@ export function InvestorForm({
         `Error ${isEditMode ? 'updating' : 'creating'} investor:`,
         error
       );
-      alert(
+      toast.error(
         error instanceof Error
           ? error.message
           : `Failed to ${
