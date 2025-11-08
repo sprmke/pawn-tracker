@@ -124,7 +124,7 @@ export function TransactionDetailContent({
           {transaction.notes && (
             <div className="space-y-2 pt-4 border-t">
               <Label className="text-sm text-muted-foreground">Notes</Label>
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">
+              <p className="font-medium whitespace-pre-wrap">
                 {transaction.notes}
               </p>
             </div>
