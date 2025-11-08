@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -298,7 +299,7 @@ export function TransactionForm({
   const onSubmit = async (data: any) => {
     // Validate investor is selected
     if (!selectedInvestorId) {
-      alert('Please select an investor');
+      toast.error('Please select an investor');
       return;
     }
 
@@ -411,7 +412,7 @@ export function TransactionForm({
 
       await Promise.all(createPromises);
 
-      alert(
+      toast.success(
         `Successfully created ${transactions.length} transaction${
           transactions.length > 1 ? 's' : ''
         }!`
@@ -425,7 +426,7 @@ export function TransactionForm({
       }
     } catch (error) {
       console.error('Error creating transaction:', error);
-      alert('Failed to create transaction. Please try again.');
+      toast.error('Failed to create transaction. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
