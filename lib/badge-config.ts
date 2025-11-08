@@ -9,7 +9,7 @@ import {
  * Badge configuration for consistent styling across the application
  */
 
-// Loan Status Badge Configuration
+// Loan Status Badge Configuration (Pastel Colors)
 export const loanStatusConfig: Record<
   LoanStatus,
   {
@@ -20,23 +20,23 @@ export const loanStatusConfig: Record<
 > = {
   'Fully Funded': {
     variant: 'default',
-    className: 'bg-green-600 hover:bg-green-700',
-    dotColor: 'bg-green-500',
+    className: 'bg-emerald-400 hover:bg-emerald-500 text-emerald-950',
+    dotColor: 'bg-emerald-400',
   },
   'Partially Funded': {
     variant: 'secondary',
-    className: 'bg-yellow-500 hover:bg-yellow-600 text-white',
-    dotColor: 'bg-yellow-500',
+    className: 'bg-amber-300 hover:bg-amber-400 text-amber-950',
+    dotColor: 'bg-amber-300',
   },
   Completed: {
     variant: 'default',
-    className: 'bg-blue-600 hover:bg-blue-700',
-    dotColor: 'bg-blue-500',
+    className: 'bg-sky-400 hover:bg-sky-500 text-sky-950',
+    dotColor: 'bg-sky-400',
   },
   Overdue: {
     variant: 'destructive',
-    className: 'bg-red-600 hover:bg-red-700',
-    dotColor: 'bg-red-500',
+    className: 'bg-rose-400 hover:bg-rose-500 text-rose-950',
+    dotColor: 'bg-rose-400',
   },
 };
 
@@ -50,15 +50,18 @@ export const loanTypeConfig: Record<
 > = {
   'Lot Title': {
     variant: 'outline',
-    className: 'border-orange-500 text-orange-700 dark:text-orange-400',
+    className:
+      'border-orange-400 text-orange-700 bg-orange-100 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-600',
   },
   'OR/CR': {
     variant: 'outline',
-    className: 'border-purple-500 text-purple-700 dark:text-purple-400',
+    className:
+      'border-indigo-400 text-indigo-700 bg-indigo-100 dark:bg-indigo-900 dark:text-indigo-300 dark:border-indigo-600',
   },
   Agent: {
     variant: 'outline',
-    className: 'border-pink-500 text-pink-700 dark:text-pink-400',
+    className:
+      'border-fuchsia-400 text-fuchsia-700 bg-fuchsia-100 dark:bg-fuchsia-900 dark:text-fuchsia-300 dark:border-fuchsia-600',
   },
 };
 
@@ -70,43 +73,33 @@ export const transactionTypeConfig: Record<
     className?: string;
   }
 > = {
-  Pawn: {
+  Loan: {
     variant: 'outline',
-    className: 'border-purple-500 text-purple-700 dark:text-purple-400',
+    className:
+      'border-fuchsia-400 text-fuchsia-700 bg-fuchsia-100 dark:bg-fuchsia-900 dark:text-fuchsia-300 dark:border-fuchsia-600',
   },
-  Salary: {
+  Investment: {
     variant: 'outline',
-    className: 'border-green-500 text-green-700 dark:text-green-400',
-  },
-  'Credit Card': {
-    variant: 'outline',
-    className: 'border-blue-500 text-blue-700 dark:text-blue-400',
-  },
-  Debt: {
-    variant: 'outline',
-    className: 'border-red-500 text-red-700 dark:text-red-400',
-  },
-  Others: {
-    variant: 'outline',
-    className: 'border-gray-500 text-gray-700 dark:text-gray-400',
+    className:
+      'border-violet-400 text-violet-700 bg-violet-100 dark:bg-violet-900 dark:text-violet-300 dark:border-violet-600',
   },
 };
 
-// Transaction Direction Badge Configuration
+// Transaction Direction Badge Configuration (Pastel Colors)
 export const transactionDirectionConfig: Record<
   TransactionDirection,
   {
-    variant: 'default' | 'secondary' | 'destructive' | 'outline';
+    variant: 'success' | 'destructive';
     className?: string;
   }
 > = {
   In: {
-    variant: 'default',
-    className: 'bg-green-600 hover:bg-green-700',
+    variant: 'success',
+    className: 'bg-emerald-400 hover:bg-emerald-500 text-emerald-950',
   },
   Out: {
-    variant: 'secondary',
-    className: 'bg-gray-600 hover:bg-gray-700',
+    variant: 'destructive',
+    className: 'bg-rose-400 hover:bg-rose-500 text-rose-950',
   },
 };
 
