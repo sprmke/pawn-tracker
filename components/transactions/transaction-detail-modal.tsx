@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from '@/lib/toast';
 import {
   Dialog,
   DialogContent,
@@ -121,7 +122,7 @@ export function TransactionDetailModal({
       onUpdate?.();
     } catch (error) {
       console.error('Error deleting transaction:', error);
-      alert('Failed to delete transaction');
+      toast.error('Failed to delete transaction');
     } finally {
       setIsDeleting(false);
     }
@@ -129,7 +130,7 @@ export function TransactionDetailModal({
 
   const handleViewLoan = async () => {
     if (!transaction.loanId) {
-      alert('This transaction is not linked to a loan.');
+      toast.error('This transaction is not linked to a loan.');
       return;
     }
 
@@ -143,7 +144,7 @@ export function TransactionDetailModal({
       setShowLoanModal(true);
     } catch (error) {
       console.error('Error fetching loan:', error);
-      alert('Failed to load loan details');
+      toast.error('Failed to load loan details');
     }
   };
 
@@ -182,7 +183,7 @@ export function TransactionDetailModal({
       onUpdate?.();
     } catch (error) {
       console.error('Error updating transaction:', error);
-      alert(
+      toast.error(
         error instanceof Error
           ? error.message
           : 'Failed to update transaction. Please try again.'
