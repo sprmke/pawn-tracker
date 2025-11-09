@@ -4,12 +4,7 @@ export type LoanStatus =
   | 'Fully Funded'
   | 'Overdue'
   | 'Completed';
-export type TransactionType =
-  | 'Pawn'
-  | 'Salary'
-  | 'Credit Card'
-  | 'Debt'
-  | 'Others';
+export type TransactionType = 'Loan' | 'Investment';
 export type TransactionDirection = 'In' | 'Out';
 export type InterestType = 'rate' | 'fixed';
 
@@ -17,7 +12,7 @@ export interface Investor {
   id: number;
   name: string;
   email: string;
-  contactNumber?: string;
+  contactNumber: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,8 +23,8 @@ export interface Loan {
   type: LoanType;
   status: LoanStatus;
   dueDate: Date;
-  freeLotSqm?: number;
-  notes?: string;
+  freeLotSqm: number | null;
+  notes: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +47,7 @@ export interface LoanInvestor {
   interestRate: string;
   interestType: InterestType;
   sentDate: Date;
+  isPaid: boolean;
   hasMultipleInterest: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -61,19 +57,21 @@ export interface LoanInvestor {
 export interface Transaction {
   id: number;
   investorId: number;
+  loanId: number | null;
   date: Date;
   type: TransactionType;
   direction: TransactionDirection;
   name: string;
   amount: string;
   balance: string;
-  notes?: string;
+  notes: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface LoanWithInvestors extends Loan {
   loanInvestors: (LoanInvestor & { investor: Investor })[];
+  transactions?: Transaction[];
 }
 
 export interface InvestorWithLoans extends Investor {
