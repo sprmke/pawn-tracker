@@ -33,9 +33,15 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Nav user={session?.user}>
-          <main className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-background via-background to-muted/20">
-            <div className="mx-auto max-w-[1600px]">{children}</div>
-          </main>
+          {session ? (
+            <main className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-background via-background to-muted/20">
+              <div className="mx-auto max-w-[1600px]">{children}</div>
+            </main>
+          ) : (
+            <main className="min-h-screen">
+              {children}
+            </main>
+          )}
         </Nav>
         <Toaster />
       </body>
