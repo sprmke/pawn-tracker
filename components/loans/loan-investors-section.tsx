@@ -8,6 +8,7 @@ interface InvestorTransaction {
   interestRate: string;
   interestType?: string;
   sentDate: Date | string;
+  isPaid: boolean;
 }
 
 interface InterestPeriod {
