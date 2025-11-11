@@ -7,12 +7,14 @@ interface ViewModeToggleProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   showCalendar?: boolean;
+  hasData?: boolean;
 }
 
 export function ViewModeToggle({
   viewMode,
   onViewModeChange,
   showCalendar = false,
+  hasData = true,
 }: ViewModeToggleProps) {
   return (
     <div className="flex items-center border rounded-lg p-1">
@@ -28,9 +30,10 @@ export function ViewModeToggle({
       <Button
         variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
         size="sm"
-        onClick={() => onViewModeChange('cards')}
+        onClick={() => hasData && onViewModeChange('cards')}
         className="h-8 px-3"
         title="Card View"
+        disabled={!hasData}
       >
         <LayoutGrid className="h-4 w-4" />
       </Button>
@@ -38,9 +41,10 @@ export function ViewModeToggle({
         <Button
           variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
           size="sm"
-          onClick={() => onViewModeChange('calendar')}
+          onClick={() => hasData && onViewModeChange('calendar')}
           className="h-8 px-3"
           title="Calendar View"
+          disabled={!hasData}
         >
           <CalendarDays className="h-4 w-4" />
         </Button>
