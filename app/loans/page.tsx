@@ -18,8 +18,6 @@ import {
 import Link from 'next/link';
 import {
   PlusCircle,
-  LayoutGrid,
-  Table as TableIcon,
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
@@ -30,7 +28,6 @@ import {
   X,
   Filter,
   TrendingUp,
-  CalendarDays,
 } from 'lucide-react';
 import {
   Select,
@@ -56,6 +53,7 @@ import {
   RangeFilter,
   CardPagination,
   InlineLoader,
+  ViewModeToggle,
 } from '@/components/common';
 
 type SortField =
@@ -112,6 +110,13 @@ export default function LoansPage() {
     fetchLoans();
     fetchInvestors();
   }, []);
+
+  // Reset to table view if no data and currently on cards/calendar view
+  useEffect(() => {
+    if (loans.length === 0 && (viewMode === 'cards' || viewMode === 'calendar')) {
+      setViewMode('table');
+    }
+  }, [loans.length, viewMode]);
 
   const fetchLoans = async () => {
     try {
@@ -427,35 +432,12 @@ export default function LoansPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center border rounded-lg p-1">
-            <Button
-              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('table')}
-              className="h-8 px-3"
-              title="Table View"
-            >
-              <TableIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('cards')}
-              className="h-8 px-3"
-              title="Card View"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('calendar')}
-              className="h-8 px-3"
-              title="Calendar View"
-            >
-              <CalendarDays className="h-4 w-4" />
-            </Button>
-          </div>
+          <ViewModeToggle
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            showCalendar={true}
+            hasData={loans.length > 0}
+          />
           <Link href="/loans/new">
             <Button className="w-full sm:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" />
