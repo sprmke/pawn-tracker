@@ -7,11 +7,8 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import {
   PlusCircle,
-  LayoutGrid,
-  Table as TableIcon,
   X,
   Filter,
-  CalendarDays,
   ChevronDown,
   ArrowLeftRight,
   Coins,
@@ -36,6 +33,7 @@ import {
   EmptyState,
   CardPagination,
   InlineLoader,
+  ViewModeToggle,
 } from '@/components/common';
 import { DollarSign, TrendingUp, Users } from 'lucide-react';
 
@@ -77,6 +75,13 @@ export default function TransactionsPage() {
     fetchTransactions();
     fetchInvestors();
   }, []);
+
+  // Reset to table view if no data and currently on cards/calendar view
+  useEffect(() => {
+    if (transactions.length === 0 && (viewMode === 'cards' || viewMode === 'calendar')) {
+      setViewMode('table');
+    }
+  }, [transactions.length, viewMode]);
 
   // Handle view mode changes for calendar view
   useEffect(() => {
@@ -258,35 +263,12 @@ export default function TransactionsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center border rounded-lg p-1">
-            <Button
-              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('table')}
-              className="h-8 px-3"
-              title="Table View"
-            >
-              <TableIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('cards')}
-              className="h-8 px-3"
-              title="Card View"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('calendar')}
-              className="h-8 px-3"
-              title="Calendar View"
-            >
-              <CalendarDays className="h-4 w-4" />
-            </Button>
-          </div>
+          <ViewModeToggle
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            showCalendar={true}
+            hasData={transactions.length > 0}
+          />
           <DropdownMenu
             trigger={
               <Button className="w-full sm:w-auto">
