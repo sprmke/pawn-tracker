@@ -11,6 +11,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const userId = session.user.id;
     const { searchParams } = new URL(request.url);
     const investorId = searchParams.get('investorId');
 
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
       allTransactions = await db.query.transactions.findMany({
         where: (transactions, { eq, and }) =>
           and(
-            eq(transactions.userId, session.user.id),
+            eq(transactions.userId, userId),
             eq(transactions.investorId, parseInt(investorId))
           ),
         orderBy: (transactions, { desc }) => [desc(transactions.date)],
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
     } else {
       allTransactions = await db.query.transactions.findMany({
         where: (transactions, { eq }) =>
-          eq(transactions.userId, session.user.id),
+          eq(transactions.userId, userId),
         orderBy: (transactions, { desc }) => [desc(transactions.date)],
         with: {
           investor: true,
@@ -55,12 +56,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const userId = session.user.id;
     const body = await request.json();
 
     // Convert ISO string date to Date object for Drizzle
     const transactionData = {
       ...body,
-      userId: session.user.id,
+      userId,
       date: new Date(body.date),
     };
 
