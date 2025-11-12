@@ -16,7 +16,6 @@ import {
   ArrowLeftRight,
   Coins,
   LogOut,
-  User,
 } from 'lucide-react';
 import { useState, ReactNode, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
@@ -30,6 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu-radix';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/common';
 
 interface SubMenuItem {
   title: string;
@@ -63,7 +63,7 @@ const navItems: NavItem[] = [
   {
     title: 'Loans',
     href: '/loans',
-    icon: Coins,
+    icon: FileText,
   },
   {
     title: 'Investors',
@@ -141,18 +141,22 @@ export function Nav({
   return (
     <>
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 border-b bg-background">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 border-b bg-background/95 backdrop-blur-lg">
         <div className="flex h-full items-center justify-between px-4">
           <Link
             href={user ? '/dashboard' : '/'}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 group"
           >
-            <span className="text-lg font-semibold">Pawn Tracker</span>
+            <Logo size="md" showIcon={true} gradient={true} animated={true} />
           </Link>
           <div className="flex items-center gap-2">
             {!user && (
               <Link href="/auth/signin">
-                <Button variant="default" size="sm">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-lg transition-all duration-300"
+                >
                   Login
                 </Button>
               </Link>
@@ -177,7 +181,7 @@ export function Nav({
       {/* Mobile Menu Overlay */}
       {user && isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/50"
+          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -186,11 +190,13 @@ export function Nav({
       {user && (
         <aside
           className={cn(
-            'lg:hidden fixed top-16 left-0 bottom-0 z-40 w-64 border-r bg-background transition-transform duration-300 overflow-y-auto',
-            isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+            'lg:hidden fixed top-16 left-0 right-0 bottom-0 z-40 border-t-2 bg-background/98 backdrop-blur-xl transition-all duration-300 flex flex-col',
+            isMobileMenuOpen
+              ? 'translate-x-0 opacity-100'
+              : 'translate-x-full opacity-0'
           )}
         >
-          <nav className="flex-1 space-y-1 p-2">
+          <nav className="flex-1 space-y-2 p-3 overflow-y-auto">
             {navItems.map((item) => {
               const Icon = item.icon;
               const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -202,12 +208,14 @@ export function Nav({
                     <button
                       onClick={() => toggleMenu(item.title)}
                       className={cn(
-                        'flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                        'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        'flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300',
+                        'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground hover:shadow-sm'
                       )}
                     >
                       <div className="flex items-center space-x-3">
-                        <Icon className="h-5 w-5 flex-shrink-0" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50">
+                          <Icon className="h-4 w-4 flex-shrink-0" />
+                        </div>
                         <span>{item.title}</span>
                       </div>
                       {isExpanded ? (
@@ -217,7 +225,7 @@ export function Nav({
                       )}
                     </button>
                     {isExpanded && (
-                      <div className="ml-8 mt-1 space-y-1">
+                      <div className="ml-11 mt-1 space-y-1">
                         {item.subItems!.map((subItem) => {
                           const isActive =
                             pathname === subItem.href ||
@@ -227,10 +235,10 @@ export function Nav({
                               key={subItem.href}
                               href={subItem.href}
                               className={cn(
-                                'flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                'flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300',
                                 isActive
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                  ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md'
+                                  : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
                               )}
                             >
                               <span>{subItem.title}</span>
@@ -251,47 +259,59 @@ export function Nav({
                   key={item.href}
                   href={item.href!}
                   className={cn(
-                    'flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    'group flex items-center space-x-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 relative',
                     isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                      ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md'
+                      : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground hover:shadow-sm'
                   )}
                 >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
-                  <span>{item.title}</span>
+                  <div
+                    className={cn(
+                      'flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-300',
+                      isActive
+                        ? 'bg-primary-foreground/20'
+                        : 'bg-muted/50 group-hover:bg-primary/10'
+                    )}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                  </div>
+                  <span className="font-medium">{item.title}</span>
                 </Link>
               );
             })}
           </nav>
 
-          {/* Mobile User Menu */}
+          {/* Mobile User Section - Fixed at Bottom */}
           {user && (
-            <div className="border-t p-2">
-              <DropdownMenuRadix>
-                <DropdownMenuTrigger className="flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={user.image || undefined}
-                      alt={user.name || 'User'}
-                    />
-                    <AvatarFallback>{userInitials}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 text-left">
-                    <p className="text-sm font-medium">{user.name || 'User'}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {user.email}
-                    </p>
-                  </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenuRadix>
+            <div className="border-t-2 bg-gradient-to-r from-muted/40 to-muted/20 mt-auto">
+              {/* User Info */}
+              <div className="flex items-center space-x-3 px-4 py-1.5 border-b">
+                <Avatar className="h-11 w-11 ring-2 ring-primary/30 shadow-md">
+                  <AvatarImage
+                    src={user.image || undefined}
+                    alt={user.name || 'User'}
+                  />
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-chart-2 text-primary-foreground font-semibold text-base">
+                    {userInitials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 overflow-hidden">
+                  <p className="text-sm font-bold truncate">
+                    {user.name || 'User'}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {user.email}
+                  </p>
+                </div>
+              </div>
+
+              {/* Logout Button */}
+              <button
+                onClick={() => signOut()}
+                className="flex w-full items-center justify-center space-x-2 px-4 py-4 text-sm font-medium text-destructive hover:bg-destructive/10 transition-all duration-300 active:bg-destructive/20"
+              >
+                <span className="font-semibold">Sign Out</span>
+              </button>
             </div>
           )}
         </aside>
@@ -301,30 +321,55 @@ export function Nav({
       {user ? (
         <aside
           className={cn(
-            'hidden lg:block fixed left-0 top-0 z-40 h-screen border-r bg-background transition-all duration-300',
-            isCollapsed ? 'w-16' : 'w-64'
+            'hidden lg:block fixed left-0 top-0 z-40 h-screen border-r-2 bg-background/95 backdrop-blur-lg transition-all duration-300 shadow-lg',
+            isCollapsed ? 'w-20' : 'w-72'
           )}
         >
           <div className="flex h-full flex-col">
             {/* Header */}
-            <div className="flex h-16 items-center justify-between border-b px-4">
+            <div className="flex h-16 items-center justify-between px-4 border-b-2 bg-gradient-to-r from-muted/40 to-muted/20">
               {!isCollapsed && (
-                <Link href="/dashboard" className="flex items-center space-x-2">
-                  <span className="text-lg font-semibold">Pawn Tracker</span>
+                <Link
+                  href="/dashboard"
+                  className="flex items-center space-x-2 group"
+                >
+                  <Logo
+                    size="md"
+                    showIcon={true}
+                    gradient={true}
+                    animated={true}
+                  />
                 </Link>
               )}
               {isCollapsed && (
-                <Link
-                  href="/dashboard"
-                  className="flex items-center justify-center w-full"
-                >
-                  <FileText className="h-5 w-5 text-primary" />
-                </Link>
+                <div className="flex w-full justify-center">
+                  <Coins className="h-6 w-6 text-primary" />
+                </div>
               )}
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className={cn(
+                  'flex items-center justify-center h-8 w-8 rounded-lg bg-muted/50 hover:bg-accent/50 text-muted-foreground hover:text-accent-foreground transition-all duration-300 hover:shadow-md',
+                  isCollapsed &&
+                    'absolute -right-3 top-4 bg-background border-2 shadow-lg'
+                )}
+                title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </button>
             </div>
 
             {/* Navigation Items */}
-            <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
+            <nav
+              className={cn(
+                'flex-1 space-y-1 overflow-y-auto',
+                isCollapsed ? 'p-2' : 'p-4'
+              )}
+            >
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -332,19 +377,29 @@ export function Nav({
 
                 if (hasSubItems) {
                   return (
-                    <div key={item.title}>
+                    <div key={item.title} className="mb-1">
                       <button
                         onClick={() => toggleMenu(item.title)}
                         className={cn(
-                          'flex items-center w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                          'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                          isCollapsed ? 'justify-center' : 'justify-between'
+                          'flex items-center w-full rounded-xl py-1.5 text-sm font-medium transition-all duration-300 text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground hover:shadow-sm',
+                          isCollapsed
+                            ? 'justify-center px-2'
+                            : 'justify-between px-4'
                         )}
                         title={isCollapsed ? item.title : undefined}
                       >
-                        <div className="flex items-center space-x-3">
-                          <Icon className="h-5 w-5 flex-shrink-0" />
-                          {!isCollapsed && <span>{item.title}</span>}
+                        <div
+                          className={cn(
+                            'flex items-center',
+                            !isCollapsed && 'space-x-3'
+                          )}
+                        >
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/50">
+                            <Icon className="h-5 w-5 flex-shrink-0" />
+                          </div>
+                          {!isCollapsed && (
+                            <span className="font-medium">{item.title}</span>
+                          )}
                         </div>
                         {!isCollapsed &&
                           (isExpanded ? (
@@ -354,7 +409,7 @@ export function Nav({
                           ))}
                       </button>
                       {isExpanded && !isCollapsed && (
-                        <div className="ml-8 mt-1 space-y-1">
+                        <div className="ml-12 mt-1 space-y-1">
                           {item.subItems!.map((subItem) => {
                             const isActive =
                               pathname === subItem.href ||
@@ -364,10 +419,10 @@ export function Nav({
                                 key={subItem.href}
                                 href={subItem.href}
                                 className={cn(
-                                  'flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                  'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-300',
                                   isActive
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                    ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md'
+                                    : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
                                 )}
                               >
                                 <span>{subItem.title}</span>
@@ -388,16 +443,27 @@ export function Nav({
                     key={item.href}
                     href={item.href!}
                     className={cn(
-                      'flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                      'group flex items-center rounded-xl py-1.5 text-sm font-medium transition-all duration-300 relative mb-1',
                       isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                      isCollapsed && 'justify-center'
+                        ? 'bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground shadow-lg'
+                        : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground hover:shadow-sm',
+                      isCollapsed ? 'justify-center px-2' : 'space-x-3 px-4'
                     )}
                     title={isCollapsed ? item.title : undefined}
                   >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    {!isCollapsed && <span>{item.title}</span>}
+                    <div
+                      className={cn(
+                        'flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300',
+                        isActive
+                          ? 'bg-primary-foreground/20 shadow-sm'
+                          : 'bg-muted/50 group-hover:bg-primary/10'
+                      )}
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                    </div>
+                    {!isCollapsed && (
+                      <span className="font-medium">{item.title}</span>
+                    )}
                   </Link>
                 );
               })}
@@ -405,36 +471,45 @@ export function Nav({
 
             {/* Desktop User Menu */}
             {user && (
-              <div className="border-t p-2">
+              <div className="border-t-2 p-4 bg-gradient-to-r from-muted/40 to-muted/20">
                 <DropdownMenuRadix>
                   <DropdownMenuTrigger
                     className={cn(
-                      'flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent',
-                      isCollapsed && 'justify-center'
+                      'flex w-full items-center rounded-xl py-1.5 text-sm font-medium transition-all duration-300 hover:bg-accent/50 hover:shadow-md',
+                      isCollapsed ? 'justify-center px-2' : 'space-x-3 px-4'
                     )}
                   >
-                    <Avatar className="h-8 w-8 flex-shrink-0">
+                    <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-primary/30 shadow-sm">
                       <AvatarImage
                         src={user.image || undefined}
                         alt={user.name || 'User'}
                       />
-                      <AvatarFallback>{userInitials}</AvatarFallback>
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-chart-2 text-primary-foreground font-semibold">
+                        {userInitials}
+                      </AvatarFallback>
                     </Avatar>
                     {!isCollapsed && (
-                      <div className="flex-1 text-left overflow-hidden">
-                        <p className="text-sm font-medium truncate">
-                          {user.name || 'User'}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {user.email}
-                        </p>
-                      </div>
+                      <>
+                        <div className="flex-1 text-left overflow-hidden">
+                          <p className="text-sm font-bold truncate">
+                            {user.name || 'User'}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                      </>
                     )}
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuLabel className="font-semibold">
+                      My Account
+                    </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => signOut()}>
+                    <DropdownMenuItem
+                      onClick={() => signOut()}
+                      className="cursor-pointer text-destructive focus:text-destructive"
+                    >
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign out
                     </DropdownMenuItem>
@@ -442,38 +517,28 @@ export function Nav({
                 </DropdownMenuRadix>
               </div>
             )}
-
-            {/* Toggle Button */}
-            <div className="border-t p-2">
-              <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className={cn(
-                  'flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
-                  isCollapsed && 'justify-center'
-                )}
-                title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              >
-                {isCollapsed ? (
-                  <ChevronRight className="h-5 w-5" />
-                ) : (
-                  <>
-                    <ChevronLeft className="h-5 w-5" />
-                    <span>Collapse</span>
-                  </>
-                )}
-              </button>
-            </div>
           </div>
         </aside>
       ) : (
         /* Desktop Header for Unauthenticated Users */
-        <header className="hidden lg:block fixed top-0 left-0 right-0 z-50 h-16 border-b bg-background">
-          <div className="flex h-full items-center justify-between px-6">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-lg font-semibold">Pawn Tracker</span>
+        <header className="hidden lg:block fixed top-0 left-0 right-0 z-50 h-16 border-b bg-background/80 backdrop-blur-lg">
+          <div className="flex h-full items-center justify-between px-6 mx-auto max-w-7xl">
+            <Link href="/" className="group transition-all duration-300">
+              <Logo
+                size="md"
+                showIcon={true}
+                gradient={true}
+                animated={true}
+                className="group-hover:from-chart-2 group-hover:to-primary"
+              />
             </Link>
             <Link href="/auth/signin">
-              <Button variant="default">Login</Button>
+              <Button
+                variant="default"
+                className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-xl transition-all duration-300"
+              >
+                Login
+              </Button>
             </Link>
           </div>
         </header>
@@ -485,9 +550,9 @@ export function Nav({
           'transition-all duration-300',
           'pt-16', // Add top padding on mobile for fixed header
           user && !isCollapsed
-            ? 'lg:pt-0 lg:ml-64'
+            ? 'lg:pt-0 lg:ml-72'
             : user && isCollapsed
-            ? 'lg:pt-0 lg:ml-16'
+            ? 'lg:pt-0 lg:ml-20'
             : 'lg:pt-16 lg:ml-0' // Apply appropriate padding and margin based on auth state
         )}
       >
