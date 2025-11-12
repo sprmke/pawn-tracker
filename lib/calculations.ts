@@ -157,6 +157,82 @@ export function calculateInterest(
 }
 
 /**
+ * Calculate the amount due on the loan's final due date
+ * For multiple interest periods: capital + final period interest only
+ * For single interest: capital + total interest
+ */
+export function calculateAmountDueOnDate(
+  loanInvestors: Array<{
+    amount: string;
+    interestRate: string;
+    interestType?: string;
+    hasMultipleInterest?: boolean;
+    interestPeriods?: Array<{
+      interestRate: string;
+      interestType?: string;
+      dueDate?: Date | string;
+    }>;
+    investor?: { id: number };
+    investorId?: number;
+  }>
+): number {
+  // Group by investor to handle multiple interest correctly
+  const investorGroups = new Map<number, typeof loanInvestors>();
+
+  loanInvestors.forEach((li) => {
+    const investorId = li.investor?.id || li.investorId;
+    if (investorId) {
+      const existing = investorGroups.get(investorId) || [];
+      existing.push(li);
+      investorGroups.set(investorId, existing);
+    }
+  });
+
+  let totalAmount = 0;
+
+  investorGroups.forEach((transactions) => {
+    // Calculate total capital for this investor
+    const investorTotalCapital = transactions.reduce(
+      (sum, t) => sum + parseFloat(t.amount),
+      0
+    );
+
+    // Find if any transaction has multiple interest periods
+    const transactionWithPeriods = transactions.find(
+      (t) =>
+        t.hasMultipleInterest &&
+        t.interestPeriods &&
+        t.interestPeriods.length > 0
+    );
+
+    if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
+      // Multiple interest periods - only calculate final period interest
+      const periods = transactionWithPeriods.interestPeriods;
+      const finalPeriod = periods[periods.length - 1];
+
+      const finalPeriodInterest = calculateInterest(
+        investorTotalCapital,
+        parseFloat(finalPeriod.interestRate),
+        finalPeriod.interestType
+      );
+
+      // Capital + final period interest only
+      totalAmount += investorTotalCapital + finalPeriodInterest;
+    } else {
+      // No multiple interest - calculate capital + total interest
+      const interest = transactions.reduce((sum, li) => {
+        const capital = parseFloat(li.amount);
+        return sum + calculateInterest(capital, li.interestRate, li.interestType);
+      }, 0);
+
+      totalAmount += investorTotalCapital + interest;
+    }
+  });
+
+  return totalAmount;
+}
+
+/**
  * Calculate total for a single investment (amount + interest)
  */
 export function calculateInvestmentTotal(
