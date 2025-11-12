@@ -18,11 +18,12 @@ export function ViewModeToggle({
 }: ViewModeToggleProps) {
   return (
     <div className="flex items-center border rounded-lg p-1">
+      {/* Table view button - hidden on mobile, visible from tablet (md) and up */}
       <Button
         variant={viewMode === 'table' ? 'secondary' : 'ghost'}
         size="sm"
         onClick={() => onViewModeChange('table')}
-        className="h-8 px-3"
+        className="h-8 px-3 hidden md:flex"
         title="Table View"
       >
         <TableIcon className="h-4 w-4" />
