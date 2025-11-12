@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/common';
 import {
   Card,
   CardContent,
@@ -66,8 +67,8 @@ export default async function HomePage() {
             {/* CTA Buttons */}
             <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up animation-delay-400">
               <Link href="/auth/signin">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="group relative overflow-hidden bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all duration-300"
                 >
                   Get Started
@@ -83,14 +84,18 @@ export default async function HomePage() {
                   <FileText className="h-6 w-6 text-primary" />
                 </div>
                 <div className="text-3xl font-bold">Unlimited</div>
-                <div className="text-sm text-muted-foreground">Loan Tracking</div>
+                <div className="text-sm text-muted-foreground">
+                  Loan Tracking
+                </div>
               </div>
               <div className="flex flex-col items-center">
                 <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-chart-2/10">
                   <Users className="h-6 w-6 text-chart-2" />
                 </div>
                 <div className="text-3xl font-bold">Complete</div>
-                <div className="text-sm text-muted-foreground">Investor Management</div>
+                <div className="text-sm text-muted-foreground">
+                  Investor Management
+                </div>
               </div>
               <div className="flex flex-col items-center">
                 <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-chart-3/10">
@@ -115,8 +120,8 @@ export default async function HomePage() {
               Everything you need to manage your pawn business
             </p>
             <p className="mt-6 text-lg leading-8 text-muted-foreground">
-              Designed specifically for pawn business operations with intuitive tools
-              and comprehensive tracking capabilities.
+              Designed specifically for pawn business operations with intuitive
+              tools and comprehensive tracking capabilities.
             </p>
           </div>
 
@@ -262,7 +267,8 @@ export default async function HomePage() {
                 </p>
                 <p className="mt-6 text-lg leading-8 text-muted-foreground">
                   Our platform is designed with your needs in mind, providing
-                  powerful tools that make managing your pawn business effortless.
+                  powerful tools that make managing your pawn business
+                  effortless.
                 </p>
                 <dl className="mt-10 max-w-xl space-y-8 text-base leading-7 lg:max-w-none">
                   <div className="relative pl-9">
@@ -272,8 +278,8 @@ export default async function HomePage() {
                     </dt>
                     <dd className="inline text-muted-foreground">
                       {' '}
-                      Monitor all financial transactions with detailed records and
-                      comprehensive reporting.
+                      Monitor all financial transactions with detailed records
+                      and comprehensive reporting.
                     </dd>
                   </div>
                   <div className="relative pl-9">
@@ -283,8 +289,8 @@ export default async function HomePage() {
                     </dt>
                     <dd className="inline text-muted-foreground">
                       {' '}
-                      Keep track of investor contributions, returns, and maintain
-                      transparent relationships.
+                      Keep track of investor contributions, returns, and
+                      maintain transparent relationships.
                     </dd>
                   </div>
                   <div className="relative pl-9">
@@ -318,7 +324,9 @@ export default async function HomePage() {
                       <Users className="h-6 w-6 text-chart-2" />
                     </div>
                     <div>
-                      <div className="text-sm font-medium">Active Investors</div>
+                      <div className="text-sm font-medium">
+                        Active Investors
+                      </div>
                       <div className="text-2xl font-bold">47</div>
                     </div>
                   </div>
@@ -374,16 +382,15 @@ export default async function HomePage() {
       <footer className="border-t bg-muted/30">
         <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
           <div className="text-center">
-            <div className="mb-4">
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-chart-2 bg-clip-text text-transparent">
-                Pawn Tracker
-              </span>
+            <div className="mb-4 flex justify-center">
+              <Logo size="xl" showIcon={true} gradient={true} />
             </div>
             <p className="text-sm text-muted-foreground">
               Professional pawn business management platform
             </p>
             <p className="mt-4 text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Pawn Tracker. All rights reserved.
+              &copy; {new Date().getFullYear()} Pawn Tracker. All rights
+              reserved.
             </p>
           </div>
         </div>
