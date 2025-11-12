@@ -27,6 +27,7 @@ export {
   ViewButton,
   ActionButtonsGroup,
 } from './action-buttons';
+export { Logo } from './logo';
 
 // Calendar components
 export * from './calendar';
