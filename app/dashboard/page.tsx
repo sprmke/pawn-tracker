@@ -21,6 +21,7 @@ import {
   PastDueLoansCard,
   PendingDisbursementsCard,
   MaturingLoansCard,
+  PageHeader,
 } from '@/components/common';
 import {
   CurrencyLineChart,
@@ -350,22 +351,17 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-          Dashboard
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Overview of your pawn business
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Overview of your pawn business"
+      />
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Overview</CardTitle>
+        <CardHeader>
+          <CardTitle>Overview</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          {/* Overview Stats */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Total Principal"
               value={formatCurrency(data.totalPrincipal)}
@@ -399,8 +395,7 @@ export default async function DashboardPage() {
             />
           </div>
 
-          {/* Transaction Stats */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Total Inflow"
               value={formatCurrency(data.totalInflow)}
