@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Logo } from '@/components/common';
 
 async function handleGoogleSignIn(redirectUrl: string) {
   'use server';
@@ -22,15 +23,17 @@ export default async function SignInPage({
   const callbackUrl = params?.callbackUrl || '/dashboard';
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">
-            Welcome to Pawn Tracker
-          </CardTitle>
-          <CardDescription>
-            Sign in to your account to manage loans and investors
-          </CardDescription>
+        <CardHeader className="space-y-4 text-center">
+          <div className="flex justify-center">
+            <Logo size="xl" showIcon={true} gradient={true} />
+          </div>
+          <div className="space-y-1">
+            <CardDescription>
+              Sign in to your account to manage loans and investors
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <form action={handleGoogleSignIn.bind(null, callbackUrl)}>
