@@ -111,9 +111,7 @@ export function DetailHeader({
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-                {title}
-              </h1>
+              <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
             </div>
             {description && (
               <p className="text-sm sm:text-base text-muted-foreground">
