@@ -34,6 +34,7 @@ import {
   CardPagination,
   InlineLoader,
   ViewModeToggle,
+  PageHeader,
 } from '@/components/common';
 import { DollarSign, TrendingUp, Users } from 'lucide-react';
 
@@ -71,6 +72,23 @@ export default function TransactionsPage() {
   const [maxBalance, setMaxBalance] = useState<string>('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
 
+  // Force cards view on mobile screens
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768; // md breakpoint
+      if (isMobile && viewMode === 'table') {
+        setViewMode('cards');
+      }
+    };
+
+    // Check on mount
+    handleResize();
+
+    // Listen for window resize
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
+
   useEffect(() => {
     fetchTransactions();
     fetchInvestors();
@@ -78,7 +96,10 @@ export default function TransactionsPage() {
 
   // Reset to table view if no data and currently on cards/calendar view
   useEffect(() => {
-    if (transactions.length === 0 && (viewMode === 'cards' || viewMode === 'calendar')) {
+    if (
+      transactions.length === 0 &&
+      (viewMode === 'cards' || viewMode === 'calendar')
+    ) {
       setViewMode('table');
     }
   }, [transactions.length, viewMode]);
@@ -236,7 +257,9 @@ export default function TransactionsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Transactions
+            </h1>
             <p className="text-muted-foreground">
               View and manage all transactions
             </p>
@@ -253,46 +276,42 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-            Transactions
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            View and manage all transactions
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ViewModeToggle
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            showCalendar={true}
-            hasData={transactions.length > 0}
-          />
-          <DropdownMenu
-            trigger={
-              <Button className="w-full sm:w-auto">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Transaction
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            }
-            items={[
-              {
-                label: 'Investment',
-                icon: <ArrowLeftRight className="h-4 w-4" />,
-                onClick: () => router.push('/transactions/new'),
-              },
-              {
-                label: 'Loan',
-                icon: <Coins className="h-4 w-4" />,
-                onClick: () => router.push('/loans/new'),
-              },
-            ]}
-            align="end"
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="Transactions"
+        description="View and manage all transactions"
+        actions={
+          <>
+            <ViewModeToggle
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              showCalendar={true}
+              hasData={transactions.length > 0}
+            />
+            <DropdownMenu
+              trigger={
+                <Button className="w-full sm:w-auto">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  New Transaction
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              }
+              items={[
+                {
+                  label: 'Investment',
+                  icon: <ArrowLeftRight className="h-4 w-4" />,
+                  onClick: () => router.push('/transactions/new'),
+                },
+                {
+                  label: 'Loan',
+                  icon: <Coins className="h-4 w-4" />,
+                  onClick: () => router.push('/loans/new'),
+                },
+              ]}
+              align="end"
+            />
+          </>
+        }
+      />
 
       {/* Search and Filter Section */}
       <div className="flex flex-col gap-4">
@@ -309,7 +328,7 @@ export default function TransactionsPage() {
               placeholder="Search by name, investor, or notes..."
             />
 
-            {/* Show/Hide Past Transactions Filter - Hidden in calendar view */}
+            {/* Show/Hide Past Transactions Filter - Hidden on Mobile & in calendar view */}
             {viewMode !== 'calendar' && (
               <Select
                 value={showPastTransactions ? 'show' : 'hide'}
@@ -318,7 +337,7 @@ export default function TransactionsPage() {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectTrigger className="hidden sm:flex w-full sm:w-[200px]">
                   <SelectValue placeholder="Past Transactions" />
                 </SelectTrigger>
                 <SelectContent>
@@ -328,7 +347,7 @@ export default function TransactionsPage() {
               </Select>
             )}
 
-            {/* Type Filter */}
+            {/* Type Filter - Hidden on Mobile */}
             <Select
               value={typeFilter}
               onValueChange={(value) => {
@@ -336,7 +355,7 @@ export default function TransactionsPage() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
@@ -346,7 +365,7 @@ export default function TransactionsPage() {
               </SelectContent>
             </Select>
 
-            {/* Direction Filter */}
+            {/* Direction Filter - Hidden on Mobile */}
             <Select
               value={directionFilter}
               onValueChange={(value) => {
@@ -354,7 +373,7 @@ export default function TransactionsPage() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
                 <SelectValue placeholder="Direction" />
               </SelectTrigger>
               <SelectContent>
@@ -398,6 +417,79 @@ export default function TransactionsPage() {
           {/* Amount Range Filters - Collapsible */}
           {showMoreFilters && (
             <div className="space-y-3 p-4 border rounded-lg bg-muted/30 animate-in slide-in-from-top-2 duration-200">
+              {/* Mobile-only Basic Filters */}
+              <div className="grid grid-cols-2 gap-3 pb-3 border-b sm:hidden">
+                {/* Past Transactions Filter - Mobile (only show when not in calendar view) */}
+                {viewMode !== 'calendar' && (
+                  <div>
+                    <label className="text-xs font-semibold mb-2 block">
+                      Past Transactions
+                    </label>
+                    <Select
+                      value={showPastTransactions ? 'show' : 'hide'}
+                      onValueChange={(value) => {
+                        setShowPastTransactions(value === 'show');
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Past Transactions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="hide">Hide Past</SelectItem>
+                        <SelectItem value="show">Show Past</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Type Filter - Mobile */}
+                <div>
+                  <label className="text-xs font-semibold mb-2 block">
+                    Type
+                  </label>
+                  <Select
+                    value={typeFilter}
+                    onValueChange={(value) => {
+                      setTypeFilter(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="Investment">Investment</SelectItem>
+                      <SelectItem value="Loan">Loan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Direction Filter - Mobile */}
+                <div className={viewMode !== 'calendar' ? '' : 'col-span-2'}>
+                  <label className="text-xs font-semibold mb-2 block">
+                    Direction
+                  </label>
+                  <Select
+                    value={directionFilter}
+                    onValueChange={(value) => {
+                      setDirectionFilter(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Direction" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Directions</SelectItem>
+                      <SelectItem value="In">In</SelectItem>
+                      <SelectItem value="Out">Out</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Amount Range */}
                 <RangeFilter
