@@ -34,6 +34,7 @@ import {
   PastDueLoansCard,
   PendingDisbursementsCard,
   MaturingLoansCard,
+  PageHeader,
 } from '@/components/common';
 import { formatCurrency } from '@/lib/format';
 import { getTodayAtMidnight, normalizeToMidnight } from '@/lib/date-utils';
@@ -156,6 +157,23 @@ export default function InvestorsPage() {
   const [minGain, setMinGain] = useState<string>('');
   const [maxGain, setMaxGain] = useState<string>('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+
+  // Force cards view on mobile screens
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768; // md breakpoint
+      if (isMobile && viewMode === 'table') {
+        setViewMode('cards');
+      }
+    };
+
+    // Check on mount
+    handleResize();
+
+    // Listen for window resize
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
 
   useEffect(() => {
     fetchInvestors();
@@ -301,7 +319,7 @@ export default function InvestorsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Investors</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Investors</h1>
           <p className="text-muted-foreground">
             Track investor portfolios and balances
           </p>
@@ -317,42 +335,39 @@ export default function InvestorsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-            Investors
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Track investor portfolios and balances
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center border rounded-lg p-1">
-            <Button
-              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('table')}
-              className="h-8 px-3"
-            >
-              <TableIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('cards')}
-              className="h-8 px-3"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-          </div>
-          <Link href="/investors/new">
-            <Button className="w-full sm:w-auto">
-              <UserPlus className="mr-2 h-4 w-4" />
-              New Investor
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Investors"
+        description="Track investor portfolios and balances"
+        actions={
+          <>
+            <div className="flex items-center border-2 rounded-lg p-1">
+              {/* Table view button - hidden on mobile, visible from tablet (md) and up */}
+              <Button
+                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+                className="h-8 px-3 hidden md:flex"
+              >
+                <TableIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('cards')}
+                className="h-8 px-3"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
+            <Link href="/investors/new">
+              <Button className="w-full sm:w-auto">
+                <UserPlus className="mr-2 h-4 w-4" />
+                New Investor
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       {/* Search and Filter Section */}
       <div className="flex flex-col gap-4">
@@ -366,12 +381,12 @@ export default function InvestorsPage() {
               placeholder="Search investors by name or email..."
             />
 
-            {/* Loan Status Filter */}
+            {/* Loan Status Filter - Hidden on Mobile */}
             <Select
               value={loanStatusFilter}
               onValueChange={(value) => setLoanStatusFilter(value)}
             >
-              <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectTrigger className="hidden sm:flex w-full sm:w-[200px]">
                 <SelectValue placeholder="Loan Status" />
               </SelectTrigger>
               <SelectContent>
@@ -411,6 +426,28 @@ export default function InvestorsPage() {
 
           {/* Amount Range Filters - Collapsible Content */}
           <CollapsibleContent isOpen={showMoreFilters}>
+            {/* Mobile-only Loan Status Filter */}
+            <div className="mb-3 pb-3 border-b sm:hidden">
+              <label className="text-xs font-semibold mb-2 block">
+                Loan Status
+              </label>
+              <Select
+                value={loanStatusFilter}
+                onValueChange={(value) => setLoanStatusFilter(value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Loan Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Loan Status</SelectItem>
+                  <SelectItem value="active">Has Active Loans</SelectItem>
+                  <SelectItem value="completed">Has Completed Loans</SelectItem>
+                  <SelectItem value="overdue">Has Overdue Loans</SelectItem>
+                  <SelectItem value="no-loans">No Loans</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {/* Total Capital Range */}
               <RangeFilter
@@ -629,6 +666,7 @@ export default function InvestorsPage() {
                                       loans={activityData.overdueLoans}
                                       limit={3}
                                       loading={loading}
+                                      investorId={investor.id}
                                     />
                                     <PendingDisbursementsCard
                                       disbursements={
@@ -641,6 +679,7 @@ export default function InvestorsPage() {
                                       loans={activityData.maturingLoans}
                                       limit={3}
                                       loading={loading}
+                                      investorId={investor.id}
                                     />
                                   </div>
                                 );
