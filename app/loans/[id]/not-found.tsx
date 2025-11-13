@@ -9,7 +9,7 @@ export default function LoanNotFound() {
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Loan Not Found</h1>
+          <h1 className="text-xl font-semibold mb-2">Loan Not Found</h1>
           <p className="text-muted-foreground text-center mb-6">
             The loan you're looking for doesn't exist or has been deleted.
           </p>
