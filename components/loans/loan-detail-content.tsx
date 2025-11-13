@@ -48,7 +48,7 @@ export function LoanDetailContent({
       {showHeader && (
         <div className="space-y-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+            <h2 className="text-xl font-semibold tracking-tight">
               {loan.loanName}
             </h2>
           </div>
