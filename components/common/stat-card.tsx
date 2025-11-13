@@ -14,34 +14,40 @@ interface StatCardProps {
 
 const variantStyles = {
   default: {
-    border: 'border-t-primary',
-    iconBg: 'bg-primary/15',
+    border: 'border-t-4 border-t-primary',
+    iconBg: 'bg-gradient-to-br from-primary/20 to-primary/10',
     iconColor: 'text-primary',
+    gradient: 'bg-gradient-to-br from-primary/5 to-transparent',
   },
   primary: {
-    border: 'border-t-primary',
-    iconBg: 'bg-primary/15',
+    border: 'border-t-4 border-t-primary',
+    iconBg: 'bg-gradient-to-br from-primary/20 to-primary/10',
     iconColor: 'text-primary',
+    gradient: 'bg-gradient-to-br from-primary/5 to-transparent',
   },
   success: {
-    border: 'border-t-success',
-    iconBg: 'bg-emerald-400/20',
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    border: 'border-t-4 border-t-chart-2',
+    iconBg: 'bg-gradient-to-br from-chart-2/20 to-chart-2/10',
+    iconColor: 'text-chart-2',
+    gradient: 'bg-gradient-to-br from-chart-2/5 to-transparent',
   },
   warning: {
-    border: 'border-t-warning',
-    iconBg: 'bg-amber-300/20',
-    iconColor: 'text-amber-600 dark:text-amber-400',
+    border: 'border-t-4 border-t-chart-3',
+    iconBg: 'bg-gradient-to-br from-chart-3/20 to-chart-3/10',
+    iconColor: 'text-chart-3',
+    gradient: 'bg-gradient-to-br from-chart-3/5 to-transparent',
   },
   danger: {
-    border: 'border-t-danger',
-    iconBg: 'bg-rose-400/20',
-    iconColor: 'text-rose-600 dark:text-rose-400',
+    border: 'border-t-4 border-t-destructive',
+    iconBg: 'bg-gradient-to-br from-destructive/20 to-destructive/10',
+    iconColor: 'text-destructive',
+    gradient: 'bg-gradient-to-br from-destructive/5 to-transparent',
   },
   info: {
-    border: 'border-t-info',
-    iconBg: 'bg-sky-400/20',
-    iconColor: 'text-sky-600 dark:text-sky-400',
+    border: 'border-t-4 border-t-chart-4',
+    iconBg: 'bg-gradient-to-br from-chart-4/20 to-chart-4/10',
+    iconColor: 'text-chart-4',
+    gradient: 'bg-gradient-to-br from-chart-4/5 to-transparent',
   },
 };
 
@@ -57,20 +63,36 @@ export function StatCard({
 
   return (
     <Card
-      className={cn('border-t-2 overflow-hidden', styles.border, className)}
+      className={cn(
+        'overflow-hidden group hover:-translate-y-0.5',
+        styles.border,
+        styles.gradient,
+        className
+      )}
     >
       <CardContent className="pt-6">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1 flex-1 min-w-0">
-            <p className="text-xs font-medium text-muted-foreground">{title}</p>
-            <p className="text-lg font-semibold break-words">{value}</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {title}
+            </p>
+            <p className="text-lg sm:text-xl font-semibold break-words">
+              {value}
+            </p>
             {subtitle && (
-              <div className="text-xs text-muted-foreground">{subtitle}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {subtitle}
+              </div>
             )}
           </div>
           {Icon && (
-            <div className={cn('rounded-md p-2', styles.iconBg)}>
-              <Icon className={cn('h-5 w-5 flex-shrink-0', styles.iconColor)} />
+            <div
+              className={cn(
+                'rounded-xl p-3 transition-transform duration-300 group-hover:scale-110 hidden sm:block',
+                styles.iconBg
+              )}
+            >
+              <Icon className={cn('h-6 w-6 flex-shrink-0', styles.iconColor)} />
             </div>
           )}
         </div>
