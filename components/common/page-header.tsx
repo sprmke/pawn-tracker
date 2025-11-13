@@ -8,9 +8,9 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
           {title}
         </h1>
         {description && (
@@ -19,7 +19,9 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
           </p>
         )}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>
+      )}
     </div>
   );
 }
