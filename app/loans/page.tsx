@@ -54,6 +54,7 @@ import {
   CardPagination,
   InlineLoader,
   ViewModeToggle,
+  PageHeader,
 } from '@/components/common';
 
 type SortField =
@@ -106,6 +107,23 @@ export default function LoansPage() {
   const [maxTotalAmount, setMaxTotalAmount] = useState<string>('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
 
+  // Force cards view on mobile screens
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768; // md breakpoint
+      if (isMobile && viewMode === 'table') {
+        setViewMode('cards');
+      }
+    };
+
+    // Check on mount
+    handleResize();
+
+    // Listen for window resize
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
+
   useEffect(() => {
     fetchLoans();
     fetchInvestors();
@@ -113,7 +131,10 @@ export default function LoansPage() {
 
   // Reset to table view if no data and currently on cards/calendar view
   useEffect(() => {
-    if (loans.length === 0 && (viewMode === 'cards' || viewMode === 'calendar')) {
+    if (
+      loans.length === 0 &&
+      (viewMode === 'cards' || viewMode === 'calendar')
+    ) {
       setViewMode('table');
     }
   }, [loans.length, viewMode]);
@@ -407,7 +428,7 @@ export default function LoansPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Loans</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Loans</h1>
             <p className="text-muted-foreground">Manage all your pawn loans</p>
           </div>
         </div>
@@ -422,30 +443,26 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-            Loans
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Manage all your pawn loans
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ViewModeToggle
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            showCalendar={true}
-            hasData={loans.length > 0}
-          />
-          <Link href="/loans/new">
-            <Button className="w-full sm:w-auto">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Loan
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Loans"
+        description="Manage all your pawn loans"
+        actions={
+          <>
+            <ViewModeToggle
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              showCalendar={true}
+              hasData={loans.length > 0}
+            />
+            <Link href="/loans/new">
+              <Button className="w-full sm:w-auto">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Loan
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       {/* Search and Filter Section */}
       <div className="flex flex-col gap-4">
@@ -461,14 +478,14 @@ export default function LoansPage() {
               placeholder="Search loans by name or notes..."
             />
 
-            {/* Status Filter */}
+            {/* Status Filter - Hidden on Mobile */}
             <Select
               value={statusFilter}
               onValueChange={(value) => {
                 setStatusFilter(value);
               }}
             >
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -482,14 +499,14 @@ export default function LoansPage() {
               </SelectContent>
             </Select>
 
-            {/* Type Filter */}
+            {/* Type Filter - Hidden on Mobile */}
             <Select
               value={typeFilter}
               onValueChange={(value) => {
                 setTypeFilter(value);
               }}
             >
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
@@ -534,6 +551,58 @@ export default function LoansPage() {
           {/* Amount Range Filters - Collapsible */}
           {showMoreFilters && (
             <div className="space-y-3 p-4 border rounded-lg bg-muted/30 animate-in slide-in-from-top-2 duration-200">
+              {/* Mobile-only Basic Filters */}
+              <div className="grid grid-cols-2 gap-3 pb-3 border-b sm:hidden">
+                {/* Status Filter - Mobile */}
+                <div>
+                  <label className="text-xs font-semibold mb-2 block">
+                    Status
+                  </label>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value) => {
+                      setStatusFilter(value);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Fully Funded">Fully Funded</SelectItem>
+                      <SelectItem value="Partially Funded">
+                        Partially Funded
+                      </SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="Overdue">Overdue</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Type Filter - Mobile */}
+                <div>
+                  <label className="text-xs font-semibold mb-2 block">
+                    Type
+                  </label>
+                  <Select
+                    value={typeFilter}
+                    onValueChange={(value) => {
+                      setTypeFilter(value);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="Lot Title">Lot Title</SelectItem>
+                      <SelectItem value="OR/CR">OR/CR</SelectItem>
+                      <SelectItem value="Agent">Agent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {/* Total Principal Range */}
                 <RangeFilter
