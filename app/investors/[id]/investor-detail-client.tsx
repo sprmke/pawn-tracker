@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,6 +25,7 @@ import {
   Filter,
   MapPin,
   X,
+  Users,
 } from 'lucide-react';
 import { InvestorWithLoans, LoanWithInvestors } from '@/lib/types';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
@@ -47,11 +48,13 @@ import {
   PastDueLoansCard,
   PendingDisbursementsCard,
   MaturingLoansCard,
+  CardPagination,
 } from '@/components/common';
 import {
   TransactionsTable,
   TransactionCreateModal,
   TransactionDetailModal,
+  TransactionCard,
 } from '@/components/transactions';
 import { LoanCreateModal, LoanDetailModal } from '@/components/loans';
 import type { TransactionWithInvestor } from '@/lib/types';
@@ -77,6 +80,14 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     null
   );
   const [showLoanDetailModal, setShowLoanDetailModal] = useState(false);
+
+  // View modes
+  const [loansViewMode, setLoansViewMode] = useState<'cards' | 'table'>(
+    'table'
+  );
+  const [transactionsViewMode, setTransactionsViewMode] = useState<
+    'cards' | 'table'
+  >('table');
 
   // Transaction filters
   const [transactionSearchQuery, setTransactionSearchQuery] = useState('');
@@ -136,6 +147,44 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     fetchLoansData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [investor.id]);
+
+  // Force cards view on mobile, table view on larger screens for loans
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768; // md breakpoint
+      if (isMobile && loansViewMode === 'table') {
+        setLoansViewMode('cards');
+      } else if (!isMobile && loansViewMode === 'cards') {
+        setLoansViewMode('table');
+      }
+    };
+
+    // Check on mount
+    handleResize();
+
+    // Listen for window resize
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [loansViewMode]);
+
+  // Force cards view on mobile, table view on larger screens for transactions
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768; // md breakpoint
+      if (isMobile && transactionsViewMode === 'table') {
+        setTransactionsViewMode('cards');
+      } else if (!isMobile && transactionsViewMode === 'cards') {
+        setTransactionsViewMode('table');
+      }
+    };
+
+    // Check on mount
+    handleResize();
+
+    // Listen for window resize
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [transactionsViewMode]);
 
   // Calculate unique loan count
   const uniqueLoanCount = Array.from(
@@ -503,7 +552,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title="Total Capital" value={formatCurrency(totalCapital)} />
 
         <StatCard title="Avg. Interest Rate" value={`${avgRate.toFixed(2)}%`} />
@@ -518,12 +567,20 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
       {/* Activity Cards */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <PastDueLoansCard loans={overdueLoans} loading={loansLoading} />
+        <PastDueLoansCard
+          loans={overdueLoans}
+          loading={loansLoading}
+          investorId={investor.id}
+        />
         <PendingDisbursementsCard
           disbursements={pendingDisbursements}
           loading={loansLoading}
         />
-        <MaturingLoansCard loans={maturingLoans} loading={loansLoading} />
+        <MaturingLoansCard
+          loans={maturingLoans}
+          loading={loansLoading}
+          investorId={investor.id}
+        />
       </div>
 
       {/* Tabs */}
@@ -549,12 +606,12 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     placeholder="Search loans by name or notes..."
                   />
 
-                  {/* Type Filter */}
+                  {/* Type Filter - Hidden on Mobile */}
                   <Select
                     value={loanTypeFilter}
                     onValueChange={setLoanTypeFilter}
                   >
-                    <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -565,12 +622,12 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     </SelectContent>
                   </Select>
 
-                  {/* Status Filter */}
+                  {/* Status Filter - Hidden on Mobile */}
                   <Select
                     value={loanStatusFilter}
                     onValueChange={setLoanStatusFilter}
                   >
-                    <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -620,6 +677,56 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                 {/* Amount Range Filters - Collapsible Content */}
                 <CollapsibleContent isOpen={showMoreLoanFilters}>
                   <div className="space-y-3">
+                    {/* Mobile-only Basic Filters */}
+                    <div className="grid grid-cols-2 gap-3 pb-3 border-b sm:hidden">
+                      {/* Type Filter - Mobile */}
+                      <div>
+                        <label className="text-xs font-semibold mb-2 block">
+                          Type
+                        </label>
+                        <Select
+                          value={loanTypeFilter}
+                          onValueChange={setLoanTypeFilter}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            <SelectItem value="Lot Title">Lot Title</SelectItem>
+                            <SelectItem value="OR/CR">OR/CR</SelectItem>
+                            <SelectItem value="Agent">Agent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Status Filter - Mobile */}
+                      <div>
+                        <label className="text-xs font-semibold mb-2 block">
+                          Status
+                        </label>
+                        <Select
+                          value={loanStatusFilter}
+                          onValueChange={setLoanStatusFilter}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="Fully Funded">
+                              Fully Funded
+                            </SelectItem>
+                            <SelectItem value="Partially Funded">
+                              Partially Funded
+                            </SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                            <SelectItem value="Overdue">Overdue</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       {/* Total Principal Range */}
                       <RangeFilter
@@ -733,27 +840,142 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
               </CardContent>
             </Card>
           ) : (
-            <LoansTable
-              loans={filteredLoans}
-              itemsPerPage={10}
-              expandedRows={expandedLoans}
-              hideFields={['sentDates', 'dueDate', 'freeLotSqm']}
-              onToggleExpand={(loanId) => {
-                setExpandedLoans((prev) => {
-                  const newSet = new Set(prev);
-                  if (newSet.has(loanId as number)) {
-                    newSet.delete(loanId as number);
-                  } else {
-                    newSet.add(loanId as number);
-                  }
-                  return newSet;
-                });
-              }}
-              onQuickView={(loan) => {
-                setSelectedLoan(loan);
-                setShowLoanDetailModal(true);
-              }}
-            />
+            <>
+              {loansViewMode === 'cards' && (
+                <CardPagination
+                  items={filteredLoans}
+                  itemsPerPage={10}
+                  itemName="loans"
+                  renderItems={(paginatedLoans) => (
+                    <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
+                      {paginatedLoans.map((loan) => {
+                        const totalPrincipal = loan.loanInvestors.reduce(
+                          (sum, li) => sum + parseFloat(li.amount),
+                          0
+                        );
+                        const totalInterest = calculateTotalInterest(
+                          loan.loanInvestors
+                        );
+                        const avgRate = calculateAverageRate(
+                          loan.loanInvestors
+                        );
+                        const totalAmount = totalPrincipal + totalInterest;
+
+                        return (
+                          <Card
+                            key={loan.id}
+                            className="hover:shadow-lg transition-shadow h-full cursor-pointer"
+                            onClick={() => {
+                              setSelectedLoan(loan);
+                              setShowLoanDetailModal(true);
+                            }}
+                          >
+                            <CardHeader className="pb-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="space-y-1 flex-1 min-w-0">
+                                  <CardTitle className="text-sm sm:text-base truncate">
+                                    {loan.loanName}
+                                  </CardTitle>
+                                </div>
+                                <Badge
+                                  variant={getLoanTypeBadge(loan.type).variant}
+                                  className={`text-[10px] ${
+                                    getLoanTypeBadge(loan.type).className || ''
+                                  }`}
+                                >
+                                  {loan.type}
+                                </Badge>
+                                <Badge
+                                  variant={
+                                    getLoanStatusBadge(loan.status).variant
+                                  }
+                                  className={`text-[10px] ${
+                                    getLoanStatusBadge(loan.status).className ||
+                                    ''
+                                  }`}
+                                >
+                                  {loan.status}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-3 px-4">
+                              {/* Summary Section */}
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="p-2 bg-muted/50 rounded-lg">
+                                  <p className="text-[10px] text-muted-foreground mb-1">
+                                    Total Principal
+                                  </p>
+                                  <p className="text-sm font-medium break-words">
+                                    {formatCurrency(totalPrincipal.toString())}
+                                  </p>
+                                </div>
+                                <div className="p-2 bg-muted/50 rounded-lg">
+                                  <p className="text-[10px] text-muted-foreground mb-1">
+                                    Avg. Rate
+                                  </p>
+                                  <p className="text-sm font-medium">
+                                    {avgRate.toFixed(2)}%
+                                  </p>
+                                </div>
+                                <div className="p-2 bg-muted/50 rounded-lg">
+                                  <p className="text-[10px] text-muted-foreground mb-1">
+                                    Total Interest
+                                  </p>
+                                  <p className="text-sm font-medium break-words">
+                                    {formatCurrency(totalInterest.toString())}
+                                  </p>
+                                </div>
+                                <div className="p-2 bg-muted/50 rounded-lg">
+                                  <p className="text-[10px] text-muted-foreground mb-1">
+                                    Total Amount
+                                  </p>
+                                  <p className="text-sm font-medium break-words">
+                                    {formatCurrency(totalAmount.toString())}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Investors Count */}
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Users className="h-4 w-4" />
+                                <span>
+                                  {loan.loanInvestors.length} investor
+                                  {loan.loanInvestors.length !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                />
+              )}
+
+              {loansViewMode === 'table' && (
+                <LoansTable
+                  loans={filteredLoans}
+                  itemsPerPage={10}
+                  expandedRows={expandedLoans}
+                  hideFields={['sentDates', 'dueDate', 'freeLotSqm']}
+                  onToggleExpand={(loanId) => {
+                    setExpandedLoans((prev) => {
+                      const newSet = new Set(prev);
+                      if (newSet.has(loanId as number)) {
+                        newSet.delete(loanId as number);
+                      } else {
+                        newSet.add(loanId as number);
+                      }
+                      return newSet;
+                    });
+                  }}
+                  onQuickView={(loan) => {
+                    setSelectedLoan(loan);
+                    setShowLoanDetailModal(true);
+                  }}
+                />
+              )}
+            </>
           )}
         </TabsContent>
 
@@ -771,14 +993,14 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     placeholder="Search transactions by name or notes..."
                   />
 
-                  {/* Show/Hide Past Transactions Filter */}
+                  {/* Show/Hide Past Transactions Filter - Hidden on Mobile */}
                   <Select
                     value={showPastTransactions ? 'show' : 'hide'}
                     onValueChange={(value) =>
                       setShowPastTransactions(value === 'show')
                     }
                   >
-                    <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectTrigger className="hidden sm:flex w-full sm:w-[200px]">
                       <SelectValue placeholder="Past Transactions" />
                     </SelectTrigger>
                     <SelectContent>
@@ -787,12 +1009,12 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     </SelectContent>
                   </Select>
 
-                  {/* Type Filter */}
+                  {/* Type Filter - Hidden on Mobile */}
                   <Select
                     value={transactionTypeFilter}
                     onValueChange={setTransactionTypeFilter}
                   >
-                    <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -802,12 +1024,12 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     </SelectContent>
                   </Select>
 
-                  {/* Direction Filter */}
+                  {/* Direction Filter - Hidden on Mobile */}
                   <Select
                     value={transactionDirectionFilter}
                     onValueChange={setTransactionDirectionFilter}
                   >
-                    <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
                       <SelectValue placeholder="Direction" />
                     </SelectTrigger>
                     <SelectContent>
@@ -853,30 +1075,98 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
                 {/* Amount Range Filters - Collapsible Content */}
                 <CollapsibleContent isOpen={showMoreFilters}>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Amount Range */}
-                    <RangeFilter
-                      label="Amount"
-                      icon={DollarSign}
-                      minValue={minAmount}
-                      maxValue={maxAmount}
-                      onMinChange={setMinAmount}
-                      onMaxChange={setMaxAmount}
-                      minPlaceholder="Min (₱)"
-                      maxPlaceholder="Max (₱)"
-                    />
+                  <div className="space-y-3">
+                    {/* Mobile-only Basic Filters */}
+                    <div className="grid grid-cols-2 gap-3 pb-3 border-b sm:hidden">
+                      {/* Past Transactions Filter - Mobile */}
+                      <div>
+                        <label className="text-xs font-semibold mb-2 block">
+                          Past Transactions
+                        </label>
+                        <Select
+                          value={showPastTransactions ? 'show' : 'hide'}
+                          onValueChange={(value) =>
+                            setShowPastTransactions(value === 'show')
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Past Transactions" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="hide">Hide Past</SelectItem>
+                            <SelectItem value="show">Show Past</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    {/* Balance Range */}
-                    <RangeFilter
-                      label="Balance"
-                      icon={TrendingUp}
-                      minValue={minBalance}
-                      maxValue={maxBalance}
-                      onMinChange={setMinBalance}
-                      onMaxChange={setMaxBalance}
-                      minPlaceholder="Min (₱)"
-                      maxPlaceholder="Max (₱)"
-                    />
+                      {/* Type Filter - Mobile */}
+                      <div>
+                        <label className="text-xs font-semibold mb-2 block">
+                          Type
+                        </label>
+                        <Select
+                          value={transactionTypeFilter}
+                          onValueChange={setTransactionTypeFilter}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            <SelectItem value="Investment">
+                              Investment
+                            </SelectItem>
+                            <SelectItem value="Loan">Loan</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Direction Filter - Mobile */}
+                      <div className="col-span-2">
+                        <label className="text-xs font-semibold mb-2 block">
+                          Direction
+                        </label>
+                        <Select
+                          value={transactionDirectionFilter}
+                          onValueChange={setTransactionDirectionFilter}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Direction" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Directions</SelectItem>
+                            <SelectItem value="In">In</SelectItem>
+                            <SelectItem value="Out">Out</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Amount Range */}
+                      <RangeFilter
+                        label="Amount"
+                        icon={DollarSign}
+                        minValue={minAmount}
+                        maxValue={maxAmount}
+                        onMinChange={setMinAmount}
+                        onMaxChange={setMaxAmount}
+                        minPlaceholder="Min (₱)"
+                        maxPlaceholder="Max (₱)"
+                      />
+
+                      {/* Balance Range */}
+                      <RangeFilter
+                        label="Balance"
+                        icon={TrendingUp}
+                        minValue={minBalance}
+                        maxValue={maxBalance}
+                        onMinChange={setMinBalance}
+                        onMaxChange={setMaxBalance}
+                        minPlaceholder="Min (₱)"
+                        maxPlaceholder="Max (₱)"
+                      />
+                    </div>
                   </div>
                 </CollapsibleContent>
               </div>
@@ -911,14 +1201,41 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
               </CardContent>
             </Card>
           ) : (
-            <TransactionsTable
-              transactions={filteredTransactions}
-              itemsPerPage={10}
-              onQuickView={(transaction) => {
-                setSelectedTransaction(transaction);
-                setShowTransactionDetailModal(true);
-              }}
-            />
+            <>
+              {transactionsViewMode === 'cards' && (
+                <CardPagination
+                  items={filteredTransactions}
+                  itemsPerPage={10}
+                  itemName="transactions"
+                  renderItems={(paginatedTransactions) => (
+                    <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
+                      {paginatedTransactions.map((transaction) => (
+                        <TransactionCard
+                          key={transaction.id}
+                          transaction={transaction}
+                          onQuickView={(transaction) => {
+                            setSelectedTransaction(transaction);
+                            setShowTransactionDetailModal(true);
+                          }}
+                          viewHref={`/transactions/${transaction.id}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                />
+              )}
+
+              {transactionsViewMode === 'table' && (
+                <TransactionsTable
+                  transactions={filteredTransactions}
+                  itemsPerPage={10}
+                  onQuickView={(transaction) => {
+                    setSelectedTransaction(transaction);
+                    setShowTransactionDetailModal(true);
+                  }}
+                />
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>
