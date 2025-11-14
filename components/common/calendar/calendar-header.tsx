@@ -32,7 +32,7 @@ export function CalendarHeader({
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h2 className="text-xl font-bold">{title}</h2>
-            <div className="flex flex-col-reverse xl:flex-row items-end xl:items-center gap-3">
+            <div className="flex flex-col-reverse xl:flex-row items-start sm:items-end xl:items-center gap-3">
               {/* Legend */}
               {showLegend && legendGroups && legendGroups.length > 0 && (
                 <div className="flex flex-wrap items-center text-xs py-1.5 px-2 md:px-3 border border-gray-200 rounded-lg">
@@ -63,7 +63,7 @@ export function CalendarHeader({
                   ))}
                 </div>
               )}
-              <div className="flex justify-end">
+              <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3">
                 {/* View Mode Selector */}
                 <div className="flex items-center border rounded-lg p-1">
                   <Button
