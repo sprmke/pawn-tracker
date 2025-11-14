@@ -215,12 +215,20 @@ export function InvestorsTable({
 
     return (
       <div className="grid gap-2 grid-cols-1 lg:grid-cols-3">
-        <PastDueLoansCard loans={activityData.overdueLoans} limit={3} />
+        <PastDueLoansCard
+          loans={activityData.overdueLoans}
+          limit={3}
+          investorId={investor.id}
+        />
         <PendingDisbursementsCard
           disbursements={activityData.pendingDisbursements}
           limit={3}
         />
-        <MaturingLoansCard loans={activityData.maturingLoans} limit={3} />
+        <MaturingLoansCard
+          loans={activityData.maturingLoans}
+          limit={3}
+          investorId={investor.id}
+        />
       </div>
     );
   };
