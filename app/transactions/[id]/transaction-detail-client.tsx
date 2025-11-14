@@ -118,7 +118,7 @@ export function TransactionDetailClient({
         </Button>
 
         <div className="flex items-center justify-between">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+          <h1 className="text-xl font-semibold tracking-tight">
             Edit Transaction
           </h1>
           <div className="flex gap-2">
