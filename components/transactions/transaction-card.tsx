@@ -54,7 +54,7 @@ export function TransactionCard({
       </CardHeader>
       <CardContent className="space-y-4 px-4">
         {/* Summary Section */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <div className="p-2 bg-muted/50 rounded-lg">
             <p className="text-[10px] text-muted-foreground mb-1">Date</p>
             <p className="text-xs font-medium">
