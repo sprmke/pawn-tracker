@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/format';
 import { InlineLoader } from './loading-state';
+import { cn } from '@/lib/utils';
 
 interface PendingDisbursement {
   id: number;
@@ -28,16 +29,23 @@ export function PendingDisbursementsCard({
   const displayDisbursements = disbursements.slice(0, limit);
 
   return (
-    <Card>
+    <Card className="border-t-4 border-t-chart-3 bg-gradient-to-br from-chart-3/5 to-transparent">
       <CardHeader className={limit === 3 ? 'space-y-0 pb-3' : ''}>
         <div className="flex items-center justify-between">
-          <CardTitle className={limit === 3 ? 'text-sm' : 'text-base'}>
+          <CardTitle
+            className={cn(
+              'font-semibold',
+              limit === 3 ? 'text-base' : 'text-lg'
+            )}
+          >
             Pending Disbursements
           </CardTitle>
-          <ArrowUpRight className="h-5 w-5 text-amber-500" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-chart-3/20 to-chart-3/10">
+            <ArrowUpRight className="h-4 w-4 text-chart-3" />
+          </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          Unpaid transactions from partially funded loans
+          Unpaid from partially funded loans
         </p>
       </CardHeader>
       <CardContent>
@@ -48,7 +56,7 @@ export function PendingDisbursementsCard({
         ) : (
           <div className="space-y-2">
             {displayDisbursements.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4 text-sm">
+              <p className="text-center text-muted-foreground py-8 text-sm">
                 No pending payments
               </p>
             ) : (
@@ -56,18 +64,20 @@ export function PendingDisbursementsCard({
                 <Link
                   key={item.id}
                   href={`/loans/${item.loanId}`}
-                  className="flex flex-col p-3 border border-amber-500/20 bg-amber-500/5 rounded-lg hover:bg-amber-500/10 transition-colors gap-1"
+                  className="flex flex-col p-3 border-2 border-chart-3/20 bg-background rounded-xl hover:bg-chart-3/5 hover:shadow-md transition-all duration-300 gap-1"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium truncate flex-1">
+                    <p className="text-sm font-semibold truncate flex-1">
                       {item.loanName}
                     </p>
-                    <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 flex-shrink-0">
+                    <p className="text-sm font-bold text-chart-3 flex-shrink-0">
                       {formatCurrency(parseFloat(item.amount))}
                     </p>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="truncate">{item.investorName}</span>
+                    <span className="truncate font-medium">
+                      {item.investorName}
+                    </span>
                     <span className="flex-shrink-0">
                       {format(new Date(item.sentDate), 'MMM dd, yyyy')}
                     </span>
