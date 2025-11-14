@@ -19,9 +19,7 @@ export default function NotFound() {
             <div className="p-2 rounded-full bg-destructive/10">
               <AlertCircle className="h-6 w-6 text-destructive" />
             </div>
-            <CardTitle className="text-xl sm:text-2xl">
-              Transaction Not Found
-            </CardTitle>
+            <CardTitle className="text-xl">Transaction Not Found</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
