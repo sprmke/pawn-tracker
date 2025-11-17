@@ -36,23 +36,15 @@ export function PendingDisbursementsCard({
 
   return (
     <Card className="border-t-4 border-t-chart-3 bg-gradient-to-br from-chart-3/5 to-transparent">
-      <CardHeader className={limit === 3 ? 'space-y-0 pb-3' : ''}>
+      <CardHeader className="space-y-0 pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle
-            className={cn(
-              'font-semibold',
-              limit === 3 ? 'text-base' : 'text-lg'
-            )}
-          >
+          <CardTitle className="font-semibold text-base">
             Pending Disbursements
           </CardTitle>
           <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-chart-3/20 to-chart-3/10">
             <ArrowUpRight className="h-4 w-4 text-chart-3" />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Unpaid from partially funded loans
-        </p>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -71,7 +63,7 @@ export function PendingDisbursementsCard({
                   <p className="text-sm font-medium text-muted-foreground">
                     Total Amount:
                   </p>
-                  <p className="text-base font-bold text-chart-3">
+                  <p className="text-base font-semibold text-chart-3">
                     {formatCurrency(totalAmount)}
                   </p>
                 </div>
@@ -82,10 +74,10 @@ export function PendingDisbursementsCard({
                     className="flex flex-col p-3 border-2 border-chart-3/20 bg-background rounded-xl hover:bg-chart-3/5 hover:shadow-md transition-all duration-300 gap-1"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold truncate flex-1">
+                      <p className="text-sm font-medium truncate flex-1">
                         {item.loanName}
                       </p>
-                      <p className="text-sm font-bold text-chart-3 flex-shrink-0">
+                      <p className="text-sm font-semibold text-chart-3 flex-shrink-0">
                         {formatCurrency(parseFloat(item.amount))}
                       </p>
                     </div>
