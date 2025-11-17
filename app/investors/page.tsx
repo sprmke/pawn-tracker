@@ -664,7 +664,6 @@ export default function InvestorsPage() {
                                   <div className="grid gap-2 grid-cols-1">
                                     <PastDueLoansCard
                                       loans={activityData.overdueLoans}
-                                      limit={3}
                                       loading={loading}
                                       investorId={investor.id}
                                     />
@@ -672,12 +671,10 @@ export default function InvestorsPage() {
                                       disbursements={
                                         activityData.pendingDisbursements
                                       }
-                                      limit={3}
                                       loading={loading}
                                     />
                                     <MaturingLoansCard
                                       loans={activityData.maturingLoans}
-                                      limit={3}
                                       loading={loading}
                                       investorId={investor.id}
                                     />
