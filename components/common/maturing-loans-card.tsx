@@ -35,21 +35,15 @@ export function MaturingLoansCard({
 
   return (
     <Card className="border-t-4 border-t-chart-2 bg-gradient-to-br from-chart-2/5 to-transparent">
-      <CardHeader className={limit === 3 ? 'space-y-0 pb-3' : ''}>
+      <CardHeader className="space-y-0 pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle
-            className={cn(
-              'font-semibold',
-              limit === 3 ? 'text-base' : 'text-lg'
-            )}
-          >
+          <CardTitle className="font-semibold text-base">
             Incoming Payouts
           </CardTitle>
           <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-chart-2/20 to-chart-2/10">
             <ArrowDownRight className="h-4 w-4 text-chart-2" />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">Due within 14 days</p>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -68,7 +62,7 @@ export function MaturingLoansCard({
                   <p className="text-sm font-medium text-muted-foreground">
                     Total Amount:
                   </p>
-                  <p className="text-base font-bold text-chart-2">
+                  <p className="text-base font-semibold text-chart-2">
                     {formatCurrency(totalAmount)}
                   </p>
                 </div>
@@ -92,10 +86,10 @@ export function MaturingLoansCard({
                       className="flex flex-col p-3 border-2 border-border bg-background rounded-xl hover:bg-chart-2/5 hover:shadow-md transition-all duration-300 gap-1"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-semibold truncate flex-1">
+                        <p className="text-sm font-medium truncate flex-1">
                           {loan.loanName}
                         </p>
-                        <p className="text-sm font-bold text-chart-2 flex-shrink-0">
+                        <p className="text-sm font-semibold text-chart-2 flex-shrink-0">
                           {formatCurrency(amount)}
                         </p>
                       </div>
