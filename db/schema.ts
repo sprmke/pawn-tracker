@@ -34,6 +34,11 @@ export const transactionDirectionEnum = pgEnum('transaction_direction', [
   'Out',
 ]);
 export const interestTypeEnum = pgEnum('interest_type', ['rate', 'fixed']);
+export const interestPeriodStatusEnum = pgEnum('interest_period_status', [
+  'Pending',
+  'Completed',
+  'Overdue',
+]);
 
 // Investors Table
 export const investors = pgTable('investors', {
@@ -94,6 +99,7 @@ export const interestPeriods = pgTable('interest_periods', {
   dueDate: timestamp('due_date').notNull(),
   interestRate: decimal('interest_rate', { precision: 15, scale: 2 }).notNull(),
   interestType: interestTypeEnum('interest_type').notNull().default('rate'),
+  status: interestPeriodStatusEnum('status').notNull().default('Pending'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
