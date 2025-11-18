@@ -3,6 +3,7 @@ import {
   LoanType,
   TransactionType,
   TransactionDirection,
+  InterestPeriodStatus,
 } from './types';
 
 /**
@@ -103,6 +104,32 @@ export const transactionDirectionConfig: Record<
   },
 };
 
+// Interest Period Status Badge Configuration (Pastel Colors)
+export const interestPeriodStatusConfig: Record<
+  InterestPeriodStatus,
+  {
+    variant: 'default' | 'secondary' | 'destructive' | 'outline';
+    className?: string;
+    dotColor?: string;
+  }
+> = {
+  Pending: {
+    variant: 'secondary',
+    className: 'bg-amber-300 hover:bg-amber-400 text-amber-950',
+    dotColor: 'bg-amber-300',
+  },
+  Completed: {
+    variant: 'default',
+    className: 'bg-emerald-400 hover:bg-emerald-500 text-emerald-950',
+    dotColor: 'bg-emerald-400',
+  },
+  Overdue: {
+    variant: 'destructive',
+    className: 'bg-rose-400 hover:bg-rose-500 text-rose-950',
+    dotColor: 'bg-rose-400',
+  },
+};
+
 // Helper functions to get badge properties
 export function getLoanStatusBadge(status: LoanStatus) {
   return loanStatusConfig[status];
@@ -118,4 +145,8 @@ export function getTransactionTypeBadge(type: TransactionType) {
 
 export function getTransactionDirectionBadge(direction: TransactionDirection) {
   return transactionDirectionConfig[direction];
+}
+
+export function getInterestPeriodStatusBadge(status: InterestPeriodStatus) {
+  return interestPeriodStatusConfig[status];
 }
