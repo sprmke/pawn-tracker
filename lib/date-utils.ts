@@ -46,12 +46,13 @@ export function getMonthsBetweenDates(
 
 /**
  * Check if the duration between two dates is more than one month
+ * Returns true only if there are 2 or more full months between the dates
  */
 export function isMoreThanOneMonth(
   startDate: Date | string,
   endDate: Date | string
 ): boolean {
-  return getMonthsBetweenDates(startDate, endDate) >= 1;
+  return getMonthsBetweenDates(startDate, endDate) > 1;
 }
 
 /**
