@@ -7,6 +7,7 @@ export type LoanStatus =
 export type TransactionType = 'Loan' | 'Investment';
 export type TransactionDirection = 'In' | 'Out';
 export type InterestType = 'rate' | 'fixed';
+export type InterestPeriodStatus = 'Pending' | 'Completed' | 'Overdue';
 
 export interface Investor {
   id: number;
@@ -35,6 +36,7 @@ export interface InterestPeriod {
   dueDate: Date;
   interestRate: string;
   interestType: InterestType;
+  status: InterestPeriodStatus;
   createdAt: Date;
   updatedAt: Date;
 }
