@@ -398,15 +398,15 @@ export function LoanForm({
                 const amount =
                   parseFloat(field === 'amount' ? value : t.amount) || 0;
 
-                if (field === 'interestRate' && amount > 0) {
+                if (field === 'interestRate') {
                   // When rate changes, calculate and update fixed amount
                   const rate = parseFloat(value) || 0;
                   const fixedAmount = amount * (rate / 100);
                   updatedTransaction.interestAmount = fixedAmount.toFixed(2);
-                } else if (field === 'interestAmount' && amount > 0) {
+                } else if (field === 'interestAmount') {
                   // When fixed amount changes, calculate and update rate
                   const fixedAmount = parseFloat(value) || 0;
-                  const rate = (fixedAmount / amount) * 100;
+                  const rate = amount > 0 ? (fixedAmount / amount) * 100 : 0;
                   updatedTransaction.interestRate = rate.toFixed(2);
                 } else if (field === 'amount') {
                   // When amount changes, recalculate based on current interest type
@@ -542,13 +542,31 @@ export function LoanForm({
       return;
     }
 
-    // Validate that all transactions have amounts
+    // Validate that all transactions have valid amounts
+    // Allow 0 principal if there's a fixed interest amount
     const hasInvalidTransactions = selectedInvestors.some((si) =>
-      si.transactions.some((t) => !t.amount || parseFloat(t.amount) <= 0)
+      si.transactions.some((t) => {
+        const amount = parseFloat(t.amount);
+        const isValidAmount = !isNaN(amount) && amount >= 0;
+        
+        // If amount is 0, must have fixed interest type with a value
+        if (amount === 0) {
+          return (
+            t.interestType !== 'fixed' ||
+            !t.interestAmount ||
+            parseFloat(t.interestAmount) <= 0
+          );
+        }
+        
+        // For non-zero amounts, just check if valid
+        return !isValidAmount || amount < 0;
+      })
     );
 
     if (hasInvalidTransactions) {
-      toast.error('Please enter valid amounts for all transactions');
+      toast.error(
+        'Please enter valid amounts for all transactions. Transactions with 0 principal must have a fixed interest amount.'
+      );
       return;
     }
 
@@ -879,14 +897,23 @@ export function LoanForm({
 
                         return {
                           investor: transactions[0].investor,
-                          transactions: transactions.map((t, index) => ({
-                            id: `preview-${t.investor.id}-${index}`,
-                            amount: t.capital.toString(),
-                            interestRate: t.interestRate.toString(),
-                            interestType: 'rate' as const,
-                            sentDate: t.sentDate,
-                            isPaid: t.isPaid,
-                          })),
+                          transactions: transactions.map((t, index) => {
+                            // Find the original transaction to get the actual interestType
+                            const originalTransaction = investorData?.transactions.find(
+                              (ot) => ot.sentDate === t.sentDate
+                            );
+                            
+                            return {
+                              id: `preview-${t.investor.id}-${index}`,
+                              amount: t.capital.toString(),
+                              interestRate: originalTransaction?.interestType === 'fixed'
+                                ? originalTransaction.interestAmount
+                                : t.interestRate.toString(),
+                              interestType: originalTransaction?.interestType || 'rate',
+                              sentDate: t.sentDate,
+                              isPaid: t.isPaid,
+                            };
+                          }),
                           hasMultipleInterest:
                             investorData?.hasMultipleInterest || false,
                           interestPeriods: investorData?.interestPeriods
