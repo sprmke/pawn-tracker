@@ -36,6 +36,7 @@ interface LoanInvestorsSectionProps {
   showEmail?: boolean;
   loanId?: number;
   onRefresh?: () => void;
+  showPeriodStatus?: boolean;
 }
 
 export function LoanInvestorsSection({
@@ -44,6 +45,7 @@ export function LoanInvestorsSection({
   showEmail = true,
   loanId,
   onRefresh,
+  showPeriodStatus = true,
 }: LoanInvestorsSectionProps) {
   const hasInvestors =
     investorsWithTransactions && investorsWithTransactions.length > 0;
@@ -67,6 +69,7 @@ export function LoanInvestorsSection({
             showEmail={showEmail}
             loanId={loanId}
             onRefresh={onRefresh}
+            showPeriodStatus={showPeriodStatus}
           />
         )}
       </CardContent>
