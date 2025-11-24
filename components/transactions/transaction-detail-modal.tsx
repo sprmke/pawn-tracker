@@ -48,7 +48,7 @@ interface TransactionDetailModalProps {
 }
 
 export function TransactionDetailModal({
-  transaction,
+  transaction: initialTransaction,
   open,
   onOpenChange,
   onUpdate,
@@ -62,6 +62,29 @@ export function TransactionDetailModal({
   const [selectedLoan, setSelectedLoan] = useState<LoanWithInvestors | null>(
     null
   );
+  const [transaction, setTransaction] = useState<TransactionWithInvestor | null>(
+    initialTransaction
+  );
+
+  // Update local transaction state when prop changes
+  useEffect(() => {
+    setTransaction(initialTransaction);
+  }, [initialTransaction]);
+
+  // Fetch fresh transaction data
+  const fetchTransaction = async () => {
+    if (!transaction?.id) return;
+    
+    try {
+      const response = await fetch(`/api/transactions/${transaction.id}`);
+      if (!response.ok) throw new Error('Failed to fetch transaction');
+      const data = await response.json();
+      setTransaction(data);
+      onUpdate?.(); // Notify parent to refresh as well
+    } catch (error) {
+      console.error('Error fetching transaction:', error);
+    }
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -148,9 +171,9 @@ export function TransactionDetailModal({
     }
   };
 
-  const handleLoanModalUpdate = () => {
+  const handleLoanModalUpdate = async () => {
     // Refresh transaction data if needed
-    onUpdate?.();
+    await fetchTransaction();
   };
 
   const isLoanTransaction = transaction?.type === 'Loan';
@@ -180,7 +203,7 @@ export function TransactionDetailModal({
       }
 
       setIsEditing(false);
-      onUpdate?.();
+      await fetchTransaction(); // Refetch transaction data
     } catch (error) {
       console.error('Error updating transaction:', error);
       toast.error(
