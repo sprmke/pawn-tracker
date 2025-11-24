@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useOverdueCheck } from '@/hooks';
 import {
   Table,
   TableBody,
@@ -96,6 +97,9 @@ export default function LoansPage() {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Automatically check for overdue loans and periods
+  useOverdueCheck();
+
   // Amount range filters
   const [minPrincipal, setMinPrincipal] = useState<string>('');
   const [maxPrincipal, setMaxPrincipal] = useState<string>('');
@@ -111,8 +115,8 @@ export default function LoansPage() {
   useEffect(() => {
     const handleResize = () => {
       const isMobile = window.innerWidth < 768; // md breakpoint
-      if (isMobile && viewMode === 'table') {
-        setViewMode('cards');
+      if (isMobile) {
+        setViewMode((current) => current === 'table' ? 'cards' : current);
       }
     };
 
@@ -122,7 +126,7 @@ export default function LoansPage() {
     // Listen for window resize
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [viewMode]);
+  }, []);
 
   useEffect(() => {
     fetchLoans();
