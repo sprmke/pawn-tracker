@@ -125,6 +125,8 @@ export function InvestorTransactionsDisplay({
         const grandTotal = totalCapital + totalInterest;
         const averageRate =
           totalCapital > 0 ? (totalInterest / totalCapital) * 100 : 0;
+        const hasFixedInterestWithZeroCapital =
+          totalCapital === 0 && totalInterest > 0;
 
         return (
           <div key={investor.id} className="p-4 border rounded-lg space-y-3">
@@ -163,6 +165,7 @@ export function InvestorTransactionsDisplay({
                 // Calculate interest based on investor's mode (not per transaction)
                 let interest = 0;
                 let rate = 0;
+                let isFixedWithZeroCapital = false;
 
                 if (
                   item.hasMultipleInterest &&
@@ -190,12 +193,18 @@ export function InvestorTransactionsDisplay({
                     transaction.interestType
                   );
                   // Always calculate and display the rate percentage
-                  rate =
-                    transaction.interestType === 'fixed'
-                      ? capital > 0
-                        ? (rateValue / capital) * 100
-                        : 0
-                      : rateValue;
+                  if (transaction.interestType === 'fixed') {
+                    if (capital > 0) {
+                      rate = (rateValue / capital) * 100;
+                    } else {
+                      // Special case: fixed interest with 0 capital
+                      // We'll display the fixed amount instead of a rate
+                      isFixedWithZeroCapital = true;
+                      rate = rateValue; // Store the fixed amount for display
+                    }
+                  } else {
+                    rate = rateValue;
+                  }
                 }
 
                 const total = capital + interest;
@@ -264,7 +273,11 @@ export function InvestorTransactionsDisplay({
                         </div>
                         <div>
                           <p className="text-muted-foreground">Rate</p>
-                          <p className="font-medium">{rate.toFixed(2)}%</p>
+                          <p className="font-medium">
+                            {isFixedWithZeroCapital
+                              ? `Fixed ${formatCurrency(rate)}`
+                              : `${rate.toFixed(2)}%`}
+                          </p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Interest</p>
@@ -392,7 +405,11 @@ export function InvestorTransactionsDisplay({
                     <p className="text-muted-foreground font-semibold">
                       Avg. Rate
                     </p>
-                    <p className="font-bold">{averageRate.toFixed(2)}%</p>
+                    <p className="font-bold">
+                      {hasFixedInterestWithZeroCapital
+                        ? `Fixed ${formatCurrency(totalInterest)}`
+                        : `${averageRate.toFixed(2)}%`}
+                    </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground font-semibold">
