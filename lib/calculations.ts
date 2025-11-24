@@ -329,18 +329,41 @@ export function calculateGroupedLoanInvestorStats(
 }
 
 /**
- * Calculate loan duration from today to due date
+ * Calculate loan duration from start date to due date
  */
-export function calculateLoanDuration(dueDate: Date | string): string {
-  const today = new Date();
-  const due = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
-  const diffTime = Math.abs(due.getTime() - today.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+export function calculateLoanDuration(dueDate: Date | string, startDate?: Date | string): string {
+  // If no start date provided, use today's date (for backward compatibility)
+  const start = startDate 
+    ? (typeof startDate === 'string' ? new Date(startDate) : new Date(startDate))
+    : new Date();
+  start.setHours(0, 0, 0, 0); // Normalize to midnight
+  
+  const due = typeof dueDate === 'string' ? new Date(dueDate) : new Date(dueDate);
+  due.setHours(0, 0, 0, 0); // Normalize to midnight
 
-  const months = Math.floor(diffDays / 30);
-  const remainingAfterMonths = diffDays % 30;
-  const weeks = Math.floor(remainingAfterMonths / 7);
-  const days = remainingAfterMonths % 7;
+  // Calculate the difference in months using calendar months
+  let months = 0;
+  let tempDate = new Date(start);
+  
+  // Count full months
+  while (tempDate < due) {
+    const nextMonth = new Date(tempDate);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    
+    if (nextMonth <= due) {
+      months++;
+      tempDate = nextMonth;
+    } else {
+      break;
+    }
+  }
+
+  // Calculate remaining days after full months
+  const remainingTime = due.getTime() - tempDate.getTime();
+  const remainingDays = Math.round(remainingTime / (1000 * 60 * 60 * 24));
+  
+  const weeks = Math.floor(remainingDays / 7);
+  const days = remainingDays % 7;
 
   const parts = [];
   if (months > 0) {
