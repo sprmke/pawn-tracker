@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useOverdueCheck } from '@/hooks';
 import {
   TrendingUp,
   DollarSign,
@@ -146,6 +147,9 @@ export default function InvestorsPage() {
     new Set()
   );
 
+  // Automatically check for overdue loans and periods
+  useOverdueCheck();
+
   // Filter states
   const [loanStatusFilter, setLoanStatusFilter] = useState<string>('all');
   const [minBalance, setMinBalance] = useState<string>('');
@@ -162,8 +166,8 @@ export default function InvestorsPage() {
   useEffect(() => {
     const handleResize = () => {
       const isMobile = window.innerWidth < 768; // md breakpoint
-      if (isMobile && viewMode === 'table') {
-        setViewMode('cards');
+      if (isMobile) {
+        setViewMode((current) => current === 'table' ? 'cards' : current);
       }
     };
 
@@ -173,7 +177,7 @@ export default function InvestorsPage() {
     // Listen for window resize
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [viewMode]);
+  }, []);
 
   useEffect(() => {
     fetchInvestors();
