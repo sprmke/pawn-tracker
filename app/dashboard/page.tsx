@@ -22,6 +22,7 @@ import {
   PendingDisbursementsCard,
   MaturingLoansCard,
   PageHeader,
+  OverdueChecker,
 } from '@/components/common';
 import {
   CurrencyLineChart,
@@ -351,16 +352,16 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      {/* Automatically check for overdue loans and periods */}
+      <OverdueChecker />
+
       <PageHeader
         title="Dashboard"
         description="Overview of your pawn business"
       />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Overview</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="pt-6 space-y-6">
           <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Total Principal"
