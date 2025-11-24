@@ -952,6 +952,7 @@ export function LoanForm({
                     );
                   })()}
                   showEmail={false}
+                  showPeriodStatus={false}
                 />
               </CollapsibleContent>
             </CardContent>
@@ -968,7 +969,7 @@ export function LoanForm({
           uniqueInvestors={summary.uniqueInvestors}
           status={summary.status}
           balance={summary.balance}
-          showStatus={true}
+          showStatus={false}
         />
       )}
 
