@@ -33,7 +33,14 @@ export function LoanDetailContent({
   const totalAmount = calculateTotalAmount(loan.loanInvestors);
   const averageRate = calculateAverageRate(loan.loanInvestors);
   const uniqueInvestors = countUniqueInvestors(loan.loanInvestors);
-  const duration = calculateLoanDuration(loan.dueDate);
+  
+  // Find the earliest sent date from all loan investors
+  const earliestSentDate = loan.loanInvestors.reduce((earliest, li) => {
+    const sentDate = new Date(li.sentDate);
+    return !earliest || sentDate < earliest ? sentDate : earliest;
+  }, null as Date | null);
+  
+  const duration = calculateLoanDuration(loan.dueDate, earliestSentDate || undefined);
 
   // Calculate funded amount and balance for partially funded loans
   const fundedCapital = loan.loanInvestors.reduce((sum, li) => {
