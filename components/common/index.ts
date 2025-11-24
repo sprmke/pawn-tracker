@@ -21,6 +21,7 @@ export { LoansTable } from './loans-table';
 export { PastDueLoansCard } from './past-due-loans-card';
 export { PendingDisbursementsCard } from './pending-disbursements-card';
 export { MaturingLoansCard } from './maturing-loans-card';
+export { OverdueChecker } from './overdue-checker';
 export {
   ToggleMoreButton,
   QuickViewButton,
