@@ -27,6 +27,10 @@ export function LoanSummarySection({
   showStatus = true,
   title = 'Summary',
 }: LoanSummarySectionProps) {
+  // Handle case where principal is 0 but there's fixed interest
+  const hasFixedInterestWithZeroCapital =
+    totalPrincipal === 0 && totalInterest > 0;
+
   return (
     <Card>
       <CardHeader>
@@ -46,7 +50,11 @@ export function LoanSummarySection({
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               Avg. Rate
             </p>
-            <p className="text-base font-semibold">{averageRate.toFixed(2)}%</p>
+            <p className="text-base font-semibold">
+              {hasFixedInterestWithZeroCapital
+                ? `Fixed ${formatCurrency(totalInterest)}`
+                : `${averageRate.toFixed(2)}%`}
+            </p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
