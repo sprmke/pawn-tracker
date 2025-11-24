@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       loanId,
       investorId: Number(inv.investorId),
       amount: String(inv.amount),
-      interestRate: String(inv.interestRate),
+      interestRate: inv.interestRate ? String(inv.interestRate) : '0',
       interestType: inv.interestType || 'rate',
       sentDate: new Date(inv.sentDate),
       isPaid: inv.isPaid ?? true, // Default to true for backward compatibility
