@@ -2,6 +2,9 @@ import React from 'react';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { calculateInterest } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { getInterestPeriodStatusBadge } from '@/lib/badge-config';
+import type { InterestPeriodStatus } from '@/lib/types';
 
 interface Transaction {
   amount: string;
@@ -18,6 +21,7 @@ interface InterestPeriod {
   dueDate: Date | string;
   interestRate: string;
   interestType?: string;
+  status?: InterestPeriodStatus;
 }
 
 interface InvestorTransactionCardProps {
@@ -142,29 +146,46 @@ export function InvestorTransactionCard({
               Due Payments:
             </p>
             <div className="space-y-2">
-              {interestPeriods.map((period, pIndex) => {
-                const periodInterest = calculateInterest(
-                  totalPrincipal,
-                  period.interestRate,
-                  period.interestType
+              {/* Sort periods by due date (earliest first) to maintain correct order */}
+              {(() => {
+                const sortedPeriods = [...interestPeriods].sort(
+                  (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
                 );
-                const periodRate =
-                  period.interestType === 'fixed'
-                    ? totalPrincipal > 0
-                      ? (periodInterest / totalPrincipal) * 100
-                      : 0
-                    : parseFloat(period.interestRate);
+                
+                return sortedPeriods.map((period, pIndex) => {
+                  const periodInterest = calculateInterest(
+                    totalPrincipal,
+                    period.interestRate,
+                    period.interestType
+                  );
+                  const periodRate =
+                    period.interestType === 'fixed'
+                      ? totalPrincipal > 0
+                        ? (periodInterest / totalPrincipal) * 100
+                        : 0
+                      : parseFloat(period.interestRate);
 
-                const isLoanDueDate = pIndex === interestPeriods.length - 1;
-                const periodLabel = isLoanDueDate
-                  ? `Period ${pIndex + 1} (Final)`
-                  : `Period ${pIndex + 1}`;
+                  const isLoanDueDate = pIndex === sortedPeriods.length - 1;
+                  const periodLabel = isLoanDueDate
+                    ? `Period ${pIndex + 1} (Final)`
+                    : `Period ${pIndex + 1}`;
+                  
+                  const periodStatus = period.status || 'Pending';
+                  const statusBadge = getInterestPeriodStatusBadge(periodStatus);
 
                 return (
                   <div key={period.id} className="bg-gray-50 rounded p-2">
-                    <p className="text-[9px] font-semibold text-muted-foreground mb-1">
-                      {periodLabel}
-                    </p>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-[9px] font-semibold text-muted-foreground">
+                        {periodLabel}
+                      </p>
+                      <Badge
+                        variant={statusBadge.variant}
+                        className={`text-[8px] px-1.5 py-0 ${statusBadge.className || ''}`}
+                      >
+                        {periodStatus}
+                      </Badge>
+                    </div>
                     <div className="grid grid-cols-3 gap-1.5 text-[10px]">
                       <div>
                         <span className="text-muted-foreground block text-[9px]">
@@ -193,7 +214,8 @@ export function InvestorTransactionCard({
                     </div>
                   </div>
                 );
-              })}
+              });
+              })()}
             </div>
           </div>
         )}
