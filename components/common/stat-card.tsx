@@ -76,7 +76,7 @@ export function StatCard({
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {title}
             </p>
-            <p className="text-lg sm:text-xl font-semibold break-words">
+            <p className="text-base sm:text-lg font-semibold break-words">
               {value}
             </p>
             {subtitle && (
