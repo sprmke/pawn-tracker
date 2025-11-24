@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Wallet } from 'lucide-react';
+import { Wallet, Check } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/format';
 import {
   calculateInterest,
   calculateInvestmentTotal,
 } from '@/lib/calculations';
+import { getInterestPeriodStatusBadge } from '@/lib/badge-config';
+import type { InterestPeriodStatus } from '@/lib/types';
 
 interface InterestPeriod {
   id?: number | string;
@@ -17,6 +19,7 @@ interface InterestPeriod {
   interestRate: string;
   interestAmount?: string;
   interestType?: string;
+  status?: InterestPeriodStatus;
 }
 
 interface InvestorTransaction {
@@ -44,6 +47,7 @@ interface InvestorTransactionsDisplayProps {
   showEmail?: boolean;
   loanId?: number;
   onRefresh?: () => void;
+  showPeriodStatus?: boolean;
 }
 
 export function InvestorTransactionsDisplay({
@@ -51,8 +55,12 @@ export function InvestorTransactionsDisplay({
   showEmail = true,
   loanId,
   onRefresh,
+  showPeriodStatus = true,
 }: InvestorTransactionsDisplayProps) {
   const [payingTransactions, setPayingTransactions] = useState<
+    Set<number | string>
+  >(new Set());
+  const [completingPeriods, setCompletingPeriods] = useState<
     Set<number | string>
   >(new Set());
 
@@ -72,6 +80,7 @@ export function InvestorTransactionsDisplay({
         throw new Error('Failed to pay transaction');
       }
 
+      toast.success('Transaction marked as paid');
       onRefresh?.();
     } catch (error) {
       console.error('Error paying transaction:', error);
@@ -81,6 +90,36 @@ export function InvestorTransactionsDisplay({
         const newSet = new Set(prev);
         newSet.delete(transactionId);
         return newSet;
+      });
+    }
+  };
+
+  const handleCompletePeriod = async (periodId: number | string) => {
+    if (typeof periodId !== 'number') return;
+
+    setCompletingPeriods((prev) => new Set(prev).add(periodId));
+
+    try {
+      const response = await fetch(`/api/interest-periods/${periodId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Completed' }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark period as complete');
+      }
+
+      toast.success('Period marked as complete');
+      onRefresh?.();
+    } catch (error) {
+      console.error('Error completing period:', error);
+      toast.error('Failed to mark period as complete. Please try again.');
+    } finally {
+      setCompletingPeriods((prev) => {
+        const next = new Set(prev);
+        next.delete(periodId);
+        return next;
       });
     }
   };
@@ -154,7 +193,8 @@ export function InvestorTransactionsDisplay({
                     Principal Payments
                   </p>
                   <Badge variant="secondary" className="text-xs w-fit">
-                    {transactions.length} Payments
+                    {transactions.length} Payment
+                    {transactions.length > 1 ? 's' : ''}
                   </Badge>
                 </div>
               )}
@@ -326,67 +366,110 @@ export function InvestorTransactionsDisplay({
                     Due Payments
                   </p>
                   <Badge variant="secondary" className="text-xs w-fit">
-                    {item.interestPeriods.length} Periods
+                    {item.interestPeriods.length} Period
+                    {item.interestPeriods.length > 1 ? 's' : ''}
                   </Badge>
                 </div>
                 <div className="space-y-2">
-                  {item.interestPeriods.map((period, pIndex) => {
-                    // Use total capital (sum of all transactions) for interest calculation
-                    const periodInterest = calculateInterest(
-                      totalCapital,
-                      period.interestRate,
-                      period.interestType
+                  {/* Sort periods by due date (earliest first) to maintain correct order */}
+                  {(() => {
+                    const sortedPeriods = [...item.interestPeriods].sort(
+                      (a, b) =>
+                        new Date(a.dueDate).getTime() -
+                        new Date(b.dueDate).getTime()
                     );
 
-                    // Calculate the rate percentage based on the interest type
-                    const periodRate =
-                      period.interestType === 'fixed'
-                        ? totalCapital > 0
-                          ? (periodInterest / totalCapital) * 100
-                          : 0
-                        : parseFloat(period.interestRate);
+                    return sortedPeriods.map((period, pIndex) => {
+                      // Use total capital (sum of all transactions) for interest calculation
+                      const periodInterest = calculateInterest(
+                        totalCapital,
+                        period.interestRate,
+                        period.interestType
+                      );
 
-                    return (
-                      <div
-                        key={period.id || `period-${pIndex}`}
-                        className="p-3 bg-muted/50 rounded-lg"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-muted-foreground">
-                            {pIndex === item.interestPeriods!.length - 1
-                              ? `Period ${pIndex + 1} (Final)`
-                              : `Period ${pIndex + 1}`}
-                          </span>
+                      // Calculate the rate percentage based on the interest type
+                      const periodRate =
+                        period.interestType === 'fixed'
+                          ? totalCapital > 0
+                            ? (periodInterest / totalCapital) * 100
+                            : 0
+                          : parseFloat(period.interestRate);
+
+                      const periodStatus = period.status || 'Pending';
+                      const statusBadge =
+                        getInterestPeriodStatusBadge(periodStatus);
+                      const canComplete =
+                        typeof period.id === 'number' &&
+                        (periodStatus === 'Pending' ||
+                          periodStatus === 'Overdue') &&
+                        loanId;
+
+                      return (
+                        <div
+                          key={period.id || `period-${pIndex}`}
+                          className="p-3 bg-muted/50 rounded-lg"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {pIndex === sortedPeriods.length - 1
+                                ? `Period ${pIndex + 1} (Final)`
+                                : `Period ${pIndex + 1}`}
+                            </span>
+                            {showPeriodStatus && (
+                              <Badge
+                                variant={statusBadge.variant}
+                                className={`text-[10px] ${
+                                  statusBadge.className || ''
+                                }`}
+                              >
+                                {periodStatus}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-sm mb-2">
+                            <div>
+                              <p className="text-muted-foreground text-xs">
+                                Due Date
+                              </p>
+                              <p className="font-medium">
+                                {formatDate(period.dueDate)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground text-xs">
+                                Rate
+                              </p>
+                              <p className="font-medium">
+                                {periodRate.toFixed(2)}%
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground text-xs">
+                                Interest
+                              </p>
+                              <p className="font-semibold">
+                                {formatCurrency(periodInterest)}
+                              </p>
+                            </div>
+                          </div>
+                          {canComplete && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleCompletePeriod(period.id!)}
+                              disabled={completingPeriods.has(period.id!)}
+                              className="w-full mt-2"
+                              variant="outline"
+                            >
+                              <Check className="mr-2 h-3 w-3" />
+                              {completingPeriods.has(period.id!)
+                                ? 'Marking Complete...'
+                                : 'Mark as Complete'}
+                            </Button>
+                          )}
                         </div>
-                        <div className="grid grid-cols-3 gap-2 text-sm">
-                          <div>
-                            <p className="text-muted-foreground text-xs">
-                              Due Date
-                            </p>
-                            <p className="font-medium">
-                              {formatDate(period.dueDate)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground text-xs">
-                              Rate
-                            </p>
-                            <p className="font-medium">
-                              {periodRate.toFixed(2)}%
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground text-xs">
-                              Interest
-                            </p>
-                            <p className="font-semibold">
-                              {formatCurrency(periodInterest)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             )}
