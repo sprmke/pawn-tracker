@@ -32,7 +32,7 @@ interface LoanDetailModalProps {
 }
 
 export function LoanDetailModal({
-  loan,
+  loan: initialLoan,
   open,
   onOpenChange,
   onUpdate,
@@ -43,6 +43,27 @@ export function LoanDetailModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [investors, setInvestors] = useState<Investor[]>([]);
+  const [loan, setLoan] = useState<LoanWithInvestors | null>(initialLoan);
+
+  // Update local loan state when prop changes
+  useEffect(() => {
+    setLoan(initialLoan);
+  }, [initialLoan]);
+
+  // Fetch fresh loan data
+  const fetchLoan = async () => {
+    if (!loan?.id) return;
+    
+    try {
+      const response = await fetch(`/api/loans/${loan.id}`);
+      if (!response.ok) throw new Error('Failed to fetch loan');
+      const data = await response.json();
+      setLoan(data);
+      onUpdate?.(); // Notify parent to refresh as well
+    } catch (error) {
+      console.error('Error fetching loan:', error);
+    }
+  };
 
   useEffect(() => {
     if (open && isEditing) {
@@ -115,7 +136,7 @@ export function LoanDetailModal({
       if (!response.ok) throw new Error('Failed to complete loan');
 
       setShowCompleteDialog(false);
-      onUpdate?.();
+      await fetchLoan(); // Refetch loan data
     } catch (error) {
       console.error('Error completing loan:', error);
       toast.error('Failed to complete loan');
@@ -124,9 +145,9 @@ export function LoanDetailModal({
     }
   };
 
-  const handleSuccess = () => {
+  const handleSuccess = async () => {
     setIsEditing(false);
-    onUpdate?.();
+    await fetchLoan(); // Refetch loan data
   };
 
   const handlePayBalance = () => {
@@ -180,7 +201,7 @@ export function LoanDetailModal({
               <LoanDetailContent
                 loan={loan}
                 showHeader={false}
-                onRefresh={onUpdate}
+                onRefresh={fetchLoan}
               />
             )}
           </div>
