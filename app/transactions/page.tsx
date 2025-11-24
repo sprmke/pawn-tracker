@@ -76,8 +76,8 @@ export default function TransactionsPage() {
   useEffect(() => {
     const handleResize = () => {
       const isMobile = window.innerWidth < 768; // md breakpoint
-      if (isMobile && viewMode === 'table') {
-        setViewMode('cards');
+      if (isMobile) {
+        setViewMode((current) => current === 'table' ? 'cards' : current);
       }
     };
 
@@ -87,7 +87,7 @@ export default function TransactionsPage() {
     // Listen for window resize
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [viewMode]);
+  }, []);
 
   useEffect(() => {
     fetchTransactions();
