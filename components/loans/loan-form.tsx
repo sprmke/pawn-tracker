@@ -543,21 +543,37 @@ export function LoanForm({
     }
 
     // Validate that all transactions have valid amounts
-    // Allow 0 principal if there's a fixed interest amount
+    // Allow 0 principal if there's a fixed interest amount (single or multiple interest)
     const hasInvalidTransactions = selectedInvestors.some((si) =>
       si.transactions.some((t) => {
         const amount = parseFloat(t.amount);
         const isValidAmount = !isNaN(amount) && amount >= 0;
-        
-        // If amount is 0, must have fixed interest type with a value
+
+        // If amount is 0, must have interest configured
         if (amount === 0) {
-          return (
-            t.interestType !== 'fixed' ||
-            !t.interestAmount ||
-            parseFloat(t.interestAmount) <= 0
-          );
+          // Check if using multiple interest periods
+          if (si.hasMultipleInterest) {
+            // Must have at least one interest period with a valid amount
+            const hasValidInterestPeriod = si.interestPeriods.some((period) => {
+              if (period.interestType === 'fixed') {
+                const fixedAmount = parseFloat(period.interestAmount);
+                return !isNaN(fixedAmount) && fixedAmount > 0;
+              } else {
+                const rate = parseFloat(period.interestRate);
+                return !isNaN(rate) && rate > 0;
+              }
+            });
+            return !hasValidInterestPeriod;
+          } else {
+            // Single interest - must be fixed type with a value
+            return (
+              t.interestType !== 'fixed' ||
+              !t.interestAmount ||
+              parseFloat(t.interestAmount) <= 0
+            );
+          }
         }
-        
+
         // For non-zero amounts, just check if valid
         return !isValidAmount || amount < 0;
       })
@@ -565,7 +581,7 @@ export function LoanForm({
 
     if (hasInvalidTransactions) {
       toast.error(
-        'Please enter valid amounts for all transactions. Transactions with 0 principal must have a fixed interest amount.'
+        'Please enter valid amounts for all transactions. Transactions with 0 principal must have a fixed interest amount or multiple interest periods configured.'
       );
       return;
     }
@@ -899,17 +915,20 @@ export function LoanForm({
                           investor: transactions[0].investor,
                           transactions: transactions.map((t, index) => {
                             // Find the original transaction to get the actual interestType
-                            const originalTransaction = investorData?.transactions.find(
-                              (ot) => ot.sentDate === t.sentDate
-                            );
-                            
+                            const originalTransaction =
+                              investorData?.transactions.find(
+                                (ot) => ot.sentDate === t.sentDate
+                              );
+
                             return {
                               id: `preview-${t.investor.id}-${index}`,
                               amount: t.capital.toString(),
-                              interestRate: originalTransaction?.interestType === 'fixed'
-                                ? originalTransaction.interestAmount
-                                : t.interestRate.toString(),
-                              interestType: originalTransaction?.interestType || 'rate',
+                              interestRate:
+                                originalTransaction?.interestType === 'fixed'
+                                  ? originalTransaction.interestAmount
+                                  : t.interestRate.toString(),
+                              interestType:
+                                originalTransaction?.interestType || 'rate',
                               sentDate: t.sentDate,
                               isPaid: t.isPaid,
                             };
