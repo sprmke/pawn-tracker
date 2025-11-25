@@ -18,6 +18,7 @@ import {
 } from '@/lib/calculations';
 import {
   StatCard,
+  CompletedLoansCard,
   PastDueLoansCard,
   PendingDisbursementsCard,
   MaturingLoansCard,
@@ -255,12 +256,9 @@ async function getDashboardData(userId: string) {
         });
     });
 
-    const upcomingPaymentsToSend = unpaidLoanTransactions
-      .sort(
-        (a, b) =>
-          new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
-      )
-      .slice(0, 5);
+    const upcomingPaymentsToSend = unpaidLoanTransactions.sort(
+      (a, b) => new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
+    );
 
     // Upcoming payments due (loans due within next 14 days, excluding completed/overdue)
     const fourteenDaysFromNow = addDays(now, 14);
@@ -276,8 +274,14 @@ async function getDashboardData(userId: string) {
       })
       .sort(
         (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-      )
-      .slice(0, 5);
+      );
+
+    // Completed loans (recently completed)
+    const completedLoansData = allLoans
+      .filter((loan) => loan.status === 'Completed')
+      .sort(
+        (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+      );
 
     // Overdue loans (status overdue or past due date)
     const overdueLoansData = allLoans
@@ -288,8 +292,7 @@ async function getDashboardData(userId: string) {
       )
       .sort(
         (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-      )
-      .slice(0, 5);
+      );
 
     return {
       // Overview stats
@@ -313,6 +316,7 @@ async function getDashboardData(userId: string) {
       // Upcoming data
       upcomingPaymentsToSend,
       upcomingPaymentsDue,
+      completedLoansData,
       overdueLoansData,
     };
   } catch (error) {
@@ -336,6 +340,7 @@ async function getDashboardData(userId: string) {
       investorCapitalData: [],
       upcomingPaymentsToSend: [],
       upcomingPaymentsDue: [],
+      completedLoansData: [],
       overdueLoansData: [],
     };
   }
@@ -443,7 +448,8 @@ export default async function DashboardPage() {
       </Card>
 
       {/* Upcoming Activity */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        <CompletedLoansCard loans={data.completedLoansData} />
         <PastDueLoansCard loans={data.overdueLoansData} />
         <PendingDisbursementsCard disbursements={data.upcomingPaymentsToSend} />
         <MaturingLoansCard loans={data.upcomingPaymentsDue} />
