@@ -56,6 +56,7 @@ import {
   InlineLoader,
   ViewModeToggle,
   PageHeader,
+  DateListWithViewMore,
 } from '@/components/common';
 
 type SortField =
@@ -918,114 +919,101 @@ export default function LoansPage() {
                             <p className="text-[10px] text-muted-foreground mb-1">
                               Sent Date
                             </p>
-                            <div className="flex flex-col items-start">
-                              {(() => {
-                                // Get unique sent dates
-                                const uniqueDates = Array.from(
-                                  new Set(
-                                    loan.loanInvestors.map(
-                                      (li) =>
-                                        new Date(li.sentDate)
-                                          .toISOString()
-                                          .split('T')[0]
-                                    )
+                            {(() => {
+                              // Get unique sent dates
+                              const uniqueDates = Array.from(
+                                new Set(
+                                  loan.loanInvestors.map(
+                                    (li) =>
+                                      new Date(li.sentDate)
+                                        .toISOString()
+                                        .split('T')[0]
                                   )
                                 )
-                                  .map((dateStr) => new Date(dateStr))
-                                  .sort((a, b) => a.getTime() - b.getTime());
+                              )
+                                .map((dateStr) => new Date(dateStr))
+                                .sort((a, b) => a.getTime() - b.getTime());
 
-                                return uniqueDates.map((date, index) => {
-                                  const dateStr = date
-                                    .toISOString()
-                                    .split('T')[0];
-                                  // Check if any transaction with this sent date is unpaid
-                                  const hasUnpaidOnThisDate =
-                                    loan.loanInvestors.some(
+                              return (
+                                <DateListWithViewMore
+                                  dates={uniqueDates}
+                                  limit={3}
+                                  dialogTitle="All Sent Dates"
+                                  getItemClassName={(date, hasUnpaid) =>
+                                    `${
+                                      uniqueDates.length > 1
+                                        ? 'text-[10px]'
+                                        : 'text-xs'
+                                    } px-2 py-0.5 rounded inline-block font-medium ${
+                                      hasUnpaid ? 'bg-yellow-200' : ''
+                                    }`
+                                  }
+                                  checkUnpaid={(date) => {
+                                    const dateStr = date
+                                      .toISOString()
+                                      .split('T')[0];
+                                    return loan.loanInvestors.some(
                                       (li) =>
                                         new Date(li.sentDate)
                                           .toISOString()
                                           .split('T')[0] === dateStr &&
                                         !li.isPaid
                                     );
-
-                                  return (
-                                    <span
-                                      key={index}
-                                      className={`${
-                                        uniqueDates.length > 1
-                                          ? 'text-[10px]'
-                                          : 'text-xs'
-                                      } px-2 py-0.5 rounded inline-block font-medium ${
-                                        hasUnpaidOnThisDate
-                                          ? 'bg-yellow-200'
-                                          : ''
-                                      }`}
-                                    >
-                                      {date.toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                      })}
-                                    </span>
-                                  );
-                                });
-                              })()}
-                            </div>
+                                  }}
+                                />
+                              );
+                            })()}
                           </div>
                           <div className="p-2 bg-muted/50 rounded-lg">
                             <p className="text-[10px] text-muted-foreground mb-1">
                               Due Date
                             </p>
-                            <div className="flex flex-col items-start">
-                              {(() => {
-                                // Collect all unique due dates
-                                const dueDateSet = new Set<string>();
+                            {(() => {
+                              // Collect all unique due dates
+                              const dueDateSet = new Set<string>();
 
-                                // Add main loan due date
-                                dueDateSet.add(
-                                  new Date(loan.dueDate)
-                                    .toISOString()
-                                    .split('T')[0]
-                                );
+                              // Add main loan due date
+                              dueDateSet.add(
+                                new Date(loan.dueDate)
+                                  .toISOString()
+                                  .split('T')[0]
+                              );
 
-                                // Add interest period due dates
-                                loan.loanInvestors.forEach((li) => {
-                                  if (
-                                    li.hasMultipleInterest &&
-                                    li.interestPeriods
-                                  ) {
-                                    li.interestPeriods.forEach((period) => {
-                                      dueDateSet.add(
-                                        new Date(period.dueDate)
-                                          .toISOString()
-                                          .split('T')[0]
-                                      );
-                                    });
-                                  }
-                                });
+                              // Add interest period due dates
+                              loan.loanInvestors.forEach((li) => {
+                                if (
+                                  li.hasMultipleInterest &&
+                                  li.interestPeriods
+                                ) {
+                                  li.interestPeriods.forEach((period) => {
+                                    dueDateSet.add(
+                                      new Date(period.dueDate)
+                                        .toISOString()
+                                        .split('T')[0]
+                                    );
+                                  });
+                                }
+                              });
 
-                                const uniqueDates = Array.from(dueDateSet)
-                                  .map((dateStr) => new Date(dateStr))
-                                  .sort((a, b) => a.getTime() - b.getTime());
+                              const uniqueDates = Array.from(dueDateSet)
+                                .map((dateStr) => new Date(dateStr))
+                                .sort((a, b) => a.getTime() - b.getTime());
 
-                                return uniqueDates.map((date, index) => (
-                                  <span
-                                    key={index}
-                                    className={`${
+                              return (
+                                <DateListWithViewMore
+                                  dates={uniqueDates}
+                                  limit={3}
+                                  dialogTitle="All Due Dates"
+                                  getItemClassName={(date) =>
+                                    `${
                                       uniqueDates.length > 1
                                         ? 'text-[10px]'
                                         : 'text-xs'
-                                    } px-2 py-0.5 rounded inline-block font-medium`}
-                                  >
-                                    {date.toLocaleDateString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      year: 'numeric',
-                                    })}
-                                  </span>
-                                ));
-                              })()}
-                            </div>
+                                    } px-2 py-0.5 rounded inline-block font-medium`
+                                  }
+                                />
+                              );
+                            })()}
                           </div>
                         </div>
 
