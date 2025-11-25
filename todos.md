@@ -1,8 +1,23 @@
 Todos & Improvements:
 
 - When filling-out loan transaction with multiple investors, add a button that will copy the details of the first filled-out investor.
-- Add a separate checker or complete button for the payment periods
-- There are bug relating to months with a due date with more than 30days. It detects as already as multiple months
+- ✅ Add a separate checker or complete button for the payment periods (Implemented: periods now have status field and can be marked as complete via UI button)
+- ✅ There are bug relating to months with a due date with more than 30days. It detects as already as multiple months
+- ✅ For all the transactions and loans, we should detect if today is more than due date of certain transaction or loan, then we should automatically update their status from 'Fully Funded' to 'Overdue'. (Implemented: automatic check runs on dashboard, loans, and investors page load. API endpoint: POST /api/loans/check-overdue)
 - Checker for possible duplicate transaction input
 - ✅ Add total amount on our 3 stats card. Make sure we have support both overall and per investor total.
 - ✅ Scroll Bug for number input
+- ✅ When creating a loan, we should be able to add a investor and payment of 0 principal but has fixed amount of interest. Right now, when we put 0 on amount, and we set the fixed interest to 10k, the total interest is 0 because it looks like we are multiplying it and not not adding
+- Limit sent and due dates for card & table view
+- ✅ Limit 1 event card to calendar view for transaction and loans, if more than 2, add view more, and when click, display all of them just we have consistent calendar cell width and height
+- When we edit a loan with multiple periods and one period is already completed, when we click Update, it reset back to Overdue. We should not update the period status if the period is already completed unless they update the due date or rate.
+- ✅ Let's create a fourth card called Completed Loans. It should be placed before Overdue Loans. Please update all usages where we have these existing 3 cards.
+- ✅ Do not add limit to 3 stat cards and set max height and inner scroll.
+- ✅ On past due loans, we should display the date of the overdue date for multiple interest and not the final due date because it doesn't make sense
+- When on mobile, all card click on Loans, Transactions, Investors on table or card view should open the detail page instead of opening the modal for better UX
+- When we create a transaction or loan, then we select an investor, the transaction or loan should be added as well on that user account via email. Meaning, all loans and transactions should be shareable via Investor email.
+- Support export to CSV or spreadsheet for all loans and transactions
+- Add total lot in investor detail page (with and without depacto)
+- Create google calendar event for every new or updated transaction
+- UI Improvements: Make most of the text smaller. Reduce padding and spacing.
+- When on smaller width screens, let's reduce the table columns
