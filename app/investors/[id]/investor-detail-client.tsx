@@ -45,6 +45,7 @@ import {
   CollapsibleSection,
   CollapsibleContent,
   InlineLoader,
+  CompletedLoansCard,
   PastDueLoansCard,
   PendingDisbursementsCard,
   MaturingLoansCard,
@@ -422,6 +423,13 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const now = new Date();
   const fourteenDaysFromNow = addDays(now, 14);
 
+  // Completed loans (recently completed for this investor)
+  const completedLoans = loans
+    .filter((loan) => loan.status === 'Completed')
+    .sort(
+      (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+    );
+
   // Overdue loans (status overdue or past due date for this investor's loans)
   const overdueLoans = loans
     .filter(
@@ -431,8 +439,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     )
     .sort(
       (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-    )
-    .slice(0, 5);
+    );
 
   // Pending disbursements (unpaid loan investor transactions for this investor)
   const unpaidLoanTransactions: Array<{
@@ -462,8 +469,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const pendingDisbursements = unpaidLoanTransactions
     .sort(
       (a, b) => new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
-    )
-    .slice(0, 5);
+    );
 
   // Maturing loans (loans due within next 14 days for this investor)
   const maturingLoans = loans
@@ -478,8 +484,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     })
     .sort(
       (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-    )
-    .slice(0, 5);
+    );
 
   if (isEditing) {
     return (
@@ -566,7 +571,12 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
       </div>
 
       {/* Activity Cards */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        <CompletedLoansCard
+          loans={completedLoans}
+          loading={loansLoading}
+          investorId={investor.id}
+        />
         <PastDueLoansCard
           loans={overdueLoans}
           loading={loansLoading}
