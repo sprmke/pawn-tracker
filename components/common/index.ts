@@ -18,10 +18,12 @@ export { DetailModalHeader } from './detail-modal-header';
 export { DataTable } from './data-table';
 export { InvestorsTable } from './investors-table';
 export { LoansTable } from './loans-table';
+export { CompletedLoansCard } from './completed-loans-card';
 export { PastDueLoansCard } from './past-due-loans-card';
 export { PendingDisbursementsCard } from './pending-disbursements-card';
 export { MaturingLoansCard } from './maturing-loans-card';
 export { OverdueChecker } from './overdue-checker';
+export { DateListWithViewMore } from './date-list-with-view-more';
 export {
   ToggleMoreButton,
   QuickViewButton,
