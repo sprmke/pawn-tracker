@@ -3,6 +3,7 @@ export { CalendarHeader } from './calendar-header';
 export { CalendarDayView } from './calendar-day-view';
 export { CalendarWeekView } from './calendar-week-view';
 export { CalendarMonthView } from './calendar-month-view';
+export { CalendarEventsModal } from './calendar-events-modal';
 export { DailySummary } from './daily-summary';
 export { useCalendar } from './use-calendar';
 export type {
