@@ -12,6 +12,7 @@ import {
 } from '@/lib/calculations';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import { InvestorTransactionCard } from './investor-transaction-card';
+import { DateListWithViewMore } from './date-list-with-view-more';
 
 interface LoansTableProps {
   loans: LoanWithInvestors[];
@@ -108,34 +109,24 @@ export function LoansTable({
           .sort((a, b) => a.getTime() - b.getTime());
 
         return (
-          <div className="flex flex-col gap-0.5 items-start">
-            {uniqueDates.map((date, index) => {
+          <DateListWithViewMore
+            dates={uniqueDates}
+            limit={3}
+            dialogTitle="All Sent Dates"
+            getItemClassName={(date, hasUnpaid) => 
+              `${uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'} px-2 py-0.5 rounded inline-block ${
+                hasUnpaid ? 'bg-yellow-200' : ''
+              }`
+            }
+            checkUnpaid={(date) => {
               const dateStr = date.toISOString().split('T')[0];
-              // Check if any transaction with this sent date is unpaid
-              const hasUnpaidOnThisDate = loan.loanInvestors.some(
+              return loan.loanInvestors.some(
                 (li) =>
                   new Date(li.sentDate).toISOString().split('T')[0] ===
                     dateStr && !li.isPaid
               );
-
-              return (
-                <span
-                  key={index}
-                  className={`${
-                    uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'
-                  } px-2 py-0.5 rounded inline-block ${
-                    hasUnpaidOnThisDate ? 'bg-yellow-200' : ''
-                  }`}
-                >
-                  {date.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </span>
-              );
-            })}
-          </div>
+            }}
+          />
         );
       },
     },
@@ -173,22 +164,14 @@ export function LoansTable({
           .sort((a, b) => a.getTime() - b.getTime());
 
         return (
-          <div className="flex flex-col gap-0.5 items-start">
-            {uniqueDates.map((date, index) => (
-              <span
-                key={index}
-                className={`${
-                  uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'
-                } px-2 py-0.5 rounded inline-block`}
-              >
-                {date.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </span>
-            ))}
-          </div>
+          <DateListWithViewMore
+            dates={uniqueDates}
+            limit={3}
+            dialogTitle="All Due Dates"
+            getItemClassName={(date) => 
+              `${uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'} px-2 py-0.5 rounded inline-block`
+            }
+          />
         );
       },
     },
