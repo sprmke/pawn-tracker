@@ -10,6 +10,7 @@ import {
   calculateAverageRate,
 } from '@/lib/calculations';
 import {
+  CompletedLoansCard,
   PastDueLoansCard,
   PendingDisbursementsCard,
   MaturingLoansCard,
@@ -148,6 +149,14 @@ export function InvestorsTable({
         investorLoanIds.has(loan.id)
       );
 
+      // Completed loans
+      const completedLoans = investorLoans
+        .filter((loan) => loan.status === 'Completed')
+        .sort(
+          (a, b) =>
+            new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+        );
+
       // Overdue loans
       const overdueLoans = investorLoans
         .filter(
@@ -207,6 +216,7 @@ export function InvestorsTable({
         );
 
       return {
+        completedLoans,
         overdueLoans,
         pendingDisbursements,
         maturingLoans,
@@ -214,7 +224,11 @@ export function InvestorsTable({
     })();
 
     return (
-      <div className="grid gap-2 grid-cols-1 lg:grid-cols-3">
+      <div className="grid gap-2 grid-cols-1 lg:grid-cols-2 xl:grid-cols-4">
+        <CompletedLoansCard
+          loans={activityData.completedLoans}
+          investorId={investor.id}
+        />
         <PastDueLoansCard
           loans={activityData.overdueLoans}
           investorId={investor.id}
