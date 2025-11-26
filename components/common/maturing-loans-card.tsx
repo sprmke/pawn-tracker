@@ -12,18 +12,16 @@ import { cn } from '@/lib/utils';
 
 interface MaturingLoansCardProps {
   loans: LoanWithInvestors[];
-  limit?: number;
   loading?: boolean;
   investorId?: number; // Filter amounts by specific investor
 }
 
 export function MaturingLoansCard({
   loans,
-  limit = 5,
   loading = false,
   investorId,
 }: MaturingLoansCardProps) {
-  const displayLoans = loans.slice(0, limit);
+  const displayLoans = loans;
 
   // Calculate total amount due across all maturing loans
   const totalAmount = loans.reduce((sum, loan) => {
@@ -58,57 +56,60 @@ export function MaturingLoansCard({
               </p>
             ) : (
               <>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium text-muted-foreground">
                     Total Amount:
                   </p>
-                  <p className="text-base font-semibold text-chart-2">
+                  <p className="text-sm font-semibold text-chart-2">
                     {formatCurrency(totalAmount)}
                   </p>
                 </div>
-                {displayLoans.map((loan) => {
-                  // Filter loan investors by investorId if provided
-                  const filteredInvestors = investorId
-                    ? loan.loanInvestors.filter(
-                        (li) => li.investor.id === investorId
-                      )
-                    : loan.loanInvestors;
+                <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                  {displayLoans.map((loan) => {
+                    // Filter loan investors by investorId if provided
+                    const filteredInvestors = investorId
+                      ? loan.loanInvestors.filter(
+                          (li) => li.investor.id === investorId
+                        )
+                      : loan.loanInvestors;
 
-                  // Calculate amount due on this date (matches transaction amount)
-                  // For multiple interest: capital + final period interest only
-                  // For single interest: capital + total interest
-                  const amount = calculateAmountDueOnDate(filteredInvestors);
+                    // Calculate amount due on this date (matches transaction amount)
+                    // For multiple interest: capital + final period interest only
+                    // For single interest: capital + total interest
+                    const amount = calculateAmountDueOnDate(filteredInvestors);
 
-                  return (
-                    <Link
-                      key={loan.id}
-                      href={`/loans/${loan.id}`}
-                      className="flex flex-col p-3 border-2 border-border bg-background rounded-xl hover:bg-chart-2/5 hover:shadow-md transition-all duration-300 gap-1"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-medium truncate flex-1">
-                          {loan.loanName}
-                        </p>
-                        <p className="text-sm font-semibold text-chart-2 flex-shrink-0">
-                          {formatCurrency(amount)}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <Badge
-                          variant={getLoanStatusBadge(loan.status).variant}
-                          className={`${
-                            getLoanStatusBadge(loan.status).className
-                          } text-[10px] px-2 py-0.5`}
-                        >
-                          {loan.type}
-                        </Badge>
-                        <span className="text-muted-foreground flex-shrink-0 font-medium">
-                          Due: {format(new Date(loan.dueDate), 'MMM dd, yyyy')}
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })}
+                    return (
+                      <Link
+                        key={loan.id}
+                        href={`/loans/${loan.id}`}
+                        className="flex flex-col p-3 border-2 border-border bg-background rounded-xl hover:bg-chart-2/5 hover:shadow-md transition-all duration-300 gap-1"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs font-medium truncate flex-1">
+                            {loan.loanName}
+                          </p>
+                          <p className="text-xs font-semibold text-chart-2 flex-shrink-0">
+                            {formatCurrency(amount)}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <Badge
+                            variant={getLoanStatusBadge(loan.status).variant}
+                            className={`${
+                              getLoanStatusBadge(loan.status).className
+                            } text-[10px] px-2 py-0.5`}
+                          >
+                            {loan.type}
+                          </Badge>
+                          <span className="text-muted-foreground flex-shrink-0 font-medium">
+                            Due:{' '}
+                            {format(new Date(loan.dueDate), 'MMM dd, yyyy')}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
               </>
             )}
           </div>
