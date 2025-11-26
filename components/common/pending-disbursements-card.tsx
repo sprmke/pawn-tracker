@@ -17,16 +17,14 @@ interface PendingDisbursement {
 
 interface PendingDisbursementsCardProps {
   disbursements: PendingDisbursement[];
-  limit?: number;
   loading?: boolean;
 }
 
 export function PendingDisbursementsCard({
   disbursements,
-  limit = 5,
   loading = false,
 }: PendingDisbursementsCardProps) {
-  const displayDisbursements = disbursements.slice(0, limit);
+  const displayDisbursements = disbursements;
 
   // Calculate total pending disbursements
   const totalAmount = disbursements.reduce(
@@ -59,38 +57,40 @@ export function PendingDisbursementsCard({
               </p>
             ) : (
               <>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium text-muted-foreground">
                     Total Amount:
                   </p>
-                  <p className="text-base font-semibold text-chart-3">
+                  <p className="text-sm  font-semibold text-chart-3">
                     {formatCurrency(totalAmount)}
                   </p>
                 </div>
-                {displayDisbursements.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/loans/${item.loanId}`}
-                    className="flex flex-col p-3 border-2 border-chart-3/20 bg-background rounded-xl hover:bg-chart-3/5 hover:shadow-md transition-all duration-300 gap-1"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium truncate flex-1">
-                        {item.loanName}
-                      </p>
-                      <p className="text-sm font-semibold text-chart-3 flex-shrink-0">
-                        {formatCurrency(parseFloat(item.amount))}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="truncate font-medium">
-                        {item.investorName}
-                      </span>
-                      <span className="flex-shrink-0">
-                        {format(new Date(item.sentDate), 'MMM dd, yyyy')}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
+                <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                  {displayDisbursements.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={`/loans/${item.loanId}`}
+                      className="flex flex-col p-3 border-2 border-chart-3/20 bg-background rounded-xl hover:bg-chart-3/5 hover:shadow-md transition-all duration-300 gap-1"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs font-medium truncate flex-1">
+                          {item.loanName}
+                        </p>
+                        <p className="text-xs font-semibold text-chart-3 flex-shrink-0">
+                          {formatCurrency(parseFloat(item.amount))}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="truncate font-medium">
+                          {item.investorName}
+                        </span>
+                        <span className="flex-shrink-0">
+                          {format(new Date(item.sentDate), 'MMM dd, yyyy')}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </>
             )}
           </div>
