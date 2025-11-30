@@ -73,7 +73,7 @@ export function DateListWithViewMore({
               e.stopPropagation();
               setShowAllModal(true);
             }}
-            className="h-auto p-0 text-xs text-primary hover:underline"
+            className="h-auto p-0 text-[11px] text-primary hover:underline mx-2"
           >
             View {dates.length - limit} more
           </Button>
