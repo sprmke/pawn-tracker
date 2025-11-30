@@ -44,6 +44,8 @@ export function LoansTable({
       id: 'type',
       header: 'Type',
       hidden: hideFields.includes('type'),
+      className: 'hidden lg:table-cell',
+      headerClassName: 'hidden lg:table-cell',
       accessorKey: 'type',
       sortable: true,
       cell: (loan) => (
@@ -61,6 +63,8 @@ export function LoansTable({
       id: 'status',
       header: 'Status',
       hidden: hideFields.includes('status'),
+      className: 'hidden lg:table-cell',
+      headerClassName: 'hidden lg:table-cell',
       accessorKey: 'status',
       sortable: true,
       cell: (loan) => (
@@ -78,6 +82,8 @@ export function LoansTable({
       id: 'sentDates',
       header: 'Sent Dates',
       hidden: hideFields.includes('sentDates'),
+      className: 'hidden lg:table-cell',
+      headerClassName: 'hidden lg:table-cell',
       accessorFn: (loan) => {
         const dates = loan.loanInvestors.map((li) =>
           new Date(li.sentDate).getTime()
@@ -113,8 +119,10 @@ export function LoansTable({
             dates={uniqueDates}
             limit={3}
             dialogTitle="All Sent Dates"
-            getItemClassName={(date, hasUnpaid) => 
-              `${uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'} px-2 py-0.5 rounded inline-block ${
+            getItemClassName={(date, hasUnpaid) =>
+              `${
+                uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'
+              } px-2 py-0.5 rounded inline-block ${
                 hasUnpaid ? 'bg-yellow-200' : ''
               }`
             }
@@ -134,6 +142,8 @@ export function LoansTable({
       id: 'dueDate',
       header: 'Due Dates',
       hidden: hideFields.includes('dueDate'),
+      className: 'hidden lg:table-cell',
+      headerClassName: 'hidden lg:table-cell',
       accessorKey: 'dueDate',
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -168,8 +178,10 @@ export function LoansTable({
             dates={uniqueDates}
             limit={3}
             dialogTitle="All Due Dates"
-            getItemClassName={(date) => 
-              `${uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'} px-2 py-0.5 rounded inline-block`
+            getItemClassName={(date) =>
+              `${
+                uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'
+              } px-2 py-0.5 rounded inline-block`
             }
           />
         );
@@ -245,6 +257,8 @@ export function LoansTable({
       id: 'freeLotSqm',
       header: 'Free Lot',
       hidden: hideFields.includes('freeLotSqm'),
+      className: 'hidden lg:table-cell',
+      headerClassName: 'hidden lg:table-cell',
       accessorKey: 'freeLotSqm',
       sortable: true,
       sortFn: (a, b, direction) => {
