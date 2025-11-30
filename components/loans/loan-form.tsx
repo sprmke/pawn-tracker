@@ -144,6 +144,7 @@ export function LoanForm({
                 interestAmount:
                   ip.interestType === 'fixed' ? ip.interestRate : '',
                 interestType: ip.interestType,
+                status: ip.status,
               }))
             : [];
 
@@ -627,6 +628,7 @@ export function LoanForm({
                   ? period.interestAmount
                   : period.interestRate,
               interestType: period.interestType,
+              status: period.status,
             }))
           : undefined;
 
