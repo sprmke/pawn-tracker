@@ -8,9 +8,9 @@ Todos & Improvements:
 - ✅ Add total amount on our 3 stats card. Make sure we have support both overall and per investor total.
 - ✅ Scroll Bug for number input
 - ✅ When creating a loan, we should be able to add a investor and payment of 0 principal but has fixed amount of interest. Right now, when we put 0 on amount, and we set the fixed interest to 10k, the total interest is 0 because it looks like we are multiplying it and not not adding
-- Limit sent and due dates for card & table view
+- ✅ Limit sent and due dates for card & table view
 - ✅ Limit 1 event card to calendar view for transaction and loans, if more than 2, add view more, and when click, display all of them just we have consistent calendar cell width and height
-- When we edit a loan with multiple periods and one period is already completed, when we click Update, it reset back to Overdue. We should not update the period status if the period is already completed unless they update the due date or rate.
+- ✅ When we edit a loan with multiple periods and one period is already completed, when we click Update, it reset back to Overdue. We should not update the period status if the period is already completed unless they update the due date or rate.
 - ✅ Let's create a fourth card called Completed Loans. It should be placed before Overdue Loans. Please update all usages where we have these existing 3 cards.
 - ✅ Do not add limit to 3 stat cards and set max height and inner scroll.
 - ✅ On past due loans, we should display the date of the overdue date for multiple interest and not the final due date because it doesn't make sense
