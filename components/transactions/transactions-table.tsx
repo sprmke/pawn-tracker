@@ -112,6 +112,8 @@ export function TransactionsTable({
       header: 'Type',
       accessorKey: 'type',
       sortable: true,
+      className: 'hidden lg:table-cell',
+      headerClassName: 'hidden lg:table-cell',
       cell: (transaction) => (
         <Badge
           variant={getTransactionTypeBadge(transaction.type).variant}
@@ -167,6 +169,8 @@ export function TransactionsTable({
       header: 'Investor Balance',
       accessorFn: (transaction) => parseFloat(transaction.balance),
       sortable: true,
+      className: 'hidden lg:table-cell',
+      headerClassName: 'hidden lg:table-cell',
       sortFn: (a, b, direction) => {
         const aValue = parseFloat(a.balance);
         const bValue = parseFloat(b.balance);
@@ -184,6 +188,8 @@ export function TransactionsTable({
       accessorFn: (transaction) =>
         calculateOverallBalance(transaction, transactions),
       sortable: true,
+      className: 'hidden lg:table-cell',
+      headerClassName: 'hidden lg:table-cell',
       sortFn: (a, b, direction) => {
         const aValue = calculateOverallBalance(a, transactions);
         const bValue = calculateOverallBalance(b, transactions);
