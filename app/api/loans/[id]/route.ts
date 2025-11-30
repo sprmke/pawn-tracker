@@ -121,6 +121,32 @@ export async function PUT(
       }
     }
 
+    // Fetch existing interest periods before deleting (to preserve completed statuses)
+    const existingLoanInvestors = await db.query.loanInvestors.findMany({
+      where: eq(loanInvestors.loanId, loanId),
+      with: {
+        interestPeriods: true,
+      },
+    });
+
+    // Create a map of existing periods by investor and due date for easy lookup
+    const existingPeriodsMap = new Map<
+      string,
+      { status: string; interestRate: string; interestType: string }
+    >();
+    existingLoanInvestors.forEach((li) => {
+      if (li.interestPeriods) {
+        li.interestPeriods.forEach((period) => {
+          const key = `${li.investorId}-${period.dueDate.toISOString()}`;
+          existingPeriodsMap.set(key, {
+            status: period.status,
+            interestRate: period.interestRate,
+            interestType: period.interestType,
+          });
+        });
+      }
+    });
+
     // Delete existing loan investors (cascade will delete interest periods)
     await db.delete(loanInvestors).where(eq(loanInvestors.loanId, loanId));
 
@@ -165,12 +191,38 @@ export async function PUT(
           inv.interestPeriods.length > 0
         ) {
           const loanInvestorId = insertedLoanInvestors[i].id;
-          const periodData = inv.interestPeriods.map((period: any) => ({
-            loanInvestorId,
-            dueDate: new Date(period.dueDate),
-            interestRate: String(period.interestRate),
-            interestType: period.interestType || 'rate',
-          }));
+          const periodData = inv.interestPeriods.map((period: any) => {
+            const dueDate = new Date(period.dueDate);
+            const newInterestRate = String(period.interestRate);
+            const newInterestType = period.interestType || 'rate';
+            
+            // Check if this period existed before with same date/rate
+            const key = `${investorId}-${dueDate.toISOString()}`;
+            const existingPeriod = existingPeriodsMap.get(key);
+            
+            // Preserve completed status only if date and rate haven't changed
+            let status: 'Pending' | 'Completed' | 'Overdue' = 'Pending';
+            if (existingPeriod) {
+              const rateChanged = existingPeriod.interestRate !== newInterestRate;
+              const typeChanged = existingPeriod.interestType !== newInterestType;
+              
+              // If nothing changed and it was completed, keep it completed
+              if (!rateChanged && !typeChanged && existingPeriod.status === 'Completed') {
+                status = 'Completed';
+              } else if (existingPeriod.status === 'Overdue' && !rateChanged && !typeChanged) {
+                // Also preserve Overdue status if rate/type unchanged
+                status = 'Overdue';
+              }
+            }
+            
+            return {
+              loanInvestorId,
+              dueDate,
+              interestRate: newInterestRate,
+              interestType: newInterestType,
+              status,
+            };
+          });
 
           console.log(
             'Inserting interest periods for loanInvestorId:',
