@@ -55,9 +55,10 @@ export function InvestorTransactionCard({
   const hasMultipleInterest = transactions.some((t) => t.hasMultipleInterest);
   const interestPeriods =
     transactions.find((t) => t.interestPeriods)?.interestPeriods || [];
-  
+
   const [showAllPeriodsModal, setShowAllPeriodsModal] = useState(false);
-  const [showAllTransactionsModal, setShowAllTransactionsModal] = useState(false);
+  const [showAllTransactionsModal, setShowAllTransactionsModal] =
+    useState(false);
   const PERIODS_LIMIT = 3;
   const TRANSACTIONS_LIMIT = 3;
 
@@ -72,9 +73,7 @@ export function InvestorTransactionCard({
         key={tIndex}
         className={cn(
           'flex flex-col text-[10px] p-1.5 rounded',
-          isUnpaid
-            ? 'bg-yellow-100 border border-yellow-200'
-            : 'bg-gray-50'
+          isUnpaid ? 'bg-yellow-100 border border-yellow-200' : 'bg-gray-50'
         )}
       >
         <p className="text-[9px] font-semibold text-muted-foreground mb-1">
@@ -103,7 +102,11 @@ export function InvestorTransactionCard({
   };
 
   // Helper function to render period cards
-  const renderPeriodCard = (period: InterestPeriod, pIndex: number, totalPeriods: number) => {
+  const renderPeriodCard = (
+    period: InterestPeriod,
+    pIndex: number,
+    totalPeriods: number
+  ) => {
     const periodInterest = calculateInterest(
       totalPrincipal,
       period.interestRate,
@@ -120,7 +123,7 @@ export function InvestorTransactionCard({
     const periodLabel = isLoanDueDate
       ? `Period ${pIndex + 1} (Final)`
       : `Period ${pIndex + 1}`;
-    
+
     const periodStatus = period.status || 'Pending';
     const statusBadge = getInterestPeriodStatusBadge(periodStatus);
 
@@ -147,12 +150,8 @@ export function InvestorTransactionCard({
             </span>
           </div>
           <div>
-            <span className="text-muted-foreground block text-[9px]">
-              Rate
-            </span>
-            <span className="text-[10px]">
-              {periodRate.toFixed(2)}%
-            </span>
+            <span className="text-muted-foreground block text-[9px]">Rate</span>
+            <span className="text-[10px]">{periodRate.toFixed(2)}%</span>
           </div>
           <div>
             <span className="text-muted-foreground block text-[9px]">
@@ -216,9 +215,12 @@ export function InvestorTransactionCard({
             </p>
             <div className="space-y-1.5">
               {(() => {
-                const displayedTransactions = transactions.slice(0, TRANSACTIONS_LIMIT);
+                const displayedTransactions = transactions.slice(
+                  0,
+                  TRANSACTIONS_LIMIT
+                );
                 const hasMore = transactions.length > TRANSACTIONS_LIMIT;
-                
+
                 return (
                   <>
                     {displayedTransactions.map((transaction, tIndex) =>
@@ -233,9 +235,13 @@ export function InvestorTransactionCard({
                           e.stopPropagation();
                           setShowAllTransactionsModal(true);
                         }}
-                        className="h-auto p-0 text-xs text-primary hover:underline"
+                        className="h-auto p-0 text-[11px] text-primary hover:underline mx-2"
                       >
-                        View {transactions.length - TRANSACTIONS_LIMIT} more payment{transactions.length - TRANSACTIONS_LIMIT > 1 ? 's' : ''}
+                        View {transactions.length - TRANSACTIONS_LIMIT} more
+                        payment
+                        {transactions.length - TRANSACTIONS_LIMIT > 1
+                          ? 's'
+                          : ''}
                       </Button>
                     )}
                   </>
@@ -255,12 +261,14 @@ export function InvestorTransactionCard({
               {/* Sort periods by due date (earliest first) to maintain correct order */}
               {(() => {
                 const sortedPeriods = [...interestPeriods].sort(
-                  (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+                  (a, b) =>
+                    new Date(a.dueDate).getTime() -
+                    new Date(b.dueDate).getTime()
                 );
-                
+
                 const displayedPeriods = sortedPeriods.slice(0, PERIODS_LIMIT);
                 const hasMore = sortedPeriods.length > PERIODS_LIMIT;
-                
+
                 return (
                   <>
                     {displayedPeriods.map((period, pIndex) =>
@@ -275,9 +283,10 @@ export function InvestorTransactionCard({
                           e.stopPropagation();
                           setShowAllPeriodsModal(true);
                         }}
-                        className="h-auto p-0 text-xs text-primary hover:underline"
+                        className="h-auto p-0 text-[11px] text-primary hover:underline mx-2"
                       >
-                        View {sortedPeriods.length - PERIODS_LIMIT} more period{sortedPeriods.length - PERIODS_LIMIT > 1 ? 's' : ''}
+                        View {sortedPeriods.length - PERIODS_LIMIT} more period
+                        {sortedPeriods.length - PERIODS_LIMIT > 1 ? 's' : ''}
                       </Button>
                     )}
                   </>
@@ -289,7 +298,10 @@ export function InvestorTransactionCard({
       </div>
 
       {/* Modal for all principal payments */}
-      <Dialog open={showAllTransactionsModal} onOpenChange={setShowAllTransactionsModal}>
+      <Dialog
+        open={showAllTransactionsModal}
+        onOpenChange={setShowAllTransactionsModal}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>All Principal Payments - {investorName}</DialogTitle>
@@ -314,9 +326,11 @@ export function InvestorTransactionCard({
             <div className="space-y-2">
               {(() => {
                 const sortedPeriods = [...interestPeriods].sort(
-                  (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+                  (a, b) =>
+                    new Date(a.dueDate).getTime() -
+                    new Date(b.dueDate).getTime()
                 );
-                
+
                 return sortedPeriods.map((period, pIndex) =>
                   renderPeriodCard(period, pIndex, sortedPeriods.length)
                 );
