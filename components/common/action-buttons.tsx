@@ -153,7 +153,7 @@ export function ActionButtonsGroup({
           isExpanded={isExpanded}
           onToggle={onToggle}
           size={size}
-          className={isCardSize ? 'flex-1' : ''}
+          className={`${isCardSize ? 'flex-1' : ''} hidden lg:flex`}
         />
       )}
       {onQuickView && (
