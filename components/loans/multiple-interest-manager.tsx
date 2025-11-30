@@ -18,6 +18,7 @@ export interface InterestPeriodData {
   interestRate: string;
   interestAmount: string;
   interestType: 'rate' | 'fixed';
+  status?: 'Pending' | 'Completed' | 'Overdue';
 }
 
 interface MultipleInterestManagerProps {
