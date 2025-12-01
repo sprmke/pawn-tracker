@@ -71,6 +71,7 @@ export function LoanCreateModal({
             preselectedInvestorId={preselectedInvestorId}
             onSuccess={handleSuccess}
             onCancel={() => onOpenChange(false)}
+            isLoadingInvestors={isLoading}
           />
         )}
       </DialogContent>
