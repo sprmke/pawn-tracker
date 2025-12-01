@@ -8,3 +8,4 @@ export { LoanForm } from './loan-form';
 export { LoanCreateModal } from './loan-create-modal';
 export { LoanDetailModal } from './loan-detail-modal';
 export { LoanInvestorCard } from './loan-investor-card';
+export { CopyInvestorModal } from './copy-investor-modal';

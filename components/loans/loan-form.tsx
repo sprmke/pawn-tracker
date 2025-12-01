@@ -44,6 +44,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { CopyInvestorModal } from './copy-investor-modal';
 
 const loanSchema = z.object({
   loanName: z.string().min(1, 'Loan name is required'),
@@ -76,6 +77,7 @@ interface LoanFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   preselectedInvestorId?: number;
+  isLoadingInvestors?: boolean;
 }
 
 export function LoanForm({
@@ -84,6 +86,7 @@ export function LoanForm({
   onSuccess,
   onCancel,
   preselectedInvestorId,
+  isLoadingInvestors = false,
 }: LoanFormProps) {
   const router = useRouter();
   const isEditMode = !!existingLoan;
@@ -92,6 +95,9 @@ export function LoanForm({
   // State for investors list (can be updated when new investor is added)
   const [investors, setInvestors] = useState<Investor[]>(initialInvestors);
   const [showInvestorModal, setShowInvestorModal] = useState(false);
+  const [copySourceInvestorId, setCopySourceInvestorId] = useState<
+    number | null
+  >(null);
 
   // Initialize selected investors from existing loan if in edit mode
   const [selectedInvestors, setSelectedInvestors] = useState<
@@ -506,7 +512,6 @@ export function LoanForm({
 
     // Count unique investors
     const uniqueInvestors = selectedInvestors.length;
-    console.log({ selectedInvestors, uniqueInvestors });
 
     // Calculate loan status
     const status = calculateLoanStatus();
@@ -705,6 +710,121 @@ export function LoanForm({
     }
   };
 
+  const handleCopy = (sourceInvestorId: number) => {
+    setCopySourceInvestorId(sourceInvestorId);
+  };
+
+  const handleCopyConfirm = (targetInvestorIds: number[]) => {
+    const sourceInvestor = selectedInvestors.find(
+      (si) => si.investor.id === copySourceInvestorId
+    );
+
+    if (!sourceInvestor) {
+      return;
+    }
+
+    const newInvestorsToAdd: InvestorAllocation[] = [];
+    const existingInvestorsToUpdate: number[] = [];
+
+    // Separate target investors into new and existing
+    targetInvestorIds.forEach((targetId) => {
+      const isAlreadySelected = selectedInvestors.some(
+        (si) => si.investor.id === targetId
+      );
+      const investor = investors.find((inv) => inv.id === targetId);
+      if (isAlreadySelected) {
+        existingInvestorsToUpdate.push(targetId);
+      } else {
+        if (investor) {
+          newInvestorsToAdd.push({
+            investor,
+            transactions: [],
+            hasMultipleInterest: false,
+            interestPeriods: [],
+          });
+        }
+      }
+    });
+
+    // Deep clone the source investor's configuration
+    setSelectedInvestors((prev) => {
+      // Update existing investors
+      const updated = prev.map((si) => {
+        if (targetInvestorIds.includes(si.investor.id)) {
+          // Deep clone transactions with new IDs
+          const clonedTransactions: Transaction[] =
+            sourceInvestor.transactions.map((t) => ({
+              id: `temp-${Date.now()}-${Math.random()}`,
+              amount: t.amount,
+              interestRate: t.interestRate,
+              interestAmount: t.interestAmount,
+              interestType: t.interestType,
+              sentDate: t.sentDate,
+              isPaid: t.isPaid,
+            }));
+
+          // Deep clone interest periods with new IDs
+          const clonedInterestPeriods: InterestPeriodData[] =
+            sourceInvestor.interestPeriods.map((ip) => ({
+              id: `temp-${Date.now()}-${Math.random()}`,
+              dueDate: ip.dueDate,
+              interestRate: ip.interestRate,
+              interestAmount: ip.interestAmount,
+              interestType: ip.interestType,
+              status: ip.status,
+            }));
+
+          return {
+            ...si,
+            transactions: clonedTransactions,
+            hasMultipleInterest: sourceInvestor.hasMultipleInterest,
+            interestPeriods: clonedInterestPeriods,
+          };
+        }
+        return si;
+      });
+
+      // Add new investors with cloned configuration
+      const newInvestorsWithConfig = newInvestorsToAdd.map((newInvestor) => {
+        const clonedTransactions: Transaction[] =
+          sourceInvestor.transactions.map((t) => ({
+            id: `temp-${Date.now()}-${Math.random()}`,
+            amount: t.amount,
+            interestRate: t.interestRate,
+            interestAmount: t.interestAmount,
+            interestType: t.interestType,
+            sentDate: t.sentDate,
+            isPaid: t.isPaid,
+          }));
+
+        const clonedInterestPeriods: InterestPeriodData[] =
+          sourceInvestor.interestPeriods.map((ip) => ({
+            id: `temp-${Date.now()}-${Math.random()}`,
+            dueDate: ip.dueDate,
+            interestRate: ip.interestRate,
+            interestAmount: ip.interestAmount,
+            interestType: ip.interestType,
+            status: ip.status,
+          }));
+
+        return {
+          ...newInvestor,
+          transactions: clonedTransactions,
+          hasMultipleInterest: sourceInvestor.hasMultipleInterest,
+          interestPeriods: clonedInterestPeriods,
+        };
+      });
+
+      return [...updated, ...newInvestorsWithConfig];
+    });
+
+    toast.success(
+      `Configuration copied to ${targetInvestorIds.length} investor${
+        targetInvestorIds.length !== 1 ? 's' : ''
+      }`
+    );
+  };
+
   return (
     <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <FormHeader
@@ -806,25 +926,49 @@ export function LoanForm({
         <CardContent className="space-y-4">
           <div className="space-y-3">
             <Label>Add Investor</Label>
-            <Select value={investorSelectValue} onValueChange={addInvestor}>
+            <Select
+              value={investorSelectValue}
+              onValueChange={addInvestor}
+              disabled={isLoadingInvestors}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select an investor..." />
+                <SelectValue
+                  placeholder={
+                    isLoadingInvestors
+                      ? 'Loading investors...'
+                      : 'Select an investor...'
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="new" className="text-primary font-medium">
-                  <div className="flex items-center gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    <span>Add New Investor</span>
+                {isLoadingInvestors ? (
+                  <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                    Loading investors...
                   </div>
-                </SelectItem>
-                {availableInvestors.length > 0 && (
-                  <div className="h-px bg-border my-1" />
+                ) : (
+                  <>
+                    <SelectItem
+                      value="new"
+                      className="text-primary font-medium"
+                    >
+                      <div className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        <span>Add New Investor</span>
+                      </div>
+                    </SelectItem>
+                    {availableInvestors.length > 0 && (
+                      <div className="h-px bg-border my-1" />
+                    )}
+                    {availableInvestors.map((investor) => (
+                      <SelectItem
+                        key={investor.id}
+                        value={investor.id.toString()}
+                      >
+                        {investor.name}
+                      </SelectItem>
+                    ))}
+                  </>
                 )}
-                {availableInvestors.map((investor) => (
-                  <SelectItem key={investor.id} value={investor.id.toString()}>
-                    {investor.name}
-                  </SelectItem>
-                ))}
               </SelectContent>
             </Select>
           </div>
@@ -865,6 +1009,7 @@ export function LoanForm({
                       )
                     );
                   }}
+                  onCopy={handleCopy}
                 />
               ))}
             </div>
@@ -1001,6 +1146,46 @@ export function LoanForm({
         onOpenChange={setShowInvestorModal}
         onSuccess={handleNewInvestorSuccess}
       />
+
+      {/* Copy Investor Modal */}
+      {copySourceInvestorId &&
+        (() => {
+          const sourceInvestorData = selectedInvestors.find(
+            (si) => si.investor.id === copySourceInvestorId
+          )!;
+          const configsMap = new Map(
+            selectedInvestors.map((si) => [
+              si.investor.id,
+              {
+                transactions: si.transactions,
+                hasMultipleInterest: si.hasMultipleInterest,
+                interestPeriods: si.interestPeriods,
+              },
+            ])
+          );
+          return (
+            <CopyInvestorModal
+              open={copySourceInvestorId !== null}
+              onOpenChange={(open) => {
+                if (!open) setCopySourceInvestorId(null);
+              }}
+              sourceInvestor={sourceInvestorData.investor}
+              sourceInvestorConfig={{
+                transactions: sourceInvestorData.transactions,
+                hasMultipleInterest: sourceInvestorData.hasMultipleInterest,
+                interestPeriods: sourceInvestorData.interestPeriods,
+              }}
+              availableInvestors={investors.filter(
+                (inv) => inv.id !== copySourceInvestorId
+              )}
+              selectedInvestorIds={selectedInvestors.map(
+                (si) => si.investor.id
+              )}
+              selectedInvestorsConfigs={configsMap}
+              onCopy={handleCopyConfirm}
+            />
+          );
+        })()}
     </form>
   );
 }

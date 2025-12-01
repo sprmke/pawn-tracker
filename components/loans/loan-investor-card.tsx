@@ -12,7 +12,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { X, Plus, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import {
+  DropdownMenuRadix,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu-radix';
+import { X, Plus, ChevronDown, ChevronUp, AlertCircle, MoreVertical, Copy } from 'lucide-react';
 import { isMoreThanOneMonth } from '@/lib/date-utils';
 import { toast } from '@/lib/toast';
 import {
@@ -52,6 +58,7 @@ interface LoanInvestorCardProps {
   ) => void;
   onPeriodsChange: (periods: InterestPeriodData[]) => void;
   onModeChange: (mode: 'single' | 'multiple') => void;
+  onCopy: (investorId: number) => void;
 }
 
 export function LoanInvestorCard({
@@ -63,6 +70,7 @@ export function LoanInvestorCard({
   onUpdateTransaction,
   onPeriodsChange,
   onModeChange,
+  onCopy,
 }: LoanInvestorCardProps) {
   return (
     <Collapsible defaultOpen={true}>
@@ -70,7 +78,7 @@ export function LoanInvestorCard({
         <CardContent className="p-2! px-4!">
           <div>
             {/* Header with collapsible trigger */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-1">
               <CollapsibleTrigger asChild>
                 <Button
                   type="button"
@@ -91,15 +99,35 @@ export function LoanInvestorCard({
                   <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                 </Button>
               </CollapsibleTrigger>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => onRemoveInvestor(si.investor.id)}
-                className="flex-shrink-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <DropdownMenuRadix>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="flex-shrink-0 h-8 w-8"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onCopy(si.investor.id)}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copy
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenuRadix>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onRemoveInvestor(si.investor.id)}
+                  className="flex-shrink-0 h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <CollapsibleContent className="space-y-4 mt-2">
