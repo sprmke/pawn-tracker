@@ -112,8 +112,8 @@ export function TransactionsTable({
       header: 'Type',
       accessorKey: 'type',
       sortable: true,
-      className: 'hidden lg:table-cell',
-      headerClassName: 'hidden lg:table-cell',
+      className: 'hidden 2xl:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
       cell: (transaction) => (
         <Badge
           variant={getTransactionTypeBadge(transaction.type).variant}
@@ -169,8 +169,8 @@ export function TransactionsTable({
       header: 'Investor Balance',
       accessorFn: (transaction) => parseFloat(transaction.balance),
       sortable: true,
-      className: 'hidden lg:table-cell',
-      headerClassName: 'hidden lg:table-cell',
+      className: 'hidden 2xl:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
       sortFn: (a, b, direction) => {
         const aValue = parseFloat(a.balance);
         const bValue = parseFloat(b.balance);
@@ -188,8 +188,8 @@ export function TransactionsTable({
       accessorFn: (transaction) =>
         calculateOverallBalance(transaction, transactions),
       sortable: true,
-      className: 'hidden lg:table-cell',
-      headerClassName: 'hidden lg:table-cell',
+      className: 'hidden 2xl:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
       sortFn: (a, b, direction) => {
         const aValue = calculateOverallBalance(a, transactions);
         const bValue = calculateOverallBalance(b, transactions);
@@ -210,6 +210,8 @@ export function TransactionsTable({
     {
       id: 'actions',
       header: 'Actions',
+      className: 'hidden 2xl:table-cell',
+      headerClassName: 'hidden 2xl:table-cell text-center',
       cell: (transaction) => (
         <ActionButtonsGroup
           onQuickView={
@@ -225,7 +227,6 @@ export function TransactionsTable({
           size="sm"
         />
       ),
-      headerClassName: 'text-center',
     },
   ];
 
@@ -238,6 +239,7 @@ export function TransactionsTable({
       getRowId={(transaction) => transaction.id}
       initialSortField="date"
       initialSortDirection="asc"
+      onRowClick={onQuickView ? onQuickView : undefined}
     />
   );
 }
