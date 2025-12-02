@@ -6,11 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, MoreVertical, Copy } from 'lucide-react';
 import {
   toLocalDateString,
   generateDefaultInterestPeriods,
 } from '@/lib/date-utils';
+import {
+  DropdownMenuRadix,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu-radix';
+import { CopyPeriodModal } from './copy-period-modal';
 
 export interface InterestPeriodData {
   id: string;
@@ -241,6 +248,46 @@ export function MultipleInterestManager({
 
   const totals = mode === 'multiple' ? calculateTotals() : null;
 
+  const [copySourcePeriod, setCopySourcePeriod] = useState<{
+    period: InterestPeriodData;
+    periodIndex: number;
+  } | null>(null);
+
+  const handleCopyPeriod = (targetPeriodIds: string[], applyToAll: boolean) => {
+    if (!copySourcePeriod) return;
+
+    const sourcePeriod = copySourcePeriod.period;
+    const principal = parseFloat(amount) || 0;
+    const periodsToUpdate = applyToAll
+      ? periods.filter((p) => p.id !== sourcePeriod.id).map((p) => p.id)
+      : targetPeriodIds;
+
+    const updatedPeriods = periods.map((period) => {
+      if (periodsToUpdate.includes(period.id)) {
+        // Copy interest from source period, but keep the due date
+        const updatedPeriod = {
+          ...period,
+          interestRate: sourcePeriod.interestRate,
+          interestAmount: sourcePeriod.interestAmount,
+          interestType: sourcePeriod.interestType,
+        };
+
+        // Recalculate interestAmount for rate type based on principal
+        if (updatedPeriod.interestType === 'rate' && principal > 0) {
+          const rate = parseFloat(updatedPeriod.interestRate) || 0;
+          updatedPeriod.interestAmount = (principal * (rate / 100)).toFixed(2);
+        }
+
+        return updatedPeriod;
+      }
+      return period;
+    });
+
+    setPeriods(updatedPeriods);
+    onPeriodsChange(updatedPeriods);
+    setCopySourcePeriod(null);
+  };
+
   return (
     <div className="space-y-4">
       <Tabs
@@ -310,16 +357,45 @@ export function MultipleInterestManager({
                         ? `Period ${index + 1} (Final)`
                         : `Period ${index + 1}`}
                     </span>
-                    {periods.length > 1 && !isLastPeriod && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removePeriod(period.id)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {periods.length > 1 && (
+                        <DropdownMenuRadix>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                            >
+                              <MoreVertical className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setCopySourcePeriod({
+                                  period,
+                                  periodIndex: index,
+                                })
+                              }
+                            >
+                              <Copy className="mr-2 h-4 w-4" />
+                              Copy
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenuRadix>
+                      )}
+                      {periods.length > 1 && !isLastPeriod && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removePeriod(period.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -455,6 +531,20 @@ export function MultipleInterestManager({
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Copy Period Modal */}
+      {copySourcePeriod && (
+        <CopyPeriodModal
+          open={copySourcePeriod !== null}
+          onOpenChange={(open) => {
+            if (!open) setCopySourcePeriod(null);
+          }}
+          sourcePeriod={copySourcePeriod.period}
+          sourcePeriodIndex={copySourcePeriod.periodIndex}
+          availablePeriods={periods}
+          onCopy={handleCopyPeriod}
+        />
+      )}
     </div>
   );
 }
