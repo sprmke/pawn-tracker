@@ -233,6 +233,106 @@ export function calculateAmountDueOnDate(
 }
 
 /**
+ * Calculate the amount due for overdue loans
+ * For multiple interest periods: sum of all overdue period interests + capital if final period is overdue
+ * For single interest: capital + total interest
+ */
+export function calculateOverdueAmount(
+  loanInvestors: Array<{
+    amount: string;
+    interestRate: string;
+    interestType?: string;
+    hasMultipleInterest?: boolean;
+    interestPeriods?: Array<{
+      interestRate: string;
+      interestType?: string;
+      dueDate?: Date | string;
+      status?: string;
+    }>;
+    investor?: { id: number };
+    investorId?: number;
+  }>
+): number {
+  // Group by investor to handle multiple interest correctly
+  const investorGroups = new Map<number, typeof loanInvestors>();
+
+  loanInvestors.forEach((li) => {
+    const investorId = li.investor?.id || li.investorId;
+    if (investorId) {
+      const existing = investorGroups.get(investorId) || [];
+      existing.push(li);
+      investorGroups.set(investorId, existing);
+    }
+  });
+
+  let totalAmount = 0;
+
+  investorGroups.forEach((transactions) => {
+    // Calculate total capital for this investor
+    const investorTotalCapital = transactions.reduce(
+      (sum, t) => sum + parseFloat(t.amount),
+      0
+    );
+
+    // Find if any transaction has multiple interest periods
+    const transactionWithPeriods = transactions.find(
+      (t) =>
+        t.hasMultipleInterest &&
+        t.interestPeriods &&
+        t.interestPeriods.length > 0
+    );
+
+    if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
+      // Multiple interest periods - calculate based on overdue periods
+      const periods = [...transactionWithPeriods.interestPeriods].sort(
+        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      );
+      const overduePeriods = periods.filter((p) => p.status === 'Overdue');
+      
+      if (overduePeriods.length > 0) {
+        // Check if the final period (by due date) is overdue
+        const finalPeriod = periods[periods.length - 1];
+        const isFinalPeriodOverdue = finalPeriod.status === 'Overdue';
+        
+        // Sum up interest for all overdue periods
+        const overdueInterest = overduePeriods.reduce((sum, period) => {
+          return sum + calculateInterest(
+            investorTotalCapital,
+            parseFloat(period.interestRate),
+            period.interestType
+          );
+        }, 0);
+        
+        // If final period is overdue, add capital; otherwise just the interest
+        totalAmount += isFinalPeriodOverdue 
+          ? investorTotalCapital + overdueInterest
+          : overdueInterest;
+      } else {
+        // No overdue periods, but loan might be overdue based on main due date
+        // In this case, return capital + final period interest
+        const finalPeriod = periods[periods.length - 1];
+        const finalPeriodInterest = calculateInterest(
+          investorTotalCapital,
+          parseFloat(finalPeriod.interestRate),
+          finalPeriod.interestType
+        );
+        totalAmount += investorTotalCapital + finalPeriodInterest;
+      }
+    } else {
+      // No multiple interest - calculate capital + total interest
+      const interest = transactions.reduce((sum, li) => {
+        const capital = parseFloat(li.amount);
+        return sum + calculateInterest(capital, li.interestRate, li.interestType);
+      }, 0);
+
+      totalAmount += investorTotalCapital + interest;
+    }
+  });
+
+  return totalAmount;
+}
+
+/**
  * Calculate total for a single investment (amount + interest)
  */
 export function calculateInvestmentTotal(
