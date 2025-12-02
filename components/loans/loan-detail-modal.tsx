@@ -43,6 +43,7 @@ export function LoanDetailModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [investors, setInvestors] = useState<Investor[]>([]);
+  const [isLoadingInvestors, setIsLoadingInvestors] = useState(false);
   const [loan, setLoan] = useState<LoanWithInvestors | null>(initialLoan);
 
   // Update local loan state when prop changes
@@ -53,7 +54,7 @@ export function LoanDetailModal({
   // Fetch fresh loan data
   const fetchLoan = async () => {
     if (!loan?.id) return;
-    
+
     try {
       const response = await fetch(`/api/loans/${loan.id}`);
       if (!response.ok) throw new Error('Failed to fetch loan');
@@ -66,14 +67,18 @@ export function LoanDetailModal({
   };
 
   useEffect(() => {
+    // Only fetch when entering edit mode AND modal is open
     if (open && isEditing) {
       fetchInvestors();
     }
+  }, [isEditing]); // Only watch isEditing changes
+
+  useEffect(() => {
     // Reset editing state when modal closes
     if (!open) {
       setIsEditing(false);
     }
-  }, [open, isEditing]);
+  }, [open]);
 
   const fetchInvestors = async () => {
     try {
@@ -82,6 +87,8 @@ export function LoanDetailModal({
       setInvestors(data);
     } catch (error) {
       console.error('Error fetching investors:', error);
+    } finally {
+      setIsLoadingInvestors(false);
     }
   };
 
@@ -178,7 +185,10 @@ export function LoanDetailModal({
                   {loan.loanName}
                 </DialogTitle>
                 <DetailModalHeader
-                  onEdit={() => setIsEditing(true)}
+                  onEdit={() => {
+                    setIsLoadingInvestors(true);
+                    setIsEditing(true);
+                  }}
                   onDelete={() => setShowDeleteDialog(true)}
                   onPayBalance={handlePayBalance}
                   showPayBalance={isPartiallyFunded}
@@ -192,10 +202,12 @@ export function LoanDetailModal({
           <div className={isEditing ? '' : 'mt-4'}>
             {isEditing ? (
               <LoanForm
+                key={`loan-form-${investors.length}`}
                 investors={investors}
                 existingLoan={loan}
                 onSuccess={handleSuccess}
                 onCancel={() => setIsEditing(false)}
+                isLoadingInvestors={isLoadingInvestors}
               />
             ) : (
               <LoanDetailContent
