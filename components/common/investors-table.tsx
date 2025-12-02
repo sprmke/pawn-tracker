@@ -16,6 +16,7 @@ import {
   MaturingLoansCard,
 } from './';
 import { addDays, isAfter, isBefore, isPast } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
 interface InvestorsTableProps {
   investors: InvestorWithLoans[];
@@ -32,6 +33,8 @@ export function InvestorsTable({
   expandedRows,
   onToggleExpand,
 }: InvestorsTableProps) {
+  const router = useRouter();
+
   const columns: ColumnDef<InvestorWithLoans>[] = [
     {
       id: 'name',
@@ -113,6 +116,8 @@ export function InvestorsTable({
     {
       id: 'actions',
       header: 'Actions',
+      className: 'hidden 2xl:table-cell',
+      headerClassName: 'hidden 2xl:table-cell text-center',
       cell: (investor) => (
         <ActionButtonsGroup
           isExpanded={expandedRows?.has(investor.id)}
@@ -129,7 +134,6 @@ export function InvestorsTable({
           size="sm"
         />
       ),
-      headerClassName: 'text-center',
     },
   ];
 
@@ -253,6 +257,7 @@ export function InvestorsTable({
       getRowId={(investor) => investor.id}
       expandedContent={expandedContent}
       expandedRows={expandedRows}
+      onRowClick={(investor) => router.push(`/investors/${investor.id}`)}
     />
   );
 }
