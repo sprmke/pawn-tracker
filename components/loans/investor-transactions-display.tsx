@@ -124,6 +124,7 @@ export function InvestorTransactionsDisplay({
     }
   };
 
+
   return (
     <div className="space-y-4">
       {investorsWithTransactions.map((item) => {
