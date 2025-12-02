@@ -4,7 +4,7 @@ import { TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/format';
-import { calculateAmountDueOnDate } from '@/lib/calculations';
+import { calculateOverdueAmount } from '@/lib/calculations';
 import { InlineLoader } from './loading-state';
 import type { LoanWithInvestors } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -57,7 +57,7 @@ export function PastDueLoansCard({
     const filteredInvestors = investorId
       ? loan.loanInvestors.filter((li) => li.investor.id === investorId)
       : loan.loanInvestors;
-    return sum + calculateAmountDueOnDate(filteredInvestors);
+    return sum + calculateOverdueAmount(filteredInvestors);
   }, 0);
 
   return (
@@ -102,10 +102,10 @@ export function PastDueLoansCard({
                         )
                       : loan.loanInvestors;
 
-                    // Calculate amount due on this date (matches transaction amount)
-                    // For multiple interest: capital + final period interest only
+                    // Calculate amount due for overdue loans
+                    // For multiple interest: sum of overdue period interests + capital if final period is overdue
                     // For single interest: capital + total interest
-                    const amount = calculateAmountDueOnDate(filteredInvestors);
+                    const amount = calculateOverdueAmount(filteredInvestors);
 
                     // For multiple interest loans, find the first overdue interest period
                     // Otherwise, use the loan's due date

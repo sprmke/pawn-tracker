@@ -168,7 +168,7 @@ export function ActionButtonsGroup({
           href={viewHref}
           size={size}
           onClick={onViewClick}
-          className={isCardSize ? 'flex-1' : ''}
+          className={`${isCardSize ? 'flex-1' : ''} hidden lg:flex`}
         />
       )}
     </div>

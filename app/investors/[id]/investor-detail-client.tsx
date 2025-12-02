@@ -198,6 +198,26 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const avgRate = calculateAverageRate(investor.loanInvestors);
   const totalGains = totalCapital + totalInterest;
 
+  // Helper function to extract depacto value from notes
+  const extractDepactoFromNotes = (notes: string | null | undefined): number => {
+    if (!notes) return 0;
+    
+    // Look for patterns like "100 sqm", "100sqm", "100.5 sqm", etc.
+    const match = notes.match(/(\d+(?:\.\d+)?)\s*sqm/i);
+    return match ? parseFloat(match[1]) : 0;
+  };
+
+  // Calculate total lot and total lot with depacto
+  const totalLot = loans.reduce((sum, loan) => {
+    return sum + (loan.freeLotSqm || 0);
+  }, 0);
+
+  const totalLotWithDepacto = loans.reduce((sum, loan) => {
+    const lotValue = loan.freeLotSqm || 0;
+    const depactoValue = extractDepactoFromNotes(loan.notes);
+    return sum + lotValue + depactoValue;
+  }, 0);
+
   const handleDelete = async () => {
     const response = await fetch(`/api/investors/${investor.id}`, {
       method: 'DELETE',
@@ -488,7 +508,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
   if (isEditing) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="space-y-6">
         <Button
           variant="ghost"
           size="sm"
@@ -498,20 +518,22 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Investors
         </Button>
-        <InvestorForm
-          existingInvestor={investor}
-          onSuccess={() => {
-            setIsEditing(false);
-            router.refresh();
-          }}
-          onCancel={() => setIsEditing(false)}
-        />
+        <div className="max-w-2xl">
+          <InvestorForm
+            existingInvestor={investor}
+            onSuccess={() => {
+              setIsEditing(false);
+              router.refresh();
+            }}
+            onCancel={() => setIsEditing(false)}
+          />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="space-y-6">
       <DetailHeader
         title={investor.name}
         description="Investor portfolio and activity"
@@ -568,6 +590,19 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         />
 
         <StatCard title="Total Amount" value={formatCurrency(totalGains)} />
+      </div>
+
+      {/* Lot Cards */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-2">
+        <StatCard 
+          title="Total Lot" 
+          value={totalLot > 0 ? `${totalLot.toLocaleString()} sqm` : '-'} 
+        />
+
+        <StatCard 
+          title="Total Lot with Depacto" 
+          value={totalLotWithDepacto > 0 ? `${totalLotWithDepacto.toLocaleString()} sqm` : '-'} 
+        />
       </div>
 
       {/* Activity Cards */}

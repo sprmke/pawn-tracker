@@ -44,8 +44,8 @@ export function LoansTable({
       id: 'type',
       header: 'Type',
       hidden: hideFields.includes('type'),
-      className: 'hidden lg:table-cell',
-      headerClassName: 'hidden lg:table-cell',
+      className: 'hidden 2xl:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
       accessorKey: 'type',
       sortable: true,
       cell: (loan) => (
@@ -63,8 +63,8 @@ export function LoansTable({
       id: 'status',
       header: 'Status',
       hidden: hideFields.includes('status'),
-      className: 'hidden lg:table-cell',
-      headerClassName: 'hidden lg:table-cell',
+      className: 'hidden 2xl:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
       accessorKey: 'status',
       sortable: true,
       cell: (loan) => (
@@ -82,8 +82,8 @@ export function LoansTable({
       id: 'sentDates',
       header: 'Sent Dates',
       hidden: hideFields.includes('sentDates'),
-      className: 'hidden lg:table-cell',
-      headerClassName: 'hidden lg:table-cell',
+      className: 'hidden 2xl:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
       accessorFn: (loan) => {
         const dates = loan.loanInvestors.map((li) =>
           new Date(li.sentDate).getTime()
@@ -142,8 +142,8 @@ export function LoansTable({
       id: 'dueDate',
       header: 'Due Dates',
       hidden: hideFields.includes('dueDate'),
-      className: 'hidden lg:table-cell',
-      headerClassName: 'hidden lg:table-cell',
+      className: 'hidden 2xl:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
       accessorKey: 'dueDate',
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -257,8 +257,8 @@ export function LoansTable({
       id: 'freeLotSqm',
       header: 'Free Lot',
       hidden: hideFields.includes('freeLotSqm'),
-      className: 'hidden lg:table-cell',
-      headerClassName: 'hidden lg:table-cell',
+      className: 'hidden 2xl:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
       accessorKey: 'freeLotSqm',
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -273,6 +273,8 @@ export function LoansTable({
     {
       id: 'actions',
       header: 'Actions',
+      className: 'hidden 2xl:table-cell',
+      headerClassName: 'hidden 2xl:table-cell text-center',
       cell: (loan) => (
         <ActionButtonsGroup
           isExpanded={expandedRows?.has(loan.id)}
@@ -299,7 +301,6 @@ export function LoansTable({
           size="sm"
         />
       ),
-      headerClassName: 'text-center',
     },
   ];
 
@@ -361,6 +362,7 @@ export function LoansTable({
       getRowId={(loan) => loan.id}
       expandedContent={expandedContent}
       expandedRows={expandedRows}
+      onRowClick={onQuickView ? onQuickView : undefined}
     />
   );
 }
