@@ -222,7 +222,9 @@ export function calculateAmountDueOnDate(
       // No multiple interest - calculate capital + total interest
       const interest = transactions.reduce((sum, li) => {
         const capital = parseFloat(li.amount);
-        return sum + calculateInterest(capital, li.interestRate, li.interestType);
+        return (
+          sum + calculateInterest(capital, li.interestRate, li.interestType)
+        );
       }, 0);
 
       totalAmount += investorTotalCapital + interest;
@@ -285,26 +287,31 @@ export function calculateOverdueAmount(
     if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
       // Multiple interest periods - calculate based on overdue periods
       const periods = [...transactionWithPeriods.interestPeriods].sort(
-        (a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime()
+        (a, b) =>
+          new Date(a.dueDate || 0).getTime() -
+          new Date(b.dueDate || 0).getTime()
       );
       const overduePeriods = periods.filter((p) => p.status === 'Overdue');
-      
+
       if (overduePeriods.length > 0) {
         // Check if the final period (by due date) is overdue
         const finalPeriod = periods[periods.length - 1];
         const isFinalPeriodOverdue = finalPeriod.status === 'Overdue';
-        
+
         // Sum up interest for all overdue periods
         const overdueInterest = overduePeriods.reduce((sum, period) => {
-          return sum + calculateInterest(
-            investorTotalCapital,
-            parseFloat(period.interestRate),
-            period.interestType
+          return (
+            sum +
+            calculateInterest(
+              investorTotalCapital,
+              parseFloat(period.interestRate),
+              period.interestType
+            )
           );
         }, 0);
-        
+
         // If final period is overdue, add capital; otherwise just the interest
-        totalAmount += isFinalPeriodOverdue 
+        totalAmount += isFinalPeriodOverdue
           ? investorTotalCapital + overdueInterest
           : overdueInterest;
       } else {
@@ -322,7 +329,9 @@ export function calculateOverdueAmount(
       // No multiple interest - calculate capital + total interest
       const interest = transactions.reduce((sum, li) => {
         const capital = parseFloat(li.amount);
-        return sum + calculateInterest(capital, li.interestRate, li.interestType);
+        return (
+          sum + calculateInterest(capital, li.interestRate, li.interestType)
+        );
       }, 0);
 
       totalAmount += investorTotalCapital + interest;
@@ -431,25 +440,31 @@ export function calculateGroupedLoanInvestorStats(
 /**
  * Calculate loan duration from start date to due date
  */
-export function calculateLoanDuration(dueDate: Date | string, startDate?: Date | string): string {
+export function calculateLoanDuration(
+  dueDate: Date | string,
+  startDate?: Date | string
+): string {
   // If no start date provided, use today's date (for backward compatibility)
-  const start = startDate 
-    ? (typeof startDate === 'string' ? new Date(startDate) : new Date(startDate))
+  const start = startDate
+    ? typeof startDate === 'string'
+      ? new Date(startDate)
+      : new Date(startDate)
     : new Date();
   start.setHours(0, 0, 0, 0); // Normalize to midnight
-  
-  const due = typeof dueDate === 'string' ? new Date(dueDate) : new Date(dueDate);
+
+  const due =
+    typeof dueDate === 'string' ? new Date(dueDate) : new Date(dueDate);
   due.setHours(0, 0, 0, 0); // Normalize to midnight
 
   // Calculate the difference in months using calendar months
   let months = 0;
   let tempDate = new Date(start);
-  
+
   // Count full months
   while (tempDate < due) {
     const nextMonth = new Date(tempDate);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
-    
+
     if (nextMonth <= due) {
       months++;
       tempDate = nextMonth;
@@ -461,7 +476,7 @@ export function calculateLoanDuration(dueDate: Date | string, startDate?: Date |
   // Calculate remaining days after full months
   const remainingTime = due.getTime() - tempDate.getTime();
   const remainingDays = Math.round(remainingTime / (1000 * 60 * 60 * 24));
-  
+
   const weeks = Math.floor(remainingDays / 7);
   const days = remainingDays % 7;
 
