@@ -285,7 +285,7 @@ export function calculateOverdueAmount(
     if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
       // Multiple interest periods - calculate based on overdue periods
       const periods = [...transactionWithPeriods.interestPeriods].sort(
-        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+        (a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime()
       );
       const overduePeriods = periods.filter((p) => p.status === 'Overdue');
       
