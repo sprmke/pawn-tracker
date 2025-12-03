@@ -14,8 +14,8 @@ Todos & Improvements:
 - ✅ Let's create a fourth card called Completed Loans. It should be placed before Overdue Loans. Please update all usages where we have these existing 3 cards.
 - ✅ Do not add limit to 3 stat cards and set max height and inner scroll.
 - ✅ On past due loans, we should display the date of the overdue date for multiple interest and not the final due date because it doesn't make sense
-- When on mobile, all card click on Loans, Transactions, Investors on table or card view should open the detail page instead of opening the modal for better UX
-- When we create a transaction or loan, then we select an investor, the transaction or loan should be added as well on that user account via email. Meaning, all loans and transactions should be shareable via Investor email.
+- ✅ When on mobile, all card click on Loans, Transactions, Investors on table or card view should open the detail page instead of opening the modal for better UX
+- When we create a transaction or loan, then we select an investor, the transaction or loan should be added as well on that user account via email. Meaning, all loans and transactions should be shareable via Investor email and the investor can see the loan and transaction details.
 - Support export to CSV or spreadsheet for all loans and transactions
 - ✅ Add total lot in investor detail page (with and without depacto)
 - Create google calendar event for every new or updated transaction
