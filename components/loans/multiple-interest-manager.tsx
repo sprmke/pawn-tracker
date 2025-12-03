@@ -10,6 +10,7 @@ import { Plus, X, MoreVertical, Copy } from 'lucide-react';
 import {
   toLocalDateString,
   generateDefaultInterestPeriods,
+  isMoreThanOneMonthAndFifteenDays,
 } from '@/lib/date-utils';
 import {
   DropdownMenuRadix,
@@ -52,6 +53,7 @@ export function MultipleInterestManager({
   initialPeriods,
 }: MultipleInterestManagerProps) {
   const [mode, setMode] = useState<'single' | 'multiple'>(initialMode);
+  const [userOverrodeAutoMode, setUserOverrodeAutoMode] = useState(false);
   const [periods, setPeriods] = useState<InterestPeriodData[]>(() => {
     if (initialPeriods && initialPeriods.length > 0) {
       return initialPeriods;
@@ -75,7 +77,18 @@ export function MultipleInterestManager({
     return [];
   });
 
-  // Update periods when sent date or due date changes
+  // Automatically switch to multiple interest mode if dates span more than 1 month + 15 days
+  // Only do this if the user hasn't manually overridden the automatic behavior
+  useEffect(() => {
+    if (!userOverrodeAutoMode && sentDate && loanDueDate && isMoreThanOneMonthAndFifteenDays(sentDate, loanDueDate)) {
+      if (mode === 'single') {
+        setMode('multiple');
+        onModeChange('multiple');
+      }
+    }
+  }, [sentDate, loanDueDate, userOverrodeAutoMode, mode]);
+
+  // Update periods when sent date or due date changes (for multiple interest mode)
   useEffect(() => {
     if (mode === 'multiple' && sentDate && loanDueDate) {
       const defaultPeriods = generateDefaultInterestPeriods(
@@ -83,21 +96,27 @@ export function MultipleInterestManager({
         loanDueDate
       );
 
-      // Only regenerate if the number of periods changed
-      if (defaultPeriods.length !== periods.length) {
-        const newPeriods = defaultPeriods.map((period, index) => {
-          // Try to preserve existing period data if available
-          const existingPeriod = periods[index];
-          return {
-            id: existingPeriod?.id || `period-${Date.now()}-${index}`,
-            dueDate: toLocalDateString(period.dueDate),
-            interestRate:
-              existingPeriod?.interestRate || defaultInterestRate || '10',
-            interestAmount: existingPeriod?.interestAmount || '',
-            interestType:
-              existingPeriod?.interestType || defaultInterestType || 'rate',
-          };
-        });
+      // Always regenerate periods when dates change
+      const newPeriods = defaultPeriods.map((period, index) => {
+        // Try to preserve existing period data if available
+        const existingPeriod = periods[index];
+        return {
+          id: existingPeriod?.id || `period-${Date.now()}-${index}`,
+          dueDate: toLocalDateString(period.dueDate),
+          interestRate:
+            existingPeriod?.interestRate || defaultInterestRate || '10',
+          interestAmount: existingPeriod?.interestAmount || '',
+          interestType:
+            existingPeriod?.interestType || defaultInterestType || 'rate',
+        };
+      });
+      
+      // Only update if periods actually changed
+      const periodsChanged = 
+        newPeriods.length !== periods.length ||
+        newPeriods.some((np, idx) => np.dueDate !== periods[idx]?.dueDate);
+      
+      if (periodsChanged) {
         setPeriods(newPeriods);
         onPeriodsChange(newPeriods);
       }
@@ -146,6 +165,13 @@ export function MultipleInterestManager({
   const handleModeChange = (newMode: 'single' | 'multiple') => {
     setMode(newMode);
     onModeChange(newMode);
+
+    // If user manually switches to single mode when auto-mode would suggest multiple,
+    // mark that they've overridden the automatic behavior
+    if (newMode === 'single' && sentDate && loanDueDate && 
+        isMoreThanOneMonthAndFifteenDays(sentDate, loanDueDate)) {
+      setUserOverrodeAutoMode(true);
+    }
 
     if (newMode === 'multiple' && periods.length === 0) {
       // Generate default periods
@@ -288,15 +314,21 @@ export function MultipleInterestManager({
     setCopySourcePeriod(null);
   };
 
+  // Check if we should highlight the multiple interest tab
+  const shouldHighlightMultiple = sentDate && loanDueDate && 
+    isMoreThanOneMonthAndFifteenDays(sentDate, loanDueDate);
+
   return (
     <div className="space-y-4">
       <Tabs
         value={mode}
         onValueChange={(v) => handleModeChange(v as 'single' | 'multiple')}
       >
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className={`grid w-full grid-cols-2 ${shouldHighlightMultiple && mode === 'multiple' ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}>
           <TabsTrigger value="single">One Time Interest</TabsTrigger>
-          <TabsTrigger value="multiple">Multiple Interest</TabsTrigger>
+          <TabsTrigger value="multiple" className={shouldHighlightMultiple && mode === 'multiple' ? 'data-[state=active]:bg-blue-500 data-[state=active]:text-white' : ''}>
+            Multiple Interest
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="single" className="space-y-3 mt-4">
