@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu-radix';
 import { X, Plus, ChevronDown, ChevronUp, AlertCircle, MoreVertical, Copy } from 'lucide-react';
-import { isMoreThanOneMonth } from '@/lib/date-utils';
+import { isMoreThanOneMonth, isMoreThanOneMonthAndFifteenDays } from '@/lib/date-utils';
 import { toast } from '@/lib/toast';
 import {
   MultipleInterestManager,
@@ -137,9 +137,9 @@ export function LoanInvestorCard({
                   watchDueDate &&
                   si.transactions.some(
                     (t) =>
-                      t.sentDate && isMoreThanOneMonth(t.sentDate, watchDueDate)
+                      t.sentDate && isMoreThanOneMonthAndFifteenDays(t.sentDate, watchDueDate)
                   )
-                    ? 'border-red-400'
+                    ? 'border-blue-400'
                     : ''
                 }`}
               >
@@ -352,7 +352,7 @@ export function LoanInvestorCard({
               {watchDueDate &&
                 si.transactions.some(
                   (t) =>
-                    t.sentDate && isMoreThanOneMonth(t.sentDate, watchDueDate)
+                    t.sentDate && isMoreThanOneMonthAndFifteenDays(t.sentDate, watchDueDate)
                 ) && (
                   <div className="space-y-3 p-4 border rounded-lg bg-muted/30 border-blue-400">
                     <Label className="text-sm font-semibold inline-flex">
@@ -362,9 +362,9 @@ export function LoanInvestorCard({
                       <AlertCircle className="h-4 w-4 text-blue-600" />
                       <AlertDescription className="text-xs text-blue-800">
                         <strong>Notice:</strong> We detected that this investor
-                        has a transaction spanning multiple months. You can
-                        manage interest for each month separately using the
-                        "Multiple Interest" option below.
+                        has a transaction spanning more than 1 month and 15 days. 
+                        The "Multiple Interest" tab has been automatically selected 
+                        to help you manage interest for each period separately.
                       </AlertDescription>
                     </Alert>
                     <MultipleInterestManager
