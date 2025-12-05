@@ -11,6 +11,10 @@ export default auth((req) => {
 
   // Allow access to public routes and auth routes
   if (isPublicRoute || isAuthRoute) {
+    // If logged in and on landing page, redirect to dashboard
+    if (isLoggedIn && isPublicRoute) {
+      return NextResponse.redirect(new URL('/dashboard', nextUrl.origin));
+    }
     return NextResponse.next();
   }
 
