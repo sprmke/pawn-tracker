@@ -18,7 +18,7 @@ Todos & Improvements:
 - When we create a transaction or loan, then we select an investor, the transaction or loan should be added as well on that user account via email. Meaning, all loans and transactions should be shareable via Investor email and the investor can see the loan and transaction details.
 - Support export to CSV or spreadsheet for all loans and transactions
 - ✅ Add total lot in investor detail page (with and without depacto)
-- Create google calendar event for every new or updated transaction
+- Create google calendar event for every new or updated transaction and add all investor emails in the google event
 - UI Improvements: Make most of the text smaller. Reduce padding and spacing.
 - ✅ When on smaller width screens, let's reduce the table columns
 - Smartly check if the update changes required updating all transactions, else, let's only update the specific changes that needs to update for for faster update
