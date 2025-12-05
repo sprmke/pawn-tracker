@@ -14,6 +14,7 @@ import { relations } from 'drizzle-orm';
 import { AdapterAccount } from 'next-auth/adapters';
 
 // Enums
+export const userRoleEnum = pgEnum('user_role', ['admin', 'investor']);
 export const loanTypeEnum = pgEnum('loan_type', [
   'Lot Title',
   'OR/CR',
@@ -46,6 +47,9 @@ export const investors = pgTable('investors', {
   userId: text('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
+  investorUserId: text('investor_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   name: text('name').notNull(),
   email: text('email').notNull(),
   contactNumber: text('contact_number'),
@@ -138,6 +142,7 @@ export const users = pgTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: timestamp('emailVerified', { mode: 'date' }),
   image: text('image'),
+  role: userRoleEnum('role').notNull().default('admin'),
 });
 
 export const accounts = pgTable(
@@ -188,6 +193,10 @@ export const verificationTokens = pgTable(
 export const investorsRelations = relations(investors, ({ one, many }) => ({
   user: one(users, {
     fields: [investors.userId],
+    references: [users.id],
+  }),
+  investorUser: one(users, {
+    fields: [investors.investorUserId],
     references: [users.id],
   }),
   loanInvestors: many(loanInvestors),
