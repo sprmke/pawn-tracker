@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { investors } from '@/db/schema';
+import { investors, users } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 
@@ -80,12 +80,51 @@ export async function PUT(
       );
     }
 
+    // If email changed, update or create investor user account
+    let investorUserId = existingInvestor.investorUserId;
+    if (body.email !== existingInvestor.email) {
+      // Check if a user with new email already exists
+      let investorUser = await db.query.users.findFirst({
+        where: eq(users.email, body.email),
+      });
+
+      // If no user exists, create one with investor role
+      if (!investorUser) {
+        const newUser = await db
+          .insert(users)
+          .values({
+            email: body.email,
+            name: body.name,
+            role: 'investor',
+          })
+          .returning();
+        investorUser = newUser[0];
+      }
+      
+      investorUserId = investorUser.id;
+      
+      // Update the existing investor user's name if it exists
+      if (existingInvestor.investorUserId) {
+        await db
+          .update(users)
+          .set({ name: body.name })
+          .where(eq(users.id, existingInvestor.investorUserId));
+      }
+    } else if (existingInvestor.investorUserId) {
+      // Just update the name if email hasn't changed
+      await db
+        .update(users)
+        .set({ name: body.name })
+        .where(eq(users.id, existingInvestor.investorUserId));
+    }
+
     const updatedInvestor = await db
       .update(investors)
       .set({
         name: body.name,
         email: body.email,
         contactNumber: body.contactNumber || null,
+        investorUserId: investorUserId,
         updatedAt: new Date(),
       })
       .where(
