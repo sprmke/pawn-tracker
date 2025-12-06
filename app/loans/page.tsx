@@ -160,6 +160,14 @@ export default function LoansPage() {
     try {
       const response = await fetch('/api/investors');
       const data = await response.json();
+      
+      // Check if response is an error
+      if (!response.ok || !Array.isArray(data)) {
+        console.error('Error fetching investors:', data);
+        setInvestors([]);
+        return;
+      }
+      
       // Extract unique investors and sort by name
       const uniqueInvestors = data
         .map((inv: any) => ({ id: inv.id, name: inv.name }))
@@ -167,6 +175,7 @@ export default function LoansPage() {
       setInvestors(uniqueInvestors);
     } catch (error) {
       console.error('Error fetching investors:', error);
+      setInvestors([]);
     }
   };
 
