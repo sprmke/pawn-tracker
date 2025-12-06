@@ -9,6 +9,7 @@ import {
   recalculateInvestorBalances,
   updateLoanTransactionCounters,
 } from '@/lib/loan-transactions';
+import { hasLoanAccess } from '@/lib/access-control';
 
 export async function GET(
   request: Request,
@@ -23,8 +24,14 @@ export async function GET(
     const { id } = await params;
     const loanId = parseInt(id);
 
+    // Check if user has access to this loan
+    const hasAccess = await hasLoanAccess(loanId, session.user.id);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
+    }
+
     const loan = await db.query.loans.findFirst({
-      where: and(eq(loans.id, loanId), eq(loans.userId, session.user.id)),
+      where: eq(loans.id, loanId),
       with: {
         loanInvestors: {
           with: {
@@ -71,9 +78,14 @@ export async function PUT(
     console.log('Received loan data:', loanData);
     console.log('Received investor data:', investorData);
 
-    // Verify ownership
+    // Verify access
+    const hasAccess = await hasLoanAccess(loanId, session.user.id);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
+    }
+
     const existingLoan = await db.query.loans.findFirst({
-      where: and(eq(loans.id, loanId), eq(loans.userId, session.user.id)),
+      where: eq(loans.id, loanId),
     });
 
     if (!existingLoan) {
@@ -310,9 +322,14 @@ export async function DELETE(
     const { id } = await params;
     const loanId = parseInt(id);
 
-    // Verify ownership
+    // Verify access
+    const hasAccess = await hasLoanAccess(loanId, session.user.id);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
+    }
+
     const existingLoan = await db.query.loans.findFirst({
-      where: and(eq(loans.id, loanId), eq(loans.userId, session.user.id)),
+      where: eq(loans.id, loanId),
     });
 
     if (!existingLoan) {
