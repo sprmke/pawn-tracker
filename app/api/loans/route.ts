@@ -12,7 +12,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const allLoans = await db.query.loans.findMany({
+    // Get loans created by this user
+    const ownedLoans = await db.query.loans.findMany({
       where: eq(loans.userId, session.user.id),
       with: {
         loanInvestors: {
@@ -25,8 +26,46 @@ export async function GET() {
           orderBy: (transactions, { asc }) => [asc(transactions.date)],
         },
       },
-      orderBy: (loans, { desc }) => [desc(loans.createdAt)],
     });
+
+    // Get loans where this user is an investor
+    const investorRecord = await db.query.investors.findFirst({
+      where: eq(investors.investorUserId, session.user.id),
+    });
+
+    let sharedLoans: any[] = [];
+    if (investorRecord) {
+      const loanInvestments = await db.query.loanInvestors.findMany({
+        where: eq(loanInvestors.investorId, investorRecord.id),
+        with: {
+          loan: {
+            with: {
+              loanInvestors: {
+                with: {
+                  investor: true,
+                  interestPeriods: true,
+                },
+              },
+              transactions: {
+                orderBy: (transactions, { asc }) => [asc(transactions.date)],
+              },
+            },
+          },
+        },
+      });
+      sharedLoans = loanInvestments.map(li => li.loan);
+    }
+
+    // Combine and deduplicate loans
+    const allLoansMap = new Map();
+    [...ownedLoans, ...sharedLoans].forEach(loan => {
+      allLoansMap.set(loan.id, loan);
+    });
+
+    const allLoans = Array.from(allLoansMap.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
     return NextResponse.json(allLoans);
   } catch (error) {
     console.error('Error fetching loans:', error);
