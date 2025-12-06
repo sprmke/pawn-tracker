@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { transactions } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { hasTransactionAccess } from '@/lib/access-control';
 
 export async function GET(
   request: Request,
@@ -17,11 +18,17 @@ export async function GET(
     const { id: paramId } = await params;
     const id = parseInt(paramId);
 
+    // Check if user has access to this transaction
+    const hasAccess = await hasTransactionAccess(id, session.user.id);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Transaction not found' },
+        { status: 404 }
+      );
+    }
+
     const transaction = await db.query.transactions.findFirst({
-      where: and(
-        eq(transactions.id, id),
-        eq(transactions.userId, session.user.id)
-      ),
+      where: eq(transactions.id, id),
       with: {
         investor: true,
       },
@@ -58,12 +65,18 @@ export async function PUT(
     const id = parseInt(paramId);
     const body = await request.json();
 
+    // Check if user has access to this transaction
+    const hasAccess = await hasTransactionAccess(id, session.user.id);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Transaction not found' },
+        { status: 404 }
+      );
+    }
+
     // Check if transaction exists and get its type
     const existingTransaction = await db.query.transactions.findFirst({
-      where: and(
-        eq(transactions.id, id),
-        eq(transactions.userId, session.user.id)
-      ),
+      where: eq(transactions.id, id),
     });
 
     if (!existingTransaction) {
@@ -132,11 +145,18 @@ export async function DELETE(
     const { id: paramId } = await params;
     const id = parseInt(paramId);
 
+    // Check if user has access to this transaction
+    const hasAccess = await hasTransactionAccess(id, session.user.id);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Transaction not found' },
+        { status: 404 }
+      );
+    }
+
     const deletedTransaction = await db
       .delete(transactions)
-      .where(
-        and(eq(transactions.id, id), eq(transactions.userId, session.user.id))
-      )
+      .where(eq(transactions.id, id))
       .returning();
 
     if (deletedTransaction.length === 0) {
