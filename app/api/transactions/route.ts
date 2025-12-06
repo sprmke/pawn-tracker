@@ -13,15 +13,21 @@ export async function GET(request: Request) {
 
     const userId = session.user.id;
     const { searchParams } = new URL(request.url);
-    const investorId = searchParams.get('investorId');
+    const investorIdParam = searchParams.get('investorId');
+
+    // Find if this user is an investor
+    const investorRecord = await db.query.investors.findFirst({
+      where: (investors, { eq }) => eq(investors.investorUserId, userId),
+    });
 
     let allTransactions;
-    if (investorId) {
+    if (investorIdParam) {
+      // Filter by specific investor
       allTransactions = await db.query.transactions.findMany({
         where: (transactions, { eq, and }) =>
           and(
             eq(transactions.userId, userId),
-            eq(transactions.investorId, parseInt(investorId))
+            eq(transactions.investorId, parseInt(investorIdParam))
           ),
         orderBy: (transactions, { desc }) => [desc(transactions.date)],
         with: {
@@ -29,14 +35,31 @@ export async function GET(request: Request) {
         },
       });
     } else {
-      allTransactions = await db.query.transactions.findMany({
-        where: (transactions, { eq }) =>
-          eq(transactions.userId, userId),
-        orderBy: (transactions, { desc }) => [desc(transactions.date)],
-        with: {
-          investor: true,
-        },
-      });
+      // Get all transactions (owned + shared)
+      if (investorRecord) {
+        // User is an investor, get transactions they created OR transactions for them
+        allTransactions = await db.query.transactions.findMany({
+          where: (transactions, { eq, or }) =>
+            or(
+              eq(transactions.userId, userId),
+              eq(transactions.investorId, investorRecord.id)
+            ),
+          orderBy: (transactions, { desc }) => [desc(transactions.date)],
+          with: {
+            investor: true,
+          },
+        });
+      } else {
+        // User is not an investor, just get their own transactions
+        allTransactions = await db.query.transactions.findMany({
+          where: (transactions, { eq }) =>
+            eq(transactions.userId, userId),
+          orderBy: (transactions, { desc }) => [desc(transactions.date)],
+          with: {
+            investor: true,
+          },
+        });
+      }
     }
 
     return NextResponse.json(allTransactions);
