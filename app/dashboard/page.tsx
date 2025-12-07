@@ -42,7 +42,7 @@ import {
   isPast,
 } from 'date-fns';
 import { auth } from '@/auth';
-import { eq, or } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { loans, investors, transactions, loanInvestors } from '@/db/schema';
 
 async function getDashboardData(userId: string) {
@@ -88,16 +88,17 @@ async function getDashboardData(userId: string) {
           },
         },
       });
-      sharedLoans = loanInvestments.map(li => li.loan);
+      sharedLoans = loanInvestments.map((li) => li.loan);
     }
 
     // Combine and deduplicate loans
     const loansMap = new Map();
-    [...ownedLoans, ...sharedLoans].forEach(loan => {
+    [...ownedLoans, ...sharedLoans].forEach((loan) => {
       loansMap.set(loan.id, loan);
     });
     const allLoans = Array.from(loansMap.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
     // Get investors created by this user
@@ -135,7 +136,9 @@ async function getDashboardData(userId: string) {
                         },
                       },
                       transactions: {
-                        orderBy: (transactions, { desc }) => [desc(transactions.date)],
+                        orderBy: (transactions, { desc }) => [
+                          desc(transactions.date),
+                        ],
                       },
                     },
                   },
@@ -147,8 +150,8 @@ async function getDashboardData(userId: string) {
       });
 
       const investorSet = new Set();
-      loanInvestments.forEach(li => {
-        li.loan.loanInvestors.forEach(loanInv => {
+      loanInvestments.forEach((li) => {
+        li.loan.loanInvestors.forEach((loanInv) => {
           if (!investorSet.has(loanInv.investor.id)) {
             investorSet.add(loanInv.investor.id);
             sharedInvestors.push(loanInv.investor);
@@ -159,7 +162,7 @@ async function getDashboardData(userId: string) {
 
     // Combine and deduplicate investors
     const investorsMap = new Map();
-    [...ownedInvestors, ...sharedInvestors].forEach(investor => {
+    [...ownedInvestors, ...sharedInvestors].forEach((investor) => {
       investorsMap.set(investor.id, investor);
     });
     const allInvestors = Array.from(investorsMap.values());
@@ -218,7 +221,7 @@ async function getDashboardData(userId: string) {
     const totalInvestors = allInvestors.length;
     const activeInvestors = allInvestors.filter((inv) =>
       inv.loanInvestors.some(
-        (li) =>
+        (li: any) =>
           li.loan.status === 'Fully Funded' ||
           li.loan.status === 'Partially Funded'
       )
@@ -343,8 +346,8 @@ async function getDashboardData(userId: string) {
 
     allLoans.forEach((loan) => {
       loan.loanInvestors
-        .filter((li) => !li.isPaid)
-        .forEach((li) => {
+        .filter((li: any) => !li.isPaid)
+        .forEach((li: any) => {
           unpaidLoanTransactions.push({
             id: li.id,
             loanId: loan.id,
