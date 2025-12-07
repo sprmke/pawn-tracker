@@ -50,6 +50,7 @@ import {
   PendingDisbursementsCard,
   MaturingLoansCard,
   CardPagination,
+  ExportButton,
 } from '@/components/common';
 import {
   TransactionsTable,
@@ -60,6 +61,7 @@ import {
 import { LoanCreateModal, LoanDetailModal } from '@/components/loans';
 import type { TransactionWithInvestor } from '@/lib/types';
 import { addDays, isAfter, isBefore, isPast } from 'date-fns';
+import { loansCSVColumns, createTransactionsCSVColumnsWithOverallBalance } from '@/lib/csv-columns';
 
 interface InvestorDetailClientProps {
   investor: InvestorWithLoans;
@@ -713,6 +715,15 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     </Button>
                   )}
 
+                  <ExportButton
+                    data={loans}
+                    filteredData={filteredLoans}
+                    columns={loansCSVColumns}
+                    filename={`loans_${investor.name.replace(/\s+/g, '_')}`}
+                    variant="outline"
+                    size="sm"
+                  />
+
                   <Button size="sm" onClick={() => setShowLoanModal(true)}>
                     <Plus className="h-3 w-3" />
                     Add Loan
@@ -1108,6 +1119,15 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                       Clear All
                     </Button>
                   )}
+
+                  <ExportButton
+                    data={transactionsWithInvestor}
+                    filteredData={filteredTransactions}
+                    columns={createTransactionsCSVColumnsWithOverallBalance(transactionsWithInvestor)}
+                    filename={`transactions_${investor.name.replace(/\s+/g, '_')}`}
+                    variant="outline"
+                    size="sm"
+                  />
 
                   <Button
                     size="sm"
