@@ -46,6 +46,7 @@ import {
   calculateAverageRate,
   calculateTransactionStats,
 } from '@/lib/calculations';
+import { loansCSVColumns } from '@/lib/csv-columns';
 import {
   InvestorTransactionCard,
   LoansTable,
@@ -57,6 +58,7 @@ import {
   ViewModeToggle,
   PageHeader,
   DateListWithViewMore,
+  ExportButton,
 } from '@/components/common';
 
 type SortField =
@@ -467,6 +469,14 @@ export default function LoansPage() {
               onViewModeChange={setViewMode}
               showCalendar={true}
               hasData={loans.length > 0}
+            />
+            <ExportButton
+              data={loans}
+              filteredData={sortedLoans}
+              columns={loansCSVColumns}
+              filename="loans"
+              variant="outline"
+              size="default"
             />
             <Link href="/loans/new">
               <Button className="w-full sm:w-auto">
