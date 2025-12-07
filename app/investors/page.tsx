@@ -36,6 +36,7 @@ import {
   PendingDisbursementsCard,
   MaturingLoansCard,
   PageHeader,
+  ExportButton,
 } from '@/components/common';
 import { formatCurrency } from '@/lib/format';
 import { getTodayAtMidnight, normalizeToMidnight } from '@/lib/date-utils';
@@ -43,6 +44,7 @@ import {
   calculateInvestorStats,
   calculateAverageRate,
 } from '@/lib/calculations';
+import { investorsCSVColumns } from '@/lib/csv-columns';
 import { addDays, isAfter, isBefore, isPast } from 'date-fns';
 import type { LoanWithInvestors } from '@/lib/types';
 
@@ -363,6 +365,14 @@ export default function InvestorsPage() {
                 <LayoutGrid className="h-4 w-4" />
               </Button>
             </div>
+            <ExportButton
+              data={investors}
+              filteredData={filteredInvestors}
+              columns={investorsCSVColumns}
+              filename="investors"
+              variant="outline"
+              size="default"
+            />
             <Link href="/investors/new">
               <Button className="w-full sm:w-auto">
                 <UserPlus className="mr-2 h-4 w-4" />
