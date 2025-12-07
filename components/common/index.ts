@@ -31,6 +31,7 @@ export {
   ActionButtonsGroup,
 } from './action-buttons';
 export { Logo } from './logo';
+export { ExportButton } from './export-button';
 
 // Calendar components
 export * from './calendar';
