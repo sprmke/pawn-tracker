@@ -116,10 +116,6 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
     header: 'Notes',
     accessor: (loan) => loan.notes || '',
   },
-  {
-    header: 'Created At',
-    accessor: (loan) => formatDateForCSV(loan.createdAt),
-  },
 ];
 
 /**
@@ -208,10 +204,6 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
       return stats.totalLoans;
     },
   },
-  {
-    header: 'Created At',
-    accessor: (investor) => formatDateForCSV(investor.createdAt),
-  },
 ];
 
 /**
@@ -249,10 +241,6 @@ export const transactionsCSVColumns: CSVColumn<TransactionWithInvestor>[] = [
   {
     header: 'Notes',
     accessor: (transaction) => transaction.notes || '',
-  },
-  {
-    header: 'Created At',
-    accessor: (transaction) => formatDateForCSV(transaction.createdAt),
   },
 ];
 
@@ -314,7 +302,7 @@ export function createTransactionsCSVColumnsWithOverallBalance(
         return formatCurrencyForCSV(balance);
       },
     },
-    ...transactionsCSVColumns.slice(7), // Include remaining columns (Notes, Created At)
+    ...transactionsCSVColumns.slice(7), // Include remaining columns (Notes)
   ];
 }
 
