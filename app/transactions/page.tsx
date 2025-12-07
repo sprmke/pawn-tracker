@@ -35,8 +35,10 @@ import {
   InlineLoader,
   ViewModeToggle,
   PageHeader,
+  ExportButton,
 } from '@/components/common';
 import { DollarSign, TrendingUp, Users } from 'lucide-react';
+import { createTransactionsCSVColumnsWithOverallBalance } from '@/lib/csv-columns';
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -286,6 +288,14 @@ export default function TransactionsPage() {
               onViewModeChange={setViewMode}
               showCalendar={true}
               hasData={transactions.length > 0}
+            />
+            <ExportButton
+              data={transactions}
+              filteredData={sortedTransactions}
+              columns={createTransactionsCSVColumnsWithOverallBalance(transactions)}
+              filename="transactions"
+              variant="outline"
+              size="default"
             />
             <DropdownMenu
               trigger={
