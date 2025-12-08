@@ -39,7 +39,7 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
     accessor: (loan) => formatDateForCSV(loan.dueDate),
   },
   {
-    header: 'Total Principal (₱)',
+    header: 'Total Principal',
     accessor: (loan) => {
       const stats = calculateLoanStats(loan);
       return formatCurrencyForCSV(stats.totalPrincipal);
@@ -53,14 +53,14 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
     },
   },
   {
-    header: 'Total Interest (₱)',
+    header: 'Total Interest',
     accessor: (loan) => {
       const stats = calculateLoanStats(loan);
       return formatCurrencyForCSV(stats.totalInterest);
     },
   },
   {
-    header: 'Total Amount (₱)',
+    header: 'Total Amount',
     accessor: (loan) => {
       const stats = calculateLoanStats(loan);
       return formatCurrencyForCSV(stats.totalAmount);
@@ -71,12 +71,13 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
     accessor: (loan) => loan.freeLotSqm || '',
   },
   {
-    header: 'Number of Investors',
+    header: 'Investors',
     accessor: (loan) => {
-      const uniqueInvestors = new Set(
-        loan.loanInvestors.map((li) => li.investor.id)
-      );
-      return uniqueInvestors.size;
+      // Get unique investor names
+      const uniqueInvestors = Array.from(
+        new Set(loan.loanInvestors.map((li) => li.investor.name))
+      ).sort();
+      return uniqueInvestors.join(', ');
     },
   },
   {
@@ -135,7 +136,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
     accessor: (investor) => investor.contactNumber || '',
   },
   {
-    header: 'Total Capital (₱)',
+    header: 'Total Capital',
     accessor: (investor) => {
       const stats = calculateInvestorStats(investor);
       return formatCurrencyForCSV(stats.totalCapital);
@@ -149,28 +150,28 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
     },
   },
   {
-    header: 'Total Interest (₱)',
+    header: 'Total Interest',
     accessor: (investor) => {
       const stats = calculateInvestorStats(investor);
       return formatCurrencyForCSV(stats.totalInterest);
     },
   },
   {
-    header: 'Total Amount (₱)',
+    header: 'Total Amount',
     accessor: (investor) => {
       const stats = calculateInvestorStats(investor);
       return formatCurrencyForCSV(stats.totalCapital + stats.totalInterest);
     },
   },
   {
-    header: 'Current Balance (₱)',
+    header: 'Current Balance',
     accessor: (investor) => {
       const stats = calculateInvestorStats(investor);
       return formatCurrencyForCSV(stats.currentBalance);
     },
   },
   {
-    header: 'Total Gain (₱)',
+    header: 'Total Gain',
     accessor: (investor) => {
       const stats = calculateInvestorStats(investor);
       return formatCurrencyForCSV(stats.totalGain);
@@ -231,11 +232,11 @@ export const transactionsCSVColumns: CSVColumn<TransactionWithInvestor>[] = [
     accessor: (transaction) => transaction.direction,
   },
   {
-    header: 'Amount (₱)',
+    header: 'Amount',
     accessor: (transaction) => formatCurrencyForCSV(transaction.amount),
   },
   {
-    header: 'Investor Balance (₱)',
+    header: 'Investor Balance',
     accessor: (transaction) => formatCurrencyForCSV(transaction.balance),
   },
   {
@@ -296,7 +297,7 @@ export function createTransactionsCSVColumnsWithOverallBalance(
   return [
     ...transactionsCSVColumns.slice(0, 7), // Include all columns up to Investor Balance
     {
-      header: 'Overall Balance (₱)',
+      header: 'Overall Balance',
       accessor: (transaction) => {
         const balance = calculateOverallBalance(transaction);
         return formatCurrencyForCSV(balance);
