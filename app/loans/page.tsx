@@ -119,7 +119,7 @@ export default function LoansPage() {
     const handleResize = () => {
       const isMobile = window.innerWidth < 768; // md breakpoint
       if (isMobile) {
-        setViewMode((current) => current === 'table' ? 'cards' : current);
+        setViewMode((current) => (current === 'table' ? 'cards' : current));
       }
     };
 
@@ -162,14 +162,14 @@ export default function LoansPage() {
     try {
       const response = await fetch('/api/investors');
       const data = await response.json();
-      
+
       // Check if response is an error
       if (!response.ok || !Array.isArray(data)) {
         console.error('Error fetching investors:', data);
         setInvestors([]);
         return;
       }
-      
+
       // Extract unique investors and sort by name
       const uniqueInvestors = data
         .map((inv: any) => ({ id: inv.id, name: inv.name }))
