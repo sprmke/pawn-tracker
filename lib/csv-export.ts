@@ -99,10 +99,17 @@ export function formatDateForCSV(date: Date | string): string {
 }
 
 /**
- * Formats currency for CSV export (removes currency symbol)
+ * Formats currency for CSV export with peso sign and thousand separators
  */
 export function formatCurrencyForCSV(amount: string | number): string {
   const numValue = typeof amount === 'string' ? parseFloat(amount) : amount;
-  return numValue.toFixed(2);
+  
+  // Format with thousand separators and 2 decimal places
+  const formatted = numValue.toLocaleString('en-PH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  
+  return `P${formatted}`;
 }
 
