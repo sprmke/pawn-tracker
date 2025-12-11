@@ -365,6 +365,7 @@ export function LoansTable({
       expandedContent={expandedContent}
       expandedRows={expandedRows}
       onRowClick={onQuickView ? onQuickView : undefined}
+      rowClickOnMobileOnly={true}
     />
   );
 }
