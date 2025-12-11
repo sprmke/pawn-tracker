@@ -4,6 +4,8 @@ import { transactions } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { hasTransactionAccess } from '@/lib/access-control';
+import { requiresBalanceRecalculation } from '@/lib/loan-update-detector';
+import { recalculateInvestorBalances } from '@/lib/loan-transactions';
 
 export async function GET(
   request: Request,
@@ -107,6 +109,24 @@ export async function PUT(
       updatedAt: new Date(),
     };
 
+    // Check if balance recalculation is needed
+    const needsBalanceRecalculation = requiresBalanceRecalculation(
+      {
+        date: existingTransaction.date,
+        amount: existingTransaction.amount,
+        direction: existingTransaction.direction,
+        investorId: existingTransaction.investorId,
+      },
+      {
+        date: transactionData.date,
+        amount: transactionData.amount,
+        direction: transactionData.direction,
+        investorId: transactionData.investorId,
+      }
+    );
+
+    console.log('Balance recalculation needed:', needsBalanceRecalculation);
+
     const updatedTransaction = await db
       .update(transactions)
       .set(transactionData)
@@ -119,6 +139,32 @@ export async function PUT(
       return NextResponse.json(
         { error: 'Transaction not found' },
         { status: 404 }
+      );
+    }
+
+    // Recalculate balances if needed
+    if (needsBalanceRecalculation) {
+      try {
+        // Get all affected investor IDs (both old and new if investor changed)
+        const affectedInvestorIds = [existingTransaction.investorId];
+        if (transactionData.investorId !== existingTransaction.investorId) {
+          affectedInvestorIds.push(transactionData.investorId);
+        }
+
+        // Use the earliest date between old and new
+        const earliestDate =
+          existingTransaction.date < transactionData.date
+            ? existingTransaction.date
+            : transactionData.date;
+
+        await recalculateInvestorBalances(affectedInvestorIds, earliestDate);
+        console.log('Recalculated balances for affected investors');
+      } catch (error) {
+        console.error('Error recalculating balances:', error);
+      }
+    } else {
+      console.log(
+        'Skipped balance recalculation - only non-computational fields changed'
       );
     }
 
@@ -154,6 +200,18 @@ export async function DELETE(
       );
     }
 
+    // Get transaction details before deletion for balance recalculation
+    const transactionToDelete = await db.query.transactions.findFirst({
+      where: eq(transactions.id, id),
+    });
+
+    if (!transactionToDelete) {
+      return NextResponse.json(
+        { error: 'Transaction not found' },
+        { status: 404 }
+      );
+    }
+
     const deletedTransaction = await db
       .delete(transactions)
       .where(eq(transactions.id, id))
@@ -164,6 +222,17 @@ export async function DELETE(
         { error: 'Transaction not found' },
         { status: 404 }
       );
+    }
+
+    // Recalculate balances after deletion
+    try {
+      await recalculateInvestorBalances(
+        [transactionToDelete.investorId],
+        transactionToDelete.date
+      );
+      console.log('Recalculated balances after transaction deletion');
+    } catch (error) {
+      console.error('Error recalculating balances after deletion:', error);
     }
 
     return NextResponse.json({ success: true });
