@@ -276,9 +276,12 @@ export async function recalculateInvestorBalances(
  * Update transaction counters for a loan after modifications
  * This recalculates and updates the transactionIndex and transactionTotal for all loan transactions
  * Counters are applied per-investor (not across all investors)
+ * @param loanId - The ID of the loan
+ * @param newLoanName - Optional new loan name to update transactions with
  */
 export async function updateLoanTransactionCounters(
-  loanId: number
+  loanId: number,
+  newLoanName?: string
 ): Promise<void> {
   // Get all transactions for this loan
   const loanTransactions = await db.query.transactions.findMany({
@@ -291,12 +294,14 @@ export async function updateLoanTransactionCounters(
 
   if (loanTransactions.length === 0) return;
 
-  // Get the base loan name (remove existing counter if present)
-  const baseLoanName = loanTransactions[0].name
-    .replace(/ - Principal Sent.*$/, '')
-    .replace(/ - Principal Payment.*$/, '')
-    .replace(/ - Payment Due.*$/, '')
-    .replace(/ - Due Payment.*$/, '');
+  // Get the base loan name (use provided newLoanName or extract from existing transaction)
+  const baseLoanName =
+    newLoanName ||
+    loanTransactions[0].name
+      .replace(/ - Principal Sent.*$/, '')
+      .replace(/ - Principal Payment.*$/, '')
+      .replace(/ - Payment Due.*$/, '')
+      .replace(/ - Due Payment.*$/, '');
 
   // Group transactions by investor
   const investorTransactions = new Map<
