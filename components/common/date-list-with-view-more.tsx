@@ -15,6 +15,7 @@ interface DateListWithViewMoreProps {
   className?: string;
   itemClassName?: string | ((date: Date, index: number) => string);
   dialogTitle?: string;
+  title?: string;
   formatDate?: (date: Date) => string;
   getItemClassName?: (date: Date, hasUnpaid?: boolean) => string;
   checkUnpaid?: (date: Date) => boolean;
@@ -26,6 +27,7 @@ export function DateListWithViewMore({
   className = '',
   itemClassName = '',
   dialogTitle = 'All Dates',
+  title,
   formatDate = (date: Date) =>
     date.toLocaleDateString('en-US', {
       month: 'short',
@@ -83,7 +85,9 @@ export function DateListWithViewMore({
       <Dialog open={showAllModal} onOpenChange={setShowAllModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogTitle>
+              {title ? `${dialogTitle} - ${title}` : dialogTitle}
+            </DialogTitle>
           </DialogHeader>
           <div className="max-h-[400px] overflow-y-auto">
             <div className="flex flex-col gap-2">
