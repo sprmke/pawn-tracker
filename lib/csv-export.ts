@@ -6,15 +6,13 @@
 export interface CSVColumn<T> {
   header: string;
   accessor: (row: T) => string | number | null | undefined;
+  summable?: boolean; // Whether this column should be summed in the total row
 }
 
 /**
  * Converts data to CSV format
  */
-export function convertToCSV<T>(
-  data: T[],
-  columns: CSVColumn<T>[]
-): string {
+export function convertToCSV<T>(data: T[], columns: CSVColumn<T>[]): string {
   if (data.length === 0) {
     return '';
   }
@@ -33,8 +31,62 @@ export function convertToCSV<T>(
       .join(',');
   });
 
-  // Combine header and data rows
-  return [headerRow, ...dataRows].join('\n');
+  // Create total row if there are summable columns
+  const hasSummableColumns = columns.some((col) => col.summable);
+  const rows = [headerRow, ...dataRows];
+
+  if (hasSummableColumns && data.length > 0) {
+    const totalRow = columns
+      .map((col, index) => {
+        // First column shows "TOTAL" label
+        if (index === 0) {
+          return escapeCSVValue('TOTAL');
+        }
+
+        // Sum up numeric values for summable columns
+        if (col.summable) {
+          const sum = data.reduce((acc, row) => {
+            const value = col.accessor(row);
+            // Extract numeric value from formatted currency strings (e.g., "P1,234.56" -> 1234.56)
+            const numValue = extractNumericValue(value);
+            return acc + numValue;
+          }, 0);
+
+          // Format the sum as currency
+          return escapeCSVValue(formatCurrencyForCSV(sum));
+        }
+
+        // Empty cell for non-summable columns
+        return '';
+      })
+      .join(',');
+
+    rows.push(totalRow);
+  }
+
+  return rows.join('\n');
+}
+
+/**
+ * Extracts numeric value from a string or number
+ * Handles formatted currency strings like "P1,234.56"
+ */
+function extractNumericValue(
+  value: string | number | null | undefined
+): number {
+  if (value === null || value === undefined) {
+    return 0;
+  }
+
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  // Remove currency symbols, commas, and other non-numeric characters except decimal point and minus
+  const cleaned = String(value).replace(/[^0-9.-]/g, '');
+  const parsed = parseFloat(cleaned);
+
+  return isNaN(parsed) ? 0 : parsed;
 }
 
 /**
@@ -62,10 +114,7 @@ function escapeCSVValue(value: string | number | null | undefined): string {
 /**
  * Triggers a CSV file download in the browser
  */
-export function downloadCSV(
-  csvContent: string,
-  filename: string
-): void {
+export function downloadCSV(csvContent: string, filename: string): void {
   // Add BOM for proper UTF-8 encoding in Excel
   const BOM = '\uFEFF';
   const blob = new Blob([BOM + csvContent], {
@@ -103,13 +152,12 @@ export function formatDateForCSV(date: Date | string): string {
  */
 export function formatCurrencyForCSV(amount: string | number): string {
   const numValue = typeof amount === 'string' ? parseFloat(amount) : amount;
-  
+
   // Format with thousand separators and 2 decimal places
   const formatted = numValue.toLocaleString('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  
+
   return `P${formatted}`;
 }
-
