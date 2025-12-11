@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { transactions } from '@/db/schema';
 import { auth } from '@/auth';
 import { eq, and } from 'drizzle-orm';
+import { recalculateInvestorBalances } from '@/lib/loan-transactions';
 
 export async function GET(request: Request) {
   try {
@@ -52,8 +53,7 @@ export async function GET(request: Request) {
       } else {
         // User is not an investor, just get their own transactions
         allTransactions = await db.query.transactions.findMany({
-          where: (transactions, { eq }) =>
-            eq(transactions.userId, userId),
+          where: (transactions, { eq }) => eq(transactions.userId, userId),
           orderBy: (transactions, { desc }) => [desc(transactions.date)],
           with: {
             investor: true,
@@ -93,6 +93,18 @@ export async function POST(request: Request) {
       .insert(transactions)
       .values(transactionData)
       .returning();
+
+    // Recalculate balances after creating new transaction
+    try {
+      await recalculateInvestorBalances(
+        [newTransaction[0].investorId],
+        newTransaction[0].date
+      );
+      console.log('Recalculated balances after transaction creation');
+    } catch (error) {
+      console.error('Error recalculating balances after creation:', error);
+    }
+
     return NextResponse.json(newTransaction[0], { status: 201 });
   } catch (error) {
     console.error('Error creating transaction:', error);
