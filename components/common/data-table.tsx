@@ -40,6 +40,7 @@ export interface DataTableProps<TData> {
   emptyState?: React.ReactNode;
   initialSortField?: string;
   initialSortDirection?: 'asc' | 'desc';
+  rowClickOnMobileOnly?: boolean;
 }
 
 export function DataTable<TData>({
@@ -55,6 +56,7 @@ export function DataTable<TData>({
   emptyState,
   initialSortField,
   initialSortDirection = 'asc',
+  rowClickOnMobileOnly = false,
 }: DataTableProps<TData>) {
   const [sortField, setSortField] = React.useState<string | null>(
     initialSortField || null
@@ -64,6 +66,18 @@ export function DataTable<TData>({
   );
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage, setItemsPerPage] = React.useState(initialItemsPerPage);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  // Track if we're on mobile
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1536); // 2xl breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleSort = (columnId: string) => {
     const column = columns.find((col) => col.id === columnId);
@@ -176,12 +190,16 @@ export function DataTable<TData>({
               {paginatedData.map((row, index) => {
                 const rowId = getRowId ? getRowId(row) : index;
                 const isExpanded = expandedRows?.has(rowId);
+                const shouldEnableRowClick =
+                  onRowClick && (!rowClickOnMobileOnly || isMobile);
 
                 return (
                   <React.Fragment key={rowId}>
                     <TableRow
-                      className={`${onRowClick ? 'cursor-pointer' : ''}`}
-                      onClick={() => onRowClick?.(row)}
+                      className={`${
+                        shouldEnableRowClick ? 'cursor-pointer' : ''
+                      }`}
+                      onClick={() => shouldEnableRowClick && onRowClick?.(row)}
                     >
                       {visibleColumns.map((column) => {
                         let cellContent: React.ReactNode;
