@@ -44,6 +44,7 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
       const stats = calculateLoanStats(loan);
       return formatCurrencyForCSV(stats.totalPrincipal);
     },
+    summable: true,
   },
   {
     header: 'Average Rate (%)',
@@ -58,6 +59,7 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
       const stats = calculateLoanStats(loan);
       return formatCurrencyForCSV(stats.totalInterest);
     },
+    summable: true,
   },
   {
     header: 'Total Amount',
@@ -65,10 +67,12 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
       const stats = calculateLoanStats(loan);
       return formatCurrencyForCSV(stats.totalAmount);
     },
+    summable: true,
   },
   {
     header: 'Free Lot (sqm)',
     accessor: (loan) => loan.freeLotSqm || '',
+    summable: true,
   },
   {
     header: 'Investors',
@@ -84,11 +88,7 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
     header: 'Sent Dates',
     accessor: (loan) => {
       const uniqueDates = Array.from(
-        new Set(
-          loan.loanInvestors.map((li) =>
-            formatDateForCSV(li.sentDate)
-          )
-        )
+        new Set(loan.loanInvestors.map((li) => formatDateForCSV(li.sentDate)))
       ).sort();
       return uniqueDates.join('; ');
     },
@@ -97,10 +97,10 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
     header: 'All Due Dates',
     accessor: (loan) => {
       const dueDateSet = new Set<string>();
-      
+
       // Add main loan due date
       dueDateSet.add(formatDateForCSV(loan.dueDate));
-      
+
       // Add interest period due dates
       loan.loanInvestors.forEach((li) => {
         if (li.hasMultipleInterest && li.interestPeriods) {
@@ -109,7 +109,7 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
           });
         }
       });
-      
+
       return Array.from(dueDateSet).sort().join('; ');
     },
   },
@@ -141,6 +141,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
       const stats = calculateInvestorStats(investor);
       return formatCurrencyForCSV(stats.totalCapital);
     },
+    summable: true,
   },
   {
     header: 'Average Rate (%)',
@@ -155,6 +156,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
       const stats = calculateInvestorStats(investor);
       return formatCurrencyForCSV(stats.totalInterest);
     },
+    summable: true,
   },
   {
     header: 'Total Amount',
@@ -162,6 +164,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
       const stats = calculateInvestorStats(investor);
       return formatCurrencyForCSV(stats.totalCapital + stats.totalInterest);
     },
+    summable: true,
   },
   {
     header: 'Current Balance',
@@ -169,6 +172,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
       const stats = calculateInvestorStats(investor);
       return formatCurrencyForCSV(stats.currentBalance);
     },
+    summable: true,
   },
   {
     header: 'Total Gain',
@@ -176,6 +180,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
       const stats = calculateInvestorStats(investor);
       return formatCurrencyForCSV(stats.totalGain);
     },
+    summable: true,
   },
   {
     header: 'Active Loans',
@@ -183,6 +188,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
       const stats = calculateInvestorStats(investor);
       return stats.activeLoans;
     },
+    summable: true,
   },
   {
     header: 'Completed Loans',
@@ -190,6 +196,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
       const stats = calculateInvestorStats(investor);
       return stats.completedLoans;
     },
+    summable: true,
   },
   {
     header: 'Overdue Loans',
@@ -197,6 +204,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
       const stats = calculateInvestorStats(investor);
       return stats.overdueLoans;
     },
+    summable: true,
   },
   {
     header: 'Total Loans',
@@ -204,6 +212,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
       const stats = calculateInvestorStats(investor);
       return stats.totalLoans;
     },
+    summable: true,
   },
 ];
 
@@ -234,6 +243,7 @@ export const transactionsCSVColumns: CSVColumn<TransactionWithInvestor>[] = [
   {
     header: 'Amount',
     accessor: (transaction) => formatCurrencyForCSV(transaction.amount),
+    summable: true,
   },
   {
     header: 'Investor Balance',
@@ -302,8 +312,8 @@ export function createTransactionsCSVColumnsWithOverallBalance(
         const balance = calculateOverallBalance(transaction);
         return formatCurrencyForCSV(balance);
       },
+      summable: false, // Overall balance shouldn't be summed as it's a running total
     },
     ...transactionsCSVColumns.slice(7), // Include remaining columns (Notes)
   ];
 }
-
