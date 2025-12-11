@@ -958,6 +958,7 @@ export default function LoansPage() {
                                   dates={uniqueDates}
                                   limit={3}
                                   dialogTitle="All Sent Dates"
+                                  title={loan.loanName}
                                   getItemClassName={(date, hasUnpaid) =>
                                     `${
                                       uniqueDates.length > 1
@@ -1023,6 +1024,7 @@ export default function LoansPage() {
                                   dates={uniqueDates}
                                   limit={3}
                                   dialogTitle="All Due Dates"
+                                  title={loan.loanName}
                                   getItemClassName={(date) =>
                                     `${
                                       uniqueDates.length > 1
