@@ -240,6 +240,7 @@ export function TransactionsTable({
       initialSortField="date"
       initialSortDirection="asc"
       onRowClick={onQuickView ? onQuickView : undefined}
+      rowClickOnMobileOnly={true}
     />
   );
 }
