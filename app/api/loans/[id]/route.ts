@@ -10,6 +10,7 @@ import {
   updateLoanTransactionCounters,
 } from '@/lib/loan-transactions';
 import { hasLoanAccess } from '@/lib/access-control';
+import { requiresTransactionRegeneration } from '@/lib/loan-update-detector';
 
 export async function GET(
   request: Request,
@@ -86,6 +87,13 @@ export async function PUT(
 
     const existingLoan = await db.query.loans.findFirst({
       where: eq(loans.id, loanId),
+      with: {
+        loanInvestors: {
+          with: {
+            interestPeriods: true,
+          },
+        },
+      },
     });
 
     if (!existingLoan) {
@@ -103,33 +111,86 @@ export async function PUT(
       updatedAt: new Date(),
     };
 
+    // Prepare existing and new investor data for comparison
+    const existingInvestorData = existingLoan.loanInvestors.map((li) => ({
+      investorId: li.investorId,
+      amount: li.amount,
+      sentDate: li.sentDate,
+      interestRate: li.interestRate,
+      interestType: li.interestType,
+      hasMultipleInterest: li.hasMultipleInterest,
+      interestPeriods: li.interestPeriods?.map((period) => ({
+        dueDate: period.dueDate,
+        interestRate: period.interestRate,
+        interestType: period.interestType,
+      })),
+    }));
+
+    const newInvestorData = investorData.map((inv: any) => ({
+      investorId: Number(inv.investorId),
+      amount: String(inv.amount),
+      sentDate: new Date(inv.sentDate),
+      interestRate: String(inv.interestRate || '0'),
+      interestType: inv.interestType || 'rate',
+      hasMultipleInterest: inv.hasMultipleInterest || false,
+      interestPeriods: inv.interestPeriods?.map((period: any) => ({
+        dueDate: new Date(period.dueDate),
+        interestRate: String(period.interestRate),
+        interestType: period.interestType || 'rate',
+      })),
+    }));
+
+    // Check if transaction regeneration is needed
+    const needsTransactionRegeneration = requiresTransactionRegeneration(
+      {
+        loanName: existingLoan.loanName,
+        type: existingLoan.type,
+        status: existingLoan.status,
+        dueDate: existingLoan.dueDate,
+        freeLotSqm: existingLoan.freeLotSqm,
+        notes: existingLoan.notes,
+      },
+      processedLoanData,
+      existingInvestorData,
+      newInvestorData
+    );
+
+    console.log(
+      'Transaction regeneration needed:',
+      needsTransactionRegeneration
+    );
+
     // Update loan
     await db
       .update(loans)
       .set(processedLoanData)
       .where(and(eq(loans.id, loanId), eq(loans.userId, session.user.id)));
 
-    // Delete existing transactions for this loan and get affected investors
+    // Only delete and regenerate transactions if computational fields changed
     let affectedInvestorIds: number[] = [];
     let earliestDate: Date | null = null;
-    try {
-      const deletionResult = await deleteLoanTransactions(loanId);
-      affectedInvestorIds = deletionResult.investorIds;
-      earliestDate = deletionResult.earliestDate;
-      console.log('Deleted old transactions for loan');
-    } catch (error) {
-      console.error('Error deleting old transactions:', error);
-    }
 
-    // Recalculate balances for affected investors after deletion
-    if (affectedInvestorIds.length > 0 && earliestDate) {
+    if (needsTransactionRegeneration) {
+      // Delete existing transactions for this loan and get affected investors
       try {
-        await recalculateInvestorBalances(affectedInvestorIds, earliestDate);
-        console.log(
-          'Recalculated balances after deletion for affected investors'
-        );
+        const deletionResult = await deleteLoanTransactions(loanId);
+        affectedInvestorIds = deletionResult.investorIds;
+        earliestDate = deletionResult.earliestDate;
+        console.log('Deleted old transactions for loan');
       } catch (error) {
-        console.error('Error recalculating balances after deletion:', error);
+        console.error('Error deleting old transactions:', error);
+      }
+
+      // Recalculate balances for affected investors after deletion
+      if (affectedInvestorIds.length > 0 && earliestDate) {
+        try {
+          await recalculateInvestorBalances(affectedInvestorIds, earliestDate);
+          console.log(
+            'Recalculated balances after deletion for affected investors'
+          );
+        } catch (error) {
+          console.error('Error recalculating balances after deletion:', error);
+        }
       }
     }
 
@@ -207,26 +268,36 @@ export async function PUT(
             const dueDate = new Date(period.dueDate);
             const newInterestRate = String(period.interestRate);
             const newInterestType = period.interestType || 'rate';
-            
+
             // Check if this period existed before with same date/rate
             const key = `${investorId}-${dueDate.toISOString()}`;
             const existingPeriod = existingPeriodsMap.get(key);
-            
+
             // Preserve completed status only if date and rate haven't changed
             let status: 'Pending' | 'Completed' | 'Overdue' = 'Pending';
             if (existingPeriod) {
-              const rateChanged = existingPeriod.interestRate !== newInterestRate;
-              const typeChanged = existingPeriod.interestType !== newInterestType;
-              
+              const rateChanged =
+                existingPeriod.interestRate !== newInterestRate;
+              const typeChanged =
+                existingPeriod.interestType !== newInterestType;
+
               // If nothing changed and it was completed, keep it completed
-              if (!rateChanged && !typeChanged && existingPeriod.status === 'Completed') {
+              if (
+                !rateChanged &&
+                !typeChanged &&
+                existingPeriod.status === 'Completed'
+              ) {
                 status = 'Completed';
-              } else if (existingPeriod.status === 'Overdue' && !rateChanged && !typeChanged) {
+              } else if (
+                existingPeriod.status === 'Overdue' &&
+                !rateChanged &&
+                !typeChanged
+              ) {
                 // Also preserve Overdue status if rate/type unchanged
                 status = 'Overdue';
               }
             }
-            
+
             return {
               loanInvestorId,
               dueDate,
@@ -264,32 +335,51 @@ export async function PUT(
 
     console.log('Loan updated successfully:', updatedLoan);
 
-    // Generate new transactions for the updated loan
-    try {
-      await generateLoanTransactions(
-        {
-          loanName: processedLoanData.loanName,
-          dueDate: processedLoanData.dueDate,
-        },
-        investorData.map((inv: any) => ({
-          investorId: Number(inv.investorId),
-          amount: String(inv.amount),
-          sentDate: new Date(inv.sentDate),
-          interestRate: String(inv.interestRate),
-          interestType: inv.interestType || 'rate',
-          hasMultipleInterest: inv.hasMultipleInterest || false,
-          interestPeriods: inv.interestPeriods?.map((period: any) => ({
-            dueDate: new Date(period.dueDate),
-            interestRate: String(period.interestRate),
-            interestType: period.interestType || 'rate',
+    // Generate new transactions only if computational fields changed
+    if (needsTransactionRegeneration) {
+      try {
+        await generateLoanTransactions(
+          {
+            loanName: processedLoanData.loanName,
+            dueDate: processedLoanData.dueDate,
+          },
+          investorData.map((inv: any) => ({
+            investorId: Number(inv.investorId),
+            amount: String(inv.amount),
+            sentDate: new Date(inv.sentDate),
+            interestRate: String(inv.interestRate),
+            interestType: inv.interestType || 'rate',
+            hasMultipleInterest: inv.hasMultipleInterest || false,
+            interestPeriods: inv.interestPeriods?.map((period: any) => ({
+              dueDate: new Date(period.dueDate),
+              interestRate: String(period.interestRate),
+              interestType: period.interestType || 'rate',
+            })),
           })),
-        })),
-        loanId,
-        session.user.id
-      );
-      console.log('New transactions created for updated loan');
-    } catch (error) {
-      console.error('Error creating transactions for updated loan:', error);
+          loanId,
+          session.user.id
+        );
+        console.log('New transactions created for updated loan');
+      } catch (error) {
+        console.error('Error creating transactions for updated loan:', error);
+      }
+    } else {
+      // If only non-computational fields changed (like loan name), update transaction names
+      if (processedLoanData.loanName !== existingLoan.loanName) {
+        try {
+          await updateLoanTransactionCounters(
+            loanId,
+            processedLoanData.loanName
+          );
+          console.log('Updated transaction names for loan');
+        } catch (error) {
+          console.error('Error updating transaction names:', error);
+        }
+      } else {
+        console.log(
+          'Skipped transaction regeneration - only non-computational fields changed'
+        );
+      }
     }
 
     return NextResponse.json(updatedLoan);
