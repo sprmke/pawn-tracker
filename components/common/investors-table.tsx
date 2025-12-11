@@ -258,6 +258,7 @@ export function InvestorsTable({
       expandedContent={expandedContent}
       expandedRows={expandedRows}
       onRowClick={(investor) => router.push(`/investors/${investor.id}`)}
+      rowClickOnMobileOnly={true}
     />
   );
 }
