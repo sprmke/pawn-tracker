@@ -119,6 +119,7 @@ export function LoansTable({
             dates={uniqueDates}
             limit={3}
             dialogTitle="All Sent Dates"
+            title={loan.loanName}
             getItemClassName={(date, hasUnpaid) =>
               `${
                 uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'
@@ -178,6 +179,7 @@ export function LoansTable({
             dates={uniqueDates}
             limit={3}
             dialogTitle="All Due Dates"
+            title={loan.loanName}
             getItemClassName={(date) =>
               `${
                 uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'
