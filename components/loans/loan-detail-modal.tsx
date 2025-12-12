@@ -190,6 +190,7 @@ export function LoanDetailModal({
                     setIsEditing(true);
                   }}
                   onDelete={() => setShowDeleteDialog(true)}
+                  onClose={() => onOpenChange(false)}
                   onPayBalance={handlePayBalance}
                   showPayBalance={isPartiallyFunded}
                   onComplete={() => setShowCompleteDialog(true)}
@@ -221,7 +222,7 @@ export function LoanDetailModal({
       </Dialog>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent showClose>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Loan</AlertDialogTitle>
             <AlertDialogDescription>
@@ -246,7 +247,7 @@ export function LoanDetailModal({
         open={showCompleteDialog}
         onOpenChange={setShowCompleteDialog}
       >
-        <AlertDialogContent>
+        <AlertDialogContent showClose>
           <AlertDialogHeader>
             <AlertDialogTitle>Complete Loan</AlertDialogTitle>
             <AlertDialogDescription>
