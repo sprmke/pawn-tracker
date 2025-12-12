@@ -62,9 +62,8 @@ export function TransactionDetailModal({
   const [selectedLoan, setSelectedLoan] = useState<LoanWithInvestors | null>(
     null
   );
-  const [transaction, setTransaction] = useState<TransactionWithInvestor | null>(
-    initialTransaction
-  );
+  const [transaction, setTransaction] =
+    useState<TransactionWithInvestor | null>(initialTransaction);
 
   // Update local transaction state when prop changes
   useEffect(() => {
@@ -74,7 +73,7 @@ export function TransactionDetailModal({
   // Fetch fresh transaction data
   const fetchTransaction = async () => {
     if (!transaction?.id) return;
-    
+
     try {
       const response = await fetch(`/api/transactions/${transaction.id}`);
       if (!response.ok) throw new Error('Failed to fetch transaction');
@@ -236,6 +235,7 @@ export function TransactionDetailModal({
                 <DetailModalHeader
                   onEdit={() => setIsEditing(true)}
                   onDelete={() => setShowDeleteDialog(true)}
+                  onClose={() => onOpenChange(false)}
                   canEdit={!isLoanTransaction}
                   editDisabledReason="Loan transactions cannot be edited directly. Please edit the loan instead."
                   onViewLoan={handleViewLoan}
@@ -412,7 +412,7 @@ export function TransactionDetailModal({
       </Dialog>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent showClose>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
             <AlertDialogDescription>
