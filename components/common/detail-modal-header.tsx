@@ -1,11 +1,12 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2, CheckCircle, Wallet, Eye } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle, Wallet, Eye, X } from 'lucide-react';
 
 interface DetailModalHeaderProps {
   onEdit: () => void;
   onDelete: () => void;
+  onClose?: () => void;
   canEdit?: boolean;
   editDisabledReason?: string;
   onComplete?: () => void;
@@ -19,6 +20,7 @@ interface DetailModalHeaderProps {
 export function DetailModalHeader({
   onEdit,
   onDelete,
+  onClose,
   canEdit = true,
   editDisabledReason,
   onComplete,
@@ -68,6 +70,12 @@ export function DetailModalHeader({
         <Trash2 className="h-4 w-4 mr-2" />
         Delete
       </Button>
+      {onClose && (
+        <Button variant="outline" size="sm" onClick={onClose}>
+          <X className="h-4 w-4 mr-2" />
+          Close
+        </Button>
+      )}
     </div>
   );
 }
