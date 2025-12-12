@@ -54,6 +54,10 @@ export function MultipleInterestManager({
 }: MultipleInterestManagerProps) {
   const [mode, setMode] = useState<'single' | 'multiple'>(initialMode);
   const [userOverrodeAutoMode, setUserOverrodeAutoMode] = useState(false);
+  // Track if we're in edit mode (have initial periods from existing loan)
+  const [isEditMode] = useState(
+    initialPeriods && initialPeriods.length > 0
+  );
   const [periods, setPeriods] = useState<InterestPeriodData[]>(() => {
     if (initialPeriods && initialPeriods.length > 0) {
       return initialPeriods;
@@ -79,24 +83,31 @@ export function MultipleInterestManager({
 
   // Automatically switch to multiple interest mode if dates span more than 1 month + 15 days
   // Only do this if the user hasn't manually overridden the automatic behavior
+  // AND we're not in edit mode (don't auto-switch when editing existing loans)
   useEffect(() => {
-    if (!userOverrodeAutoMode && sentDate && loanDueDate && isMoreThanOneMonthAndFifteenDays(sentDate, loanDueDate)) {
+    if (!isEditMode && !userOverrodeAutoMode && sentDate && loanDueDate && isMoreThanOneMonthAndFifteenDays(sentDate, loanDueDate)) {
       if (mode === 'single') {
         setMode('multiple');
         onModeChange('multiple');
       }
     }
-  }, [sentDate, loanDueDate, userOverrodeAutoMode, mode]);
+  }, [sentDate, loanDueDate, userOverrodeAutoMode, mode, isEditMode]);
 
   // Update periods when sent date or due date changes (for multiple interest mode)
+  // ONLY do this on CREATE, not on UPDATE (when isEditMode is true)
   useEffect(() => {
+    // Skip auto-generation if we're editing an existing loan with periods
+    if (isEditMode) {
+      return;
+    }
+
     if (mode === 'multiple' && sentDate && loanDueDate) {
       const defaultPeriods = generateDefaultInterestPeriods(
         sentDate,
         loanDueDate
       );
 
-      // Always regenerate periods when dates change
+      // Always regenerate periods when dates change (only on create)
       const newPeriods = defaultPeriods.map((period, index) => {
         // Try to preserve existing period data if available
         const existingPeriod = periods[index];
@@ -121,10 +132,16 @@ export function MultipleInterestManager({
         onPeriodsChange(newPeriods);
       }
     }
-  }, [sentDate, loanDueDate, mode]);
+  }, [sentDate, loanDueDate, mode, isEditMode]);
 
   // Ensure the last period (Final Due Date) always has the loan due date
+  // ONLY do this on CREATE, not on UPDATE (when isEditMode is true)
   useEffect(() => {
+    // Skip auto-update if we're editing an existing loan with periods
+    if (isEditMode) {
+      return;
+    }
+
     if (mode === 'multiple' && periods.length > 0 && loanDueDate) {
       const lastPeriod = periods[periods.length - 1];
       if (lastPeriod.dueDate !== loanDueDate) {
@@ -137,7 +154,7 @@ export function MultipleInterestManager({
         onPeriodsChange(updatedPeriods);
       }
     }
-  }, [loanDueDate, mode, periods]);
+  }, [loanDueDate, mode, periods, isEditMode]);
 
   // Calculate interest amount when rate or amount changes
   useEffect(() => {
