@@ -29,7 +29,11 @@ Todos & Improvements:
   -✅ When we are on desktop view, we should not make the table rows clickable. We should only open the loan/transaction detail modal if we click on "View" action button. Only on mobile view we can open the modal upon row click.
 - Support partially paid process for loans
 - Loan with multiple interest where we have overdue on a period is still Overdue status after I completed the overdue period. Ex. Del Carmen, Lubao
-- We have major issue when updating existing loans, the periods are updating because of auto set of period that we have instead of getting the existing periods. It also seems that the periods distribution on 2nd and final periods. Only do the multiple period interest distribution on create and not on UPDATE so that do don't modify existing periods
+- ✅ We have major issue when updating existing loans, the periods are updating because of auto set of period that we have instead of getting the existing periods. It also seems that the periods distribution on 2nd and final periods. Only do the multiple period interest distribution on create and not on UPDATE so that do don't modify existing periods
 - Update Status to Partially Paid when we a loan have multiple periods a period is marked a completed
 - Let's remove the update every transaction implementation for every loan/transaction create/update. I don't think we still need it.
 - We are showing investors that's not in a loan when we copy investor detail
+- Improve responsiveness of action buttons on modal
+- Let's revert and enable close modal on outside click and just prevent modal on outside click ONLY if we are submitting the form or we have dirty changes from the form
+- Let's update the date format from DD/MM/YYYY to MM/DD/YYYY on calendar picker input
+- It seems that the update transaction detection is not properly working because when I ONLY edit a notes from a loan, it's still updating every transaction.
