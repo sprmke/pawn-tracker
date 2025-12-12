@@ -192,132 +192,136 @@ export async function PUT(
           console.error('Error recalculating balances after deletion:', error);
         }
       }
-    }
 
-    // Fetch existing interest periods before deleting (to preserve completed statuses)
-    const existingLoanInvestors = await db.query.loanInvestors.findMany({
-      where: eq(loanInvestors.loanId, loanId),
-      with: {
-        interestPeriods: true,
-      },
-    });
+      // Fetch existing interest periods before deleting (to preserve completed statuses)
+      const existingLoanInvestors = await db.query.loanInvestors.findMany({
+        where: eq(loanInvestors.loanId, loanId),
+        with: {
+          interestPeriods: true,
+        },
+      });
 
-    // Create a map of existing periods by investor and due date for easy lookup
-    const existingPeriodsMap = new Map<
-      string,
-      { status: string; interestRate: string; interestType: string }
-    >();
-    existingLoanInvestors.forEach((li) => {
-      if (li.interestPeriods) {
-        li.interestPeriods.forEach((period) => {
-          const key = `${li.investorId}-${period.dueDate.toISOString()}`;
-          existingPeriodsMap.set(key, {
-            status: period.status,
-            interestRate: period.interestRate,
-            interestType: period.interestType,
+      // Create a map of existing periods by investor and due date for easy lookup
+      const existingPeriodsMap = new Map<
+        string,
+        { status: string; interestRate: string; interestType: string }
+      >();
+      existingLoanInvestors.forEach((li) => {
+        if (li.interestPeriods) {
+          li.interestPeriods.forEach((period) => {
+            const key = `${li.investorId}-${period.dueDate.toISOString()}`;
+            existingPeriodsMap.set(key, {
+              status: period.status,
+              interestRate: period.interestRate,
+              interestType: period.interestType,
+            });
           });
-        });
-      }
-    });
+        }
+      });
 
-    // Delete existing loan investors (cascade will delete interest periods)
-    await db.delete(loanInvestors).where(eq(loanInvestors.loanId, loanId));
+      // Delete existing loan investors (cascade will delete interest periods)
+      await db.delete(loanInvestors).where(eq(loanInvestors.loanId, loanId));
 
-    // Insert updated loan investors
-    if (investorData && investorData.length > 0) {
-      const loanInvestorData = investorData.map((inv: any) => ({
-        loanId,
-        investorId: Number(inv.investorId),
-        amount: String(inv.amount),
-        interestRate: inv.interestRate ? String(inv.interestRate) : '0',
-        interestType: inv.interestType || 'rate',
-        sentDate: new Date(inv.sentDate),
-        isPaid: inv.isPaid ?? true, // Default to true for backward compatibility
-        hasMultipleInterest: inv.hasMultipleInterest || false,
-      }));
+      // Insert updated loan investors
+      if (investorData && investorData.length > 0) {
+        const loanInvestorData = investorData.map((inv: any) => ({
+          loanId,
+          investorId: Number(inv.investorId),
+          amount: String(inv.amount),
+          interestRate: inv.interestRate ? String(inv.interestRate) : '0',
+          interestType: inv.interestType || 'rate',
+          sentDate: new Date(inv.sentDate),
+          isPaid: inv.isPaid ?? true, // Default to true for backward compatibility
+          hasMultipleInterest: inv.hasMultipleInterest || false,
+        }));
 
-      const insertedLoanInvestors = await db
-        .insert(loanInvestors)
-        .values(loanInvestorData)
-        .returning();
+        const insertedLoanInvestors = await db
+          .insert(loanInvestors)
+          .values(loanInvestorData)
+          .returning();
 
-      // Insert interest periods if any
-      // Group by investor to avoid inserting periods multiple times for the same investor
-      const processedInvestors = new Set<number>();
+        // Insert interest periods if any
+        // Group by investor to avoid inserting periods multiple times for the same investor
+        const processedInvestors = new Set<number>();
 
-      for (let i = 0; i < investorData.length; i++) {
-        const inv = investorData[i];
-        const investorId = Number(inv.investorId);
+        for (let i = 0; i < investorData.length; i++) {
+          const inv = investorData[i];
+          const investorId = Number(inv.investorId);
 
-        console.log(`Processing investor ${i} (ID: ${investorId}):`, {
-          hasMultipleInterest: inv.hasMultipleInterest,
-          interestPeriodsLength: inv.interestPeriods?.length || 0,
-          interestPeriods: inv.interestPeriods,
-          alreadyProcessed: processedInvestors.has(investorId),
-        });
+          console.log(`Processing investor ${i} (ID: ${investorId}):`, {
+            hasMultipleInterest: inv.hasMultipleInterest,
+            interestPeriodsLength: inv.interestPeriods?.length || 0,
+            interestPeriods: inv.interestPeriods,
+            alreadyProcessed: processedInvestors.has(investorId),
+          });
 
-        // Only insert interest periods once per investor (skip if already processed)
-        if (
-          !processedInvestors.has(investorId) &&
-          inv.hasMultipleInterest &&
-          inv.interestPeriods &&
-          inv.interestPeriods.length > 0
-        ) {
-          const loanInvestorId = insertedLoanInvestors[i].id;
-          const periodData = inv.interestPeriods.map((period: any) => {
-            const dueDate = new Date(period.dueDate);
-            const newInterestRate = String(period.interestRate);
-            const newInterestType = period.interestType || 'rate';
+          // Only insert interest periods once per investor (skip if already processed)
+          if (
+            !processedInvestors.has(investorId) &&
+            inv.hasMultipleInterest &&
+            inv.interestPeriods &&
+            inv.interestPeriods.length > 0
+          ) {
+            const loanInvestorId = insertedLoanInvestors[i].id;
+            const periodData = inv.interestPeriods.map((period: any) => {
+              const dueDate = new Date(period.dueDate);
+              const newInterestRate = String(period.interestRate);
+              const newInterestType = period.interestType || 'rate';
 
-            // Check if this period existed before with same date/rate
-            const key = `${investorId}-${dueDate.toISOString()}`;
-            const existingPeriod = existingPeriodsMap.get(key);
+              // Check if this period existed before with same date/rate
+              const key = `${investorId}-${dueDate.toISOString()}`;
+              const existingPeriod = existingPeriodsMap.get(key);
 
-            // Preserve completed status only if date and rate haven't changed
-            let status: 'Pending' | 'Completed' | 'Overdue' = 'Pending';
-            if (existingPeriod) {
-              const rateChanged =
-                existingPeriod.interestRate !== newInterestRate;
-              const typeChanged =
-                existingPeriod.interestType !== newInterestType;
+              // Preserve completed status only if date and rate haven't changed
+              let status: 'Pending' | 'Completed' | 'Overdue' = 'Pending';
+              if (existingPeriod) {
+                const rateChanged =
+                  existingPeriod.interestRate !== newInterestRate;
+                const typeChanged =
+                  existingPeriod.interestType !== newInterestType;
 
-              // If nothing changed and it was completed, keep it completed
-              if (
-                !rateChanged &&
-                !typeChanged &&
-                existingPeriod.status === 'Completed'
-              ) {
-                status = 'Completed';
-              } else if (
-                existingPeriod.status === 'Overdue' &&
-                !rateChanged &&
-                !typeChanged
-              ) {
-                // Also preserve Overdue status if rate/type unchanged
-                status = 'Overdue';
+                // If nothing changed and it was completed, keep it completed
+                if (
+                  !rateChanged &&
+                  !typeChanged &&
+                  existingPeriod.status === 'Completed'
+                ) {
+                  status = 'Completed';
+                } else if (
+                  existingPeriod.status === 'Overdue' &&
+                  !rateChanged &&
+                  !typeChanged
+                ) {
+                  // Also preserve Overdue status if rate/type unchanged
+                  status = 'Overdue';
+                }
               }
-            }
 
-            return {
+              return {
+                loanInvestorId,
+                dueDate,
+                interestRate: newInterestRate,
+                interestType: newInterestType,
+                status,
+              };
+            });
+
+            console.log(
+              'Inserting interest periods for loanInvestorId:',
               loanInvestorId,
-              dueDate,
-              interestRate: newInterestRate,
-              interestType: newInterestType,
-              status,
-            };
-          });
+              periodData
+            );
+            await db.insert(interestPeriods).values(periodData);
+            console.log('Interest periods inserted successfully');
 
-          console.log(
-            'Inserting interest periods for loanInvestorId:',
-            loanInvestorId,
-            periodData
-          );
-          await db.insert(interestPeriods).values(periodData);
-          console.log('Interest periods inserted successfully');
-
-          processedInvestors.add(investorId);
+            processedInvestors.add(investorId);
+          }
         }
       }
+    } else {
+      console.log(
+        'Skipping loan investor deletion/recreation - no computational changes detected'
+      );
     }
 
     // Fetch the updated loan with investors
