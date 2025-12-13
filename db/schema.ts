@@ -69,6 +69,7 @@ export const loans = pgTable('loans', {
   dueDate: timestamp('due_date').notNull(),
   freeLotSqm: integer('free_lot_sqm'),
   notes: text('notes'),
+  googleCalendarEventIds: jsonb('google_calendar_event_ids'), // Store array of event IDs for sent/due/interest events
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
