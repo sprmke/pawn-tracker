@@ -59,6 +59,7 @@ import {
   PageHeader,
   DateListWithViewMore,
   ExportButton,
+  SyncCalendarButton,
 } from '@/components/common';
 
 type SortField =
@@ -470,6 +471,7 @@ export default function LoansPage() {
               showCalendar={true}
               hasData={loans.length > 0}
             />
+            <SyncCalendarButton variant="outline" size="default" />
             <ExportButton
               data={loans}
               filteredData={sortedLoans}
