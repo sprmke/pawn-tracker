@@ -37,3 +37,4 @@ Todos & Improvements:
 - Let's revert and enable close modal on outside click and just prevent modal on outside click ONLY if we are submitting the form or we have dirty changes from the form
 - Let's update the date format from DD/MM/YYYY to MM/DD/YYYY on calendar picker input
 - It seems that the update transaction detection is not properly working because when I ONLY edit a notes from a loan, it's still updating every transaction.
+- Let's support query filter by day and so that we can connect it on Google calendar when we click Daily Summary link
