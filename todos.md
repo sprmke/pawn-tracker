@@ -38,3 +38,5 @@ Todos & Improvements:
 - Let's update the date format from DD/MM/YYYY to MM/DD/YYYY on calendar picker input
 - It seems that the update transaction detection is not properly working because when I ONLY edit a notes from a loan, it's still updating every transaction.
 - Let's support query filter by day and so that we can connect it on Google calendar when we click Daily Summary link
+- Improve export UX when we click Export, we will show a modal that displays all table columns on that page. By default, all columns are checked. User can uncheck column that they don't want to be included on exported CSV.
+- Update logo
