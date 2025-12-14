@@ -32,6 +32,7 @@ export {
 } from './action-buttons';
 export { Logo } from './logo';
 export { ExportButton } from './export-button';
+export { SyncCalendarButton } from './sync-calendar-button';
 
 // Calendar components
 export * from './calendar';
