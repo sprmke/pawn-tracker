@@ -9,6 +9,10 @@ import {
   recalculateInvestorBalances,
   updateLoanTransactionCounters,
 } from '@/lib/loan-transactions';
+import {
+  generateLoanCalendarEvents,
+  deleteMultipleCalendarEvents,
+} from '@/lib/google-calendar';
 import { hasLoanAccess } from '@/lib/access-control';
 import { requiresTransactionRegeneration } from '@/lib/loan-update-detector';
 
@@ -386,6 +390,32 @@ export async function PUT(
       }
     }
 
+    // Update Google Calendar events
+    try {
+      // Delete existing calendar events if any
+      const existingEventIds = existingLoan.googleCalendarEventIds as string[] | null;
+      if (existingEventIds && existingEventIds.length > 0) {
+        await deleteMultipleCalendarEvents(existingEventIds);
+        console.log('Deleted existing calendar events');
+      }
+
+      // Generate new calendar events
+      if (updatedLoan) {
+        const calendarEventIds = await generateLoanCalendarEvents(updatedLoan);
+        if (calendarEventIds.length > 0) {
+          // Update loan with new calendar event IDs
+          await db
+            .update(loans)
+            .set({ googleCalendarEventIds: calendarEventIds })
+            .where(eq(loans.id, loanId));
+          console.log('Calendar events updated for loan:', calendarEventIds);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating calendar events for loan:', error);
+      // Don't fail the loan update if calendar event update fails
+    }
+
     return NextResponse.json(updatedLoan);
   } catch (error) {
     console.error('Error updating loan:', error);
@@ -428,6 +458,18 @@ export async function DELETE(
 
     if (!existingLoan) {
       return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
+    }
+
+    // Delete Google Calendar events first
+    try {
+      const existingEventIds = existingLoan.googleCalendarEventIds as string[] | null;
+      if (existingEventIds && existingEventIds.length > 0) {
+        await deleteMultipleCalendarEvents(existingEventIds);
+        console.log('Deleted calendar events for loan');
+      }
+    } catch (error) {
+      console.error('Error deleting calendar events:', error);
+      // Don't fail the loan deletion if calendar event deletion fails
     }
 
     // Delete associated transactions first and get affected investors
