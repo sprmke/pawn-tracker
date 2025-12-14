@@ -4,6 +4,17 @@ A comprehensive web application for tracking pawn business loans and investor tr
 
 ## Features
 
+### Google Calendar Integration
+
+- **Automatic calendar event creation** for all loan events:
+  - 📤 **Disbursement events** (sent dates) with investor details
+  - 📅 **Due date events** with principal and interest breakdown
+  - 💰 **Interest due events** for loans with multiple interest periods
+- **Investor notifications**: All investors are automatically added as attendees and receive email notifications
+- **Complete loan information**: Events include detailed loan data, amounts, and investor breakdowns
+- **Automatic synchronization**: Events are created, updated, and deleted automatically with loan changes
+- **Easy setup**: See [GOOGLE_CALENDAR_SETUP.md](./GOOGLE_CALENDAR_SETUP.md) for detailed setup instructions
+
 ### Module 1: Pawn Tracker
 
 - **Create and manage loans** with detailed information:
