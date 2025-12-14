@@ -27,7 +27,10 @@ export function SyncCalendarButton({
   const [syncing, setSyncing] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
 
-  const handleSync = async () => {
+  const handleSync = async (e: React.MouseEvent) => {
+    // Prevent the AlertDialogAction from closing the dialog
+    e.preventDefault();
+
     try {
       setSyncing(true);
       // Keep dialog open during sync
@@ -99,43 +102,32 @@ export function SyncCalendarButton({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {syncing
-                ? 'Syncing to Google Calendar...'
-                : 'Sync Loans to Google Calendar?'}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Sync Loans to Google Calendar?</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-2">
-                {syncing ? (
-                  <>
-                    <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 font-medium">
+              <div className="space-y-3">
+                <div>
+                  This will sync all your loans with Google Calendar. The
+                  following events will be created:
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>📊 Daily summary events</li>
+                  <li>📤 Disbursement events (sent dates)</li>
+                  <li>📅 Due date events</li>
+                  <li>💰 Interest due events (for multi-period loans)</li>
+                </ul>
+
+                {syncing && (
+                  <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-md p-3 mt-3">
+                    <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 font-medium mb-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Syncing in progress...</span>
                     </div>
-                    <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-md p-3 mt-3">
-                      <p className="text-sm text-orange-800 dark:text-orange-200 font-medium">
-                        ⚠️ Please do not close this window or refresh the page
-                        while syncing is in progress.
-                      </p>
-                      <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
-                        This may take a few moments depending on the number of
-                        loans.
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      This will sync all your loans with Google Calendar. The
-                      following events will be created:
-                    </div>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      <li>📊 Daily summary events</li>
-                      <li>📤 Disbursement events (sent dates)</li>
-                      <li>📅 Due date events</li>
-                      <li>💰 Interest due events (for multi-period loans)</li>
-                    </ul>
-                  </>
+                    <p className="text-sm text-orange-800 dark:text-orange-200 font-medium"></p>
+                    <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                      This may take a few moments... Please do not close this
+                      window or refresh the page while syncing is in progress.
+                    </p>
+                  </div>
                 )}
               </div>
             </AlertDialogDescription>
