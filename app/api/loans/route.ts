@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { loans, loanInvestors, investors, interestPeriods } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateLoanTransactions } from '@/lib/loan-transactions';
+import { generateLoanCalendarEvents } from '@/lib/google-calendar';
 import { auth } from '@/auth';
 
 export async function GET() {
@@ -205,6 +206,24 @@ export async function POST(request: Request) {
     } catch (error) {
       console.error('Error creating transactions for loan:', error);
       // Don't fail the loan creation if transaction creation fails
+    }
+
+    // Generate Google Calendar events for the loan
+    try {
+      if (completeLoan) {
+        const calendarEventIds = await generateLoanCalendarEvents(completeLoan);
+        if (calendarEventIds.length > 0) {
+          // Update loan with calendar event IDs
+          await db
+            .update(loans)
+            .set({ googleCalendarEventIds: calendarEventIds })
+            .where(eq(loans.id, loanId));
+          console.log('Calendar events created for loan:', calendarEventIds);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating calendar events for loan:', error);
+      // Don't fail the loan creation if calendar event creation fails
     }
 
     return NextResponse.json(completeLoan, { status: 201 });
