@@ -5,6 +5,7 @@ import { toast } from '@/lib/toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, X, MoreVertical, Copy } from 'lucide-react';
 import {
@@ -449,13 +450,9 @@ export function MultipleInterestManager({
 
                   <div className="space-y-2">
                     <Label className="text-xs">Due Date</Label>
-                    <Input
-                      type="date"
+                    <DatePicker
                       value={isLastPeriod ? loanDueDate : period.dueDate}
-                      min={sentDate || undefined}
-                      max={loanDueDate || undefined}
-                      onChange={(e) => {
-                        const newDate = e.target.value;
+                      onChange={(newDate) => {
                         // Check if date is already used by another period
                         const isDateUsed = periods.some(
                           (p) => p.id !== period.id && p.dueDate === newDate
