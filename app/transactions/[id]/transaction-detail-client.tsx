@@ -11,6 +11,7 @@ import { DetailHeader } from '@/components/common';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -157,12 +158,11 @@ export function TransactionDetailClient({
 
               <div className="space-y-2">
                 <Label htmlFor="date">Date *</Label>
-                <Input
+                <DatePicker
                   id="date"
-                  type="date"
                   value={formData.date}
-                  onChange={(e) =>
-                    setFormData({ ...formData, date: e.target.value })
+                  onChange={(date) =>
+                    setFormData({ ...formData, date })
                   }
                 />
               </div>
