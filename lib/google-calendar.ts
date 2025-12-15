@@ -114,11 +114,7 @@ function createEventDescription(eventData: CalendarEventData): string {
       description += `\n<b>Total: +${formatCurrency(totalAmount || 0)}</b>\n`;
     } else if (type === 'interest_due') {
       description += `Investor: ${investorName}\n`;
-      description += `Principal: +${formatCurrency(principal || 0)}\n`;
-      description += `Interest: +${formatCurrency(interest || 0)}\n`;
-      description += `\n<b>Total: +${formatCurrency(
-        (principal || 0) + (interest || 0)
-      )}</b>\n`;
+      description += `\n<b>Total: +${formatCurrency(interest || 0)}</b>\n`;
     }
 
     if (loan.notes) {
@@ -145,13 +141,13 @@ function createEventSummary(eventData: CalendarEventData): string {
     } else if (type === 'due') {
       return `${loan.type}: ${
         loan.loanName
-      } - Due Date (${investorName}: +${formatCurrency(totalAmount || 0)})`;
+      } - Due Date (${investorName} +${formatCurrency(totalAmount || 0)})`;
     } else if (type === 'interest_due') {
-      const interestTotal =
-        (eventData.principal || 0) + (eventData.interest || 0);
       return `${loan.type}: ${
         loan.loanName
-      } - Interest Due (${investorName}: +${formatCurrency(interestTotal)})`;
+      } - Interest Due (${investorName} +${formatCurrency(
+        eventData.interest || 0
+      )})`;
     }
     return loan.loanName;
   }
@@ -392,7 +388,15 @@ export async function generateLoanCalendarEvents(
           li.interestPeriods &&
           li.interestPeriods.length > 0
         ) {
-          for (const period of li.interestPeriods) {
+          // Sort periods by due date to find the last one
+          const sortedPeriods = [...li.interestPeriods].sort(
+            (a, b) =>
+              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+          );
+
+          for (let i = 0; i < sortedPeriods.length; i++) {
+            const period = sortedPeriods[i];
+            const isLastPeriod = i === sortedPeriods.length - 1;
             const principal = parseFloat(li.amount);
             let interest = 0;
 
@@ -403,16 +407,32 @@ export async function generateLoanCalendarEvents(
               interest = parseFloat(period.interestRate);
             }
 
-            const eventId = await createCalendarEvent({
-              type: 'interest_due',
-              date: new Date(period.dueDate),
-              loan,
-              investorName: li.investor.name,
-              principal,
-              interest,
-              loanInvestorId: li.id,
-              interestPeriodId: period.id,
-            });
+            let eventId;
+            if (isLastPeriod) {
+              // Last period: create a "due" event with principal + interest
+              eventId = await createCalendarEvent({
+                type: 'due',
+                date: new Date(period.dueDate),
+                loan,
+                investorName: li.investor.name,
+                totalPrincipal: principal,
+                totalInterest: interest,
+                totalAmount: principal + interest,
+                loanInvestorId: li.id,
+                interestPeriodId: period.id,
+              });
+            } else {
+              // Other periods: create "interest_due" event with interest only
+              eventId = await createCalendarEvent({
+                type: 'interest_due',
+                date: new Date(period.dueDate),
+                loan,
+                investorName: li.investor.name,
+                interest,
+                loanInvestorId: li.id,
+                interestPeriodId: period.id,
+              });
+            }
 
             if (eventId) {
               eventIds.push(eventId);
@@ -528,7 +548,15 @@ export async function generateAllLoansCalendarEvents(
             li.interestPeriods &&
             li.interestPeriods.length > 0
           ) {
-            for (const period of li.interestPeriods) {
+            // Sort periods by due date to find the last one
+            const sortedPeriods = [...li.interestPeriods].sort(
+              (a, b) =>
+                new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+            );
+
+            for (let i = 0; i < sortedPeriods.length; i++) {
+              const period = sortedPeriods[i];
+              const isLastPeriod = i === sortedPeriods.length - 1;
               const dateKey = toLocalDateString(period.dueDate);
               const principal = parseFloat(li.amount);
               let interest = 0;
@@ -538,7 +566,11 @@ export async function generateAllLoansCalendarEvents(
               } else {
                 interest = parseFloat(period.interestRate);
               }
-              const totalAmount = principal + interest;
+
+              // Last period: principal + interest, Other periods: interest only
+              const totalAmount = isLastPeriod
+                ? principal + interest
+                : interest;
 
               if (!dailyEvents.has(dateKey)) {
                 dailyEvents.set(dateKey, {
