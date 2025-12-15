@@ -222,3 +222,44 @@ export function getTodayAtMidnight(): Date {
   today.setHours(0, 0, 0, 0);
   return today;
 }
+
+/**
+ * Format a date to MM/DD/YYYY string
+ * This is the display format for date pickers
+ */
+export function formatToMMDDYYYY(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${month}/${day}/${year}`;
+}
+
+/**
+ * Parse MM/DD/YYYY string to YYYY-MM-DD string
+ * Returns empty string if invalid
+ */
+export function parseMMDDYYYY(dateString: string): string {
+  const match = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return '';
+  
+  const [, month, day, year] = match;
+  const monthNum = parseInt(month, 10);
+  const dayNum = parseInt(day, 10);
+  const yearNum = parseInt(year, 10);
+
+  // Validate date
+  if (monthNum >= 1 && monthNum <= 12 && dayNum >= 1 && dayNum <= 31) {
+    const date = new Date(yearNum, monthNum - 1, dayNum);
+    // Check if the date is valid (handles invalid dates like 02/31/2024)
+    if (
+      date.getFullYear() === yearNum &&
+      date.getMonth() === monthNum - 1 &&
+      date.getDate() === dayNum
+    ) {
+      return `${year}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+    }
+  }
+  
+  return '';
+}
