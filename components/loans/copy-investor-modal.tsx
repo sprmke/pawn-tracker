@@ -324,6 +324,7 @@ export function CopyInvestorModal({
                     const isChecked = checkedInvestorIds.includes(investor.id);
                     const currentlyMatches = hasMatchingConfig(investor.id);
                     const isDisabled = isChecked && currentlyMatches;
+                    const isAlreadyAdded = selectedInvestorIds.includes(investor.id);
 
                     return (
                       <div
@@ -346,8 +347,13 @@ export function CopyInvestorModal({
                               : 'cursor-pointer'
                           }`}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span>{investor.name}</span>
+                            {isAlreadyAdded && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                Added
+                              </span>
+                            )}
                             {currentlyMatches && isChecked && (
                               <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded">
                                 Same config
