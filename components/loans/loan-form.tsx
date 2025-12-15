@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -888,7 +889,11 @@ export function LoanForm({
 
             <div className="space-y-2">
               <Label htmlFor="dueDate">Due Date *</Label>
-              <Input id="dueDate" type="date" {...register('dueDate')} />
+              <DatePicker
+                id="dueDate"
+                value={watchDueDate}
+                onChange={(date) => setValue('dueDate', date)}
+              />
               {errors.dueDate && (
                 <p className="text-sm text-red-600">{errors.dueDate.message}</p>
               )}
