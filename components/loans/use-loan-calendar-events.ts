@@ -64,7 +64,14 @@ export function useLoanCalendarEvents(loans: LoanWithInvestors[]) {
             li.interestPeriods &&
             li.interestPeriods.length > 0
           ) {
-            li.interestPeriods.forEach((period) => {
+            // Sort periods by due date to find the last one
+            const sortedPeriods = [...li.interestPeriods].sort(
+              (a, b) =>
+                new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+            );
+
+            sortedPeriods.forEach((period, index) => {
+              const isLastPeriod = index === sortedPeriods.length - 1;
               const principal = parseFloat(li.amount);
               let interest = 0;
 
@@ -75,16 +82,29 @@ export function useLoanCalendarEvents(loans: LoanWithInvestors[]) {
                 interest = parseFloat(period.interestRate);
               }
 
-              events.push({
-                type: 'interest_due',
-                loan,
-                loanInvestor: li,
-                interestPeriod: period,
-                date: new Date(period.dueDate),
-                principal,
-                interest,
-                totalAmount: principal + interest,
-              } as CalendarEventInterestDue);
+              if (isLastPeriod) {
+                // Last period: create a "due" event with principal + interest
+                events.push({
+                  type: 'due',
+                  loan,
+                  date: new Date(period.dueDate),
+                  totalPrincipal: principal,
+                  totalInterest: interest,
+                  totalAmount: principal + interest,
+                } as CalendarEventDue);
+              } else {
+                // Other periods: create "interest_due" event with interest only
+                events.push({
+                  type: 'interest_due',
+                  loan,
+                  loanInvestor: li,
+                  interestPeriod: period,
+                  date: new Date(period.dueDate),
+                  principal,
+                  interest,
+                  totalAmount: interest,
+                } as CalendarEventInterestDue);
+              }
             });
           }
         });
