@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -584,10 +585,10 @@ export function TransactionForm({
 
                 <div className="space-y-2">
                   <Label htmlFor="transactionDate">Transaction Date *</Label>
-                  <Input
+                  <DatePicker
                     id="transactionDate"
-                    type="date"
-                    {...register('transactionDate')}
+                    value={watchTransactionDate}
+                    onChange={(date) => setValue('transactionDate', date)}
                   />
                   <p className="text-xs text-muted-foreground">
                     This will be used for succeeding dates.
@@ -718,7 +719,11 @@ export function TransactionForm({
 
                 <div className="space-y-2">
                   <Label htmlFor="loanDate">Loan Date *</Label>
-                  <Input id="loanDate" type="date" {...register('loanDate')} />
+                  <DatePicker
+                    id="loanDate"
+                    value={watchLoanDate}
+                    onChange={(date) => setValue('loanDate', date)}
+                  />
                   {errors.loanDate && (
                     <p className="text-sm text-red-600">
                       {String(errors.loanDate.message)}
@@ -730,7 +735,11 @@ export function TransactionForm({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="dueDates">Due Dates *</Label>
-                  <Input id="dueDates" type="date" {...register('dueDates')} />
+                  <DatePicker
+                    id="dueDates"
+                    value={watchDueDates}
+                    onChange={(date) => setValue('dueDates', date)}
+                  />
                   <p className="text-xs text-muted-foreground">
                     These will be used for succeeding due dates.
                   </p>
