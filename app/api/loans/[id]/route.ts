@@ -390,20 +390,19 @@ export async function PUT(
       }
     }
 
-    // Update Google Calendar events
+    // Update Google Calendar events for THIS loan only
     try {
-      // Delete existing calendar events if any
+      // Delete existing calendar events for this loan
       const existingEventIds = existingLoan.googleCalendarEventIds as string[] | null;
       if (existingEventIds && existingEventIds.length > 0) {
         await deleteMultipleCalendarEvents(existingEventIds);
-        console.log('Deleted existing calendar events');
+        console.log('Deleted existing calendar events for loan');
       }
 
-      // Generate new calendar events
+      // Generate new calendar events for this loan
       if (updatedLoan) {
         const calendarEventIds = await generateLoanCalendarEvents(updatedLoan);
         if (calendarEventIds.length > 0) {
-          // Update loan with new calendar event IDs
           await db
             .update(loans)
             .set({ googleCalendarEventIds: calendarEventIds })
@@ -460,18 +459,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
     }
 
-    // Delete Google Calendar events first
-    try {
-      const existingEventIds = existingLoan.googleCalendarEventIds as string[] | null;
-      if (existingEventIds && existingEventIds.length > 0) {
-        await deleteMultipleCalendarEvents(existingEventIds);
-        console.log('Deleted calendar events for loan');
-      }
-    } catch (error) {
-      console.error('Error deleting calendar events:', error);
-      // Don't fail the loan deletion if calendar event deletion fails
-    }
-
     // Delete associated transactions first and get affected investors
     let affectedInvestorIds: number[] = [];
     let earliestDate: Date | null = null;
@@ -500,6 +487,18 @@ export async function DELETE(
     await db
       .delete(loans)
       .where(and(eq(loans.id, loanId), eq(loans.userId, session.user.id)));
+
+    // Delete Google Calendar events for this loan
+    try {
+      const existingEventIds = existingLoan.googleCalendarEventIds as string[] | null;
+      if (existingEventIds && existingEventIds.length > 0) {
+        await deleteMultipleCalendarEvents(existingEventIds);
+        console.log('Deleted calendar events for loan');
+      }
+    } catch (error) {
+      console.error('Error deleting calendar events:', error);
+      // Don't fail the loan deletion if calendar event deletion fails
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
