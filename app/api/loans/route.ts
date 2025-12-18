@@ -208,12 +208,11 @@ export async function POST(request: Request) {
       // Don't fail the loan creation if transaction creation fails
     }
 
-    // Generate Google Calendar events for the loan
+    // Generate Google Calendar events for this loan only
     try {
       if (completeLoan) {
         const calendarEventIds = await generateLoanCalendarEvents(completeLoan);
         if (calendarEventIds.length > 0) {
-          // Update loan with calendar event IDs
           await db
             .update(loans)
             .set({ googleCalendarEventIds: calendarEventIds })
