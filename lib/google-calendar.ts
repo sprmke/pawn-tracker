@@ -331,7 +331,63 @@ export async function deleteMultipleCalendarEvents(
   }
 }
 
-// Generate calendar events for a loan
+// Delete ALL events from Google Calendar (complete cleanup for fresh start)
+export async function deleteAllCalendarEvents(): Promise<number> {
+  try {
+    if (
+      !process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ||
+      !process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+    ) {
+      console.warn(
+        'Google Calendar credentials not configured. Skipping calendar cleanup.'
+      );
+      return 0;
+    }
+
+    const calendar = getCalendarClient();
+    let deletedCount = 0;
+    let pageToken: string | undefined;
+
+    do {
+      // Get ALL events from the calendar
+      const response = await calendar.events.list({
+        calendarId: CALENDAR_ID,
+        maxResults: 250,
+        pageToken,
+        singleEvents: true,
+      });
+
+      const events = response.data.items || [];
+      console.log(`Found ${events.length} events to delete...`);
+
+      for (const event of events) {
+        if (event.id) {
+          try {
+            await calendar.events.delete({
+              calendarId: CALENDAR_ID,
+              eventId: event.id,
+              sendUpdates: 'none',
+            });
+            deletedCount++;
+            console.log(`Deleted: ${event.summary || 'Untitled'}`);
+          } catch (error) {
+            console.error(`Failed to delete event ${event.id}:`, error);
+          }
+        }
+      }
+
+      pageToken = response.data.nextPageToken || undefined;
+    } while (pageToken);
+
+    console.log(`Total deleted events: ${deletedCount}`);
+    return deletedCount;
+  } catch (error) {
+    console.error('Error deleting all calendar events:', error);
+    throw error;
+  }
+}
+
+// Generate calendar events for a loan (individual events only, no summaries)
 export async function generateLoanCalendarEvents(
   loan: LoanWithInvestors
 ): Promise<string[]> {
@@ -477,6 +533,7 @@ export async function generateLoanCalendarEvents(
 }
 
 // Generate calendar events for multiple loans with daily summaries
+// This is ONLY used for initial sync or bulk operations
 export async function generateAllLoansCalendarEvents(
   loans: LoanWithInvestors[]
 ): Promise<Map<number, string[]>> {
@@ -680,13 +737,10 @@ export async function generateAllLoansCalendarEvents(
         });
 
         if (eventId) {
-          // Add this summary event ID to all affected loans
-          for (const loan of uniqueLoans) {
-            const existingIds = loanEventIds.get(loan.id) || [];
-            // Push to the end so summary appears last
-            existingIds.push(eventId);
-            loanEventIds.set(loan.id, existingIds);
-          }
+          // NOTE: We intentionally do NOT add summary event IDs to individual loans
+          // Summary events are shared across loans and should not be deleted when
+          // updating a single loan. They are only managed during full sync operations.
+          console.log(`Created summary event for ${dateKey}: ${eventId}`);
         }
       }
     }
