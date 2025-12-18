@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import { Download, FileSpreadsheet, Filter } from 'lucide-react';
 import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/csv-export';
+import { ExportColumnsModal } from './export-columns-modal';
 
 interface ExportButtonProps<T> {
   data: T[];
@@ -25,17 +26,25 @@ export function ExportButton<T>({
   size = 'default',
   className = '',
 }: ExportButtonProps<T>) {
-  const handleExport = (exportAll: boolean) => {
-    const dataToExport = exportAll ? data : filteredData;
+  const [showColumnsModal, setShowColumnsModal] = useState(false);
+  const [exportAllData, setExportAllData] = useState(true);
+
+  const handleExportClick = (exportAll: boolean) => {
+    setExportAllData(exportAll);
+    setShowColumnsModal(true);
+  };
+
+  const handleExport = (selectedColumns: CSVColumn<T>[]) => {
+    const dataToExport = exportAllData ? data : filteredData;
 
     if (dataToExport.length === 0) {
       alert('No data to export');
       return;
     }
 
-    const csvContent = convertToCSV(dataToExport, columns);
+    const csvContent = convertToCSV(dataToExport, selectedColumns);
     const timestamp = new Date().toISOString().split('T')[0];
-    const exportType = exportAll ? 'all' : 'filtered';
+    const exportType = exportAllData ? 'all' : 'filtered';
     const fullFilename = `${filename}_${exportType}_${timestamp}.csv`;
 
     downloadCSV(csvContent, fullFilename);
@@ -43,47 +52,75 @@ export function ExportButton<T>({
 
   const hasFilters = data.length !== filteredData.length;
 
-  // If no filters are active, export directly without showing dropdown
+  // If no filters are active, show single button that opens modal
   if (!hasFilters) {
     return (
-      <Button
-        variant={variant}
-        size={size}
-        className={className}
-        onClick={() => handleExport(true)}
-      >
-        <Download className="mr-2 h-4 w-4" />
-        Export CSV
-      </Button>
+      <>
+        <Button
+          variant={variant}
+          size={size}
+          className={className}
+          onClick={() => handleExportClick(true)}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
+        <ExportColumnsModal
+          open={showColumnsModal}
+          onOpenChange={setShowColumnsModal}
+          columns={columns}
+          onExport={handleExport}
+          title="Select Columns to Export"
+          description={`Choose which columns you want to include in the exported CSV file. (${data.length} ${
+            data.length === 1 ? 'item' : 'items'
+          })`}
+        />
+      </>
     );
   }
 
   // If filters are active, show dropdown with both options
   return (
-    <DropdownMenu
-      trigger={
-        <Button variant={variant} size={size} className={className}>
-          <Download className="mr-2 h-4 w-4" />
-          Export CSV
-        </Button>
-      }
-      items={[
-        {
-          label: `Export All Data (${data.length} ${
-            data.length === 1 ? 'item' : 'items'
-          })`,
-          icon: <FileSpreadsheet className="h-4 w-4" />,
-          onClick: () => handleExport(true),
-        },
-        {
-          label: `Export Filtered Data (${filteredData.length} ${
-            filteredData.length === 1 ? 'item' : 'items'
-          })`,
-          icon: <Filter className="h-4 w-4" />,
-          onClick: () => handleExport(false),
-        },
-      ]}
-      align="end"
-    />
+    <>
+      <DropdownMenu
+        trigger={
+          <Button variant={variant} size={size} className={className}>
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        }
+        items={[
+          {
+            label: `Export All Data (${data.length} ${
+              data.length === 1 ? 'item' : 'items'
+            })`,
+            icon: <FileSpreadsheet className="h-4 w-4" />,
+            onClick: () => handleExportClick(true),
+          },
+          {
+            label: `Export Filtered Data (${filteredData.length} ${
+              filteredData.length === 1 ? 'item' : 'items'
+            })`,
+            icon: <Filter className="h-4 w-4" />,
+            onClick: () => handleExportClick(false),
+          },
+        ]}
+        align="end"
+      />
+      <ExportColumnsModal
+        open={showColumnsModal}
+        onOpenChange={setShowColumnsModal}
+        columns={columns}
+        onExport={handleExport}
+        title="Select Columns to Export"
+        description={`Choose which columns you want to include in the exported CSV file. (${
+          exportAllData ? data.length : filteredData.length
+        } ${
+          (exportAllData ? data.length : filteredData.length) === 1
+            ? 'item'
+            : 'items'
+        })`}
+      />
+    </>
   );
 }
