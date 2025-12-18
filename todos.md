@@ -38,7 +38,7 @@ Todos & Improvements:
 - ✅ Let's update the date format from DD/MM/YYYY to MM/DD/YYYY on calendar picker input (Implemented: Created custom DatePicker component using react-day-picker with MM/DD/YYYY format. Updated all date inputs across the application including loans, transactions, and interest periods.)
 - ✅ It seems that the update transaction detection is not properly working because when I ONLY edit a notes from a loan, it's still updating every transaction.
 - ✅ On Copy investor configuration, let's add a tag on investor if they are already added as investor to determine which investors are already added from a loan
-- Let's support query filter by day and so that we can connect it on Google calendar when we click Daily Summary link
+- Let's support query parameter filter by due date on the current day on loans page. So that we can connect it on Google calendar and user click Daily Summary 'View Loans' link, they will be redirected to our app and see all loans due on that day
 - ✅ Improve export UX when we click Export, we will show a modal that displays all table columns on that page. By default, all columns are checked. User can uncheck column that they don't want to be included on exported CSV.
 - Update logo
 - ✅ I noticed that when we update a loan, it deleted the daily summary event and not recreated it for all the days that we have that loan.
