@@ -44,10 +44,11 @@ export async function POST(request: Request) {
     }
 
     // Check if user has access to this loan
-    if (loan.userId !== session.user.id) {
+    const userId = session.user.id;
+    if (loan.userId !== userId) {
       // Check if user is an investor in this loan
       const isInvestor = loan.loanInvestors.some(
-        (li) => li.investor.investorUserId === session.user.id
+        (li) => li.investor.investorUserId === userId
       );
       if (!isInvestor) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
