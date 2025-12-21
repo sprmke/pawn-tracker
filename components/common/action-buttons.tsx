@@ -125,6 +125,7 @@ interface ActionButtonsGroupProps {
   onQuickView?: (e: React.MouseEvent) => void;
   showToggle?: boolean;
   showView?: boolean;
+  hideViewOnMobile?: boolean;
   size?: 'sm' | 'md';
   className?: string;
 }
@@ -137,6 +138,7 @@ export function ActionButtonsGroup({
   onQuickView,
   showToggle = true,
   showView = true,
+  hideViewOnMobile = true,
   size = 'sm',
   className = '',
 }: ActionButtonsGroupProps) {
@@ -168,7 +170,7 @@ export function ActionButtonsGroup({
           href={viewHref}
           size={size}
           onClick={onViewClick}
-          className={`${isCardSize ? 'flex-1' : ''} hidden lg:flex`}
+          className={`${isCardSize ? 'flex-1' : ''} ${hideViewOnMobile ? 'hidden lg:flex' : ''}`}
         />
       )}
     </div>
