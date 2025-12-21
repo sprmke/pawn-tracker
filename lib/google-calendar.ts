@@ -53,6 +53,7 @@ function formatCurrency(amount: number): string {
 function createEventDescription(eventData: CalendarEventData): string {
   const {
     type,
+    date,
     loan,
     loans,
     loanAmounts,
@@ -93,7 +94,10 @@ function createEventDescription(eventData: CalendarEventData): string {
     description += `<b>Total: ${sign}${formatCurrency(
       Math.abs(totalAmount || 0)
     )}</b>\n`;
-    description += `\n<a href="${appUrl}/loans">View All Loans</a>`;
+
+    // Add date parameter to the loans link for filtering
+    const dateStr = toLocalDateString(date);
+    description += `\n<a href="${appUrl}/loans?dueDate=${dateStr}">View Loans</a>`;
   } else if (loan) {
     const loanUrl = `${appUrl}/loans/${loan.id}`;
 
