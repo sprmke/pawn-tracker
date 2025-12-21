@@ -3,7 +3,7 @@
 import React from 'react';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -61,6 +61,7 @@ import {
   ExportButton,
   SyncCalendarButton,
 } from '@/components/common';
+import { toLocalDateString } from '@/lib/date-utils';
 
 type SortField =
   | 'loanName'
@@ -77,6 +78,7 @@ type SortDirection = 'asc' | 'desc';
 
 export default function LoansPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loans, setLoans] = useState<LoanWithInvestors[]>([]);
   const [investors, setInvestors] = useState<{ id: number; name: string }[]>(
     []
@@ -114,6 +116,9 @@ export default function LoansPage() {
   const [minTotalAmount, setMinTotalAmount] = useState<string>('');
   const [maxTotalAmount, setMaxTotalAmount] = useState<string>('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+
+  // Get due date filter from URL query parameter
+  const dueDateFilter = searchParams.get('dueDate');
 
   // Force cards view on mobile screens
   useEffect(() => {
@@ -255,6 +260,10 @@ export default function LoansPage() {
     setMaxInterest('');
     setMinTotalAmount('');
     setMaxTotalAmount('');
+    // Clear due date filter from URL
+    if (dueDateFilter) {
+      router.push('/loans');
+    }
   };
 
   const hasActiveAmountFilters =
@@ -273,7 +282,8 @@ export default function LoansPage() {
     searchQuery !== '' ||
     statusFilter !== 'all' ||
     typeFilter !== 'all' ||
-    hasActiveAmountFilters;
+    hasActiveAmountFilters ||
+    !!dueDateFilter;
 
   // Filter loans based on search and filters
   const filteredLoans = loans.filter((loan) => {
@@ -307,6 +317,28 @@ export default function LoansPage() {
         selectedInvestors.includes(li.investor.id)
       );
       if (!hasSelectedInvestor) return false;
+    }
+
+    // Due date filter (from URL query parameter)
+    if (dueDateFilter) {
+      // Check if the loan's main due date matches
+      const loanDueDateStr = toLocalDateString(loan.dueDate);
+      let hasMatchingDueDate = loanDueDateStr === dueDateFilter;
+
+      // Also check interest period due dates
+      if (!hasMatchingDueDate) {
+        hasMatchingDueDate = loan.loanInvestors.some((li) => {
+          if (li.hasMultipleInterest && li.interestPeriods) {
+            return li.interestPeriods.some((period) => {
+              const periodDueDateStr = toLocalDateString(period.dueDate);
+              return periodDueDateStr === dueDateFilter;
+            });
+          }
+          return false;
+        });
+      }
+
+      if (!hasMatchingDueDate) return false;
     }
 
     // Calculate loan amounts for filtering
@@ -809,10 +841,28 @@ export default function LoansPage() {
           )}
         </div>
 
-        {/* Results Count */}
+        {/* Results Count and Due Date Filter Badge */}
         {hasActiveFilters && (
-          <div className="text-sm text-muted-foreground">
-            Showing {filteredLoans.length} of {loans.length} loans
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="text-sm text-muted-foreground">
+              Showing {filteredLoans.length} of {loans.length} loans
+            </div>
+            {dueDateFilter && (
+              <Badge variant="secondary" className="gap-2">
+                <Calendar className="h-3 w-3" />
+                Due on: {new Date(dueDateFilter + 'T00:00:00').toLocaleDateString('en-PH', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+                <button
+                  onClick={() => router.push('/loans')}
+                  className="ml-1 hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
           </div>
         )}
       </div>
