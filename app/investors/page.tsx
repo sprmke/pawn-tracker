@@ -594,7 +594,16 @@ export default function InvestorsPage() {
                     return (
                       <Card
                         key={investor.id}
-                        className="hover:shadow-lg transition-shadow h-full"
+                        className="hover:shadow-lg transition-shadow h-full cursor-pointer lg:cursor-default"
+                        onClick={(e) => {
+                          // Only navigate on mobile (below lg breakpoint)
+                          // Check if click is on the card itself, not on buttons
+                          const target = e.target as HTMLElement;
+                          const isButton = target.closest('button');
+                          if (!isButton && window.innerWidth < 1024) {
+                            router.push(`/investors/${investor.id}`);
+                          }
+                        }}
                       >
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between gap-2">
@@ -654,6 +663,7 @@ export default function InvestorsPage() {
                               onToggle={(e) => toggleInvestor(investor.id, e)}
                               viewHref={`/investors/${investor.id}`}
                               showToggle={true}
+                              hideViewOnMobile={false}
                               size="md"
                             />
                           </div>
