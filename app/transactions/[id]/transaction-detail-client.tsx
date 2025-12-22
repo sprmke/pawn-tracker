@@ -118,19 +118,26 @@ export function TransactionDetailClient({
           Back to Transactions
         </Button>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-xl font-semibold tracking-tight">
             Edit Transaction
           </h1>
           <div className="flex gap-2">
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setIsEditing(false)}
               disabled={isSubmitting}
+              className="flex-1 sm:flex-none"
             >
               Cancel
             </Button>
-            <Button onClick={handleUpdate} disabled={isSubmitting}>
+            <Button 
+              size="sm" 
+              onClick={handleUpdate} 
+              disabled={isSubmitting}
+              className="flex-1 sm:flex-none"
+            >
               {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
