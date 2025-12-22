@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useResponsiveViewMode } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -84,13 +85,21 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   );
   const [showLoanDetailModal, setShowLoanDetailModal] = useState(false);
 
-  // View modes
-  const [loansViewMode, setLoansViewMode] = useState<'cards' | 'table'>(
-    'table'
-  );
-  const [transactionsViewMode, setTransactionsViewMode] = useState<
-    'cards' | 'table'
-  >('table');
+  // View modes - using responsive hook for SSR-safe view mode detection
+  const { 
+    viewMode: loansViewMode, 
+    setViewMode: setLoansViewMode, 
+    isReady: isLoansViewModeReady 
+  } = useResponsiveViewMode<'cards' | 'table'>();
+  
+  const { 
+    viewMode: transactionsViewMode, 
+    setViewMode: setTransactionsViewMode, 
+    isReady: isTransactionsViewModeReady 
+  } = useResponsiveViewMode<'cards' | 'table'>();
+  
+  // Combined ready state for view modes
+  const isViewModeReady = isLoansViewModeReady && isTransactionsViewModeReady;
 
   // Transaction filters
   const [transactionSearchQuery, setTransactionSearchQuery] = useState('');
@@ -151,43 +160,6 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [investor.id]);
 
-  // Force cards view on mobile, table view on larger screens for loans
-  useEffect(() => {
-    const handleResize = () => {
-      const isMobile = window.innerWidth < 768; // md breakpoint
-      if (isMobile && loansViewMode === 'table') {
-        setLoansViewMode('cards');
-      } else if (!isMobile && loansViewMode === 'cards') {
-        setLoansViewMode('table');
-      }
-    };
-
-    // Check on mount
-    handleResize();
-
-    // Listen for window resize
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [loansViewMode]);
-
-  // Force cards view on mobile, table view on larger screens for transactions
-  useEffect(() => {
-    const handleResize = () => {
-      const isMobile = window.innerWidth < 768; // md breakpoint
-      if (isMobile && transactionsViewMode === 'table') {
-        setTransactionsViewMode('cards');
-      } else if (!isMobile && transactionsViewMode === 'cards') {
-        setTransactionsViewMode('table');
-      }
-    };
-
-    // Check on mount
-    handleResize();
-
-    // Listen for window resize
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [transactionsViewMode]);
 
   // Calculate unique loan count
   const uniqueLoanCount = Array.from(
@@ -645,7 +617,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-3">
                 {/* Search and Basic Filters Row */}
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
                   {/* Search Input */}
                   <SearchFilter
                     value={loanSearchQuery}
@@ -710,8 +682,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                       onClick={clearLoanFilters}
                       className="whitespace-nowrap"
                     >
-                      <X className="mr-2 h-4 w-4" />
-                      Clear All
+                      <X className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Clear All</span>
                     </Button>
                   )}
 
@@ -725,8 +697,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   />
 
                   <Button size="sm" onClick={() => setShowLoanModal(true)}>
-                    <Plus className="h-3 w-3" />
-                    Add Loan
+                    <Plus className="h-3 w-3 sm:mr-1" />
+                    <span className="hidden sm:inline">Add Loan</span>
                   </Button>
                 </div>
 
@@ -871,7 +843,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
           )}
 
           {/* Loans List */}
-          {loansLoading ? (
+          {loansLoading || !isViewModeReady ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
                 <InlineLoader size="md" />
@@ -1041,7 +1013,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-3">
                 {/* Search and Basic Filters Row */}
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
                   {/* Search Input */}
                   <SearchFilter
                     value={transactionSearchQuery}
@@ -1115,8 +1087,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                       onClick={clearTransactionFilters}
                       className="whitespace-nowrap"
                     >
-                      <X className="mr-2 h-4 w-4" />
-                      Clear All
+                      <X className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Clear All</span>
                     </Button>
                   )}
 
@@ -1133,8 +1105,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     size="sm"
                     onClick={() => setShowTransactionModal(true)}
                   >
-                    <Plus className="h-3 w-3" />
-                    Add Transaction
+                    <Plus className="h-3 w-3 sm:mr-1" />
+                    <span className="hidden sm:inline">Add Transaction</span>
                   </Button>
                 </div>
 
@@ -1247,7 +1219,13 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
           )}
 
           {/* Transactions Table */}
-          {investor.transactions.length === 0 ? (
+          {!isViewModeReady ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+                <InlineLoader size="md" />
+              </CardContent>
+            </Card>
+          ) : investor.transactions.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground">No transactions yet</p>
