@@ -119,45 +119,49 @@ export function DetailHeader({
               </p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {onEdit && canEdit && (
-              <Button variant="outline" onClick={onEdit}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
+              <Button variant="outline" size="sm" onClick={onEdit} className="flex-shrink-0">
+                <Edit className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Edit</span>
               </Button>
             )}
             {showPayBalance && onPayBalance && (
               <Button
                 variant="default"
+                size="sm"
                 onClick={onPayBalance}
-                className="bg-yellow-500 hover:bg-yellow-600"
+                className="bg-yellow-500 hover:bg-yellow-600 flex-shrink-0"
               >
-                <Wallet className="mr-2 h-4 w-4" />
-                Pay Balance
+                <Wallet className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Pay Balance</span>
               </Button>
             )}
             {showComplete && onComplete && (
               <Button
                 variant="default"
+                size="sm"
                 onClick={() => setShowCompleteConfirm(true)}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 flex-shrink-0"
               >
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Complete
+                <CheckCircle className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Complete</span>
               </Button>
             )}
             {showViewLoan && onViewLoan && (
-              <Button variant="outline" onClick={onViewLoan}>
-                <ExternalLink className="mr-2 h-4 w-4" />
-                View Loan
+              <Button variant="outline" size="sm" onClick={onViewLoan} className="flex-shrink-0">
+                <ExternalLink className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">View Loan</span>
               </Button>
             )}
             <Button
               variant="destructive"
+              size="sm"
               onClick={() => setShowDeleteConfirm(true)}
+              className="flex-shrink-0"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
+              <Trash2 className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Delete</span>
             </Button>
           </div>
         </div>
