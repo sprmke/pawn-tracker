@@ -80,13 +80,13 @@ export function SyncCalendarButton({
       >
         {syncing ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Syncing...
+            <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
+            <span className="hidden sm:inline">Syncing...</span>
           </>
         ) : (
           <>
-            <Calendar className="mr-2 h-4 w-4" />
-            Sync to Google Calendar
+            <Calendar className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Sync to Google Calendar</span>
           </>
         )}
       </Button>
