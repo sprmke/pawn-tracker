@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useOverdueCheck } from '@/hooks';
+import { useOverdueCheck, useResponsiveViewMode } from '@/hooks';
 import {
   Table,
   TableBody,
@@ -84,9 +84,11 @@ export default function LoansPage() {
     []
   );
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'cards' | 'table' | 'calendar'>(
-    'table'
-  );
+  
+  // Use responsive view mode hook for SSR-safe view mode detection
+  const { viewMode, setViewMode, isReady: isViewModeReady } = useResponsiveViewMode<
+    'cards' | 'table' | 'calendar'
+  >({ includeCalendar: true });
   const [sortField, setSortField] = useState<SortField>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const itemsPerPage = 10;
@@ -119,23 +121,6 @@ export default function LoansPage() {
 
   // Get due date filter from URL query parameter
   const dueDateFilter = searchParams.get('dueDate');
-
-  // Force cards view on mobile screens
-  useEffect(() => {
-    const handleResize = () => {
-      const isMobile = window.innerWidth < 768; // md breakpoint
-      if (isMobile) {
-        setViewMode((current) => (current === 'table' ? 'cards' : current));
-      }
-    };
-
-    // Check on mount
-    handleResize();
-
-    // Listen for window resize
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     fetchLoans();
@@ -472,7 +457,7 @@ export default function LoansPage() {
     return 0;
   });
 
-  if (loading) {
+  if (loading || !isViewModeReady) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
