@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useResponsiveViewMode } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,9 +50,11 @@ export default function TransactionsPage() {
     []
   );
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'cards' | 'table' | 'calendar'>(
-    'table'
-  );
+  
+  // Use responsive view mode hook for SSR-safe view mode detection
+  const { viewMode, setViewMode, isReady: isViewModeReady } = useResponsiveViewMode<
+    'cards' | 'table' | 'calendar'
+  >({ includeCalendar: true });
   const itemsPerPage = 10;
 
   // Store the previous showPastTransactions state when switching to calendar view
@@ -73,23 +76,6 @@ export default function TransactionsPage() {
   const [minBalance, setMinBalance] = useState<string>('');
   const [maxBalance, setMaxBalance] = useState<string>('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
-
-  // Force cards view on mobile screens
-  useEffect(() => {
-    const handleResize = () => {
-      const isMobile = window.innerWidth < 768; // md breakpoint
-      if (isMobile) {
-        setViewMode((current) => current === 'table' ? 'cards' : current);
-      }
-    };
-
-    // Check on mount
-    handleResize();
-
-    // Listen for window resize
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     fetchTransactions();
@@ -254,7 +240,7 @@ export default function TransactionsPage() {
     return aTime - bTime; // Ascending order (earliest first)
   });
 
-  if (loading) {
+  if (loading || !isViewModeReady) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
