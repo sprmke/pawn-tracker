@@ -39,16 +39,24 @@ export function FormHeader({
           <p className="text-muted-foreground mt-1">{description}</p>
         )}
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-2 w-full sm:w-auto">
         <Button
           type="button"
           variant="outline"
+          size="sm"
           onClick={onCancel}
           disabled={isSubmitting}
+          className="flex-1 sm:flex-none"
         >
           {cancelLabel}
         </Button>
-        <Button type="button" onClick={onSubmit} disabled={isSubmitting}>
+        <Button 
+          type="button" 
+          size="sm"
+          onClick={onSubmit} 
+          disabled={isSubmitting}
+          className="flex-1 sm:flex-none"
+        >
           {submitLabel || defaultSubmitLabel}
         </Button>
       </div>
