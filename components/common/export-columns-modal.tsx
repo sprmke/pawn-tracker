@@ -117,7 +117,7 @@ export function ExportColumnsModal<T>({
 
           {/* Column Selection List */}
           <ScrollArea className="h-[300px] pr-4">
-            <div className="space-y-3">
+            <div className="space-y-1">
               {columns.map((column, index) => (
                 <div
                   key={index}
@@ -164,4 +164,3 @@ export function ExportColumnsModal<T>({
     </Dialog>
   );
 }
-
