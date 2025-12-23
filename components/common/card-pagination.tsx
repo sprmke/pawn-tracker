@@ -9,6 +9,7 @@ interface CardPaginationProps<T> {
   renderItems: (paginatedItems: T[]) => React.ReactNode;
   itemName?: string;
   className?: string;
+  scrollToTop?: boolean;
 }
 
 export function CardPagination<T>({
@@ -18,6 +19,7 @@ export function CardPagination<T>({
   renderItems,
   itemName = 'items',
   className = '',
+  scrollToTop = true,
 }: CardPaginationProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
@@ -41,11 +43,17 @@ export function CardPagination<T>({
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    if (scrollToTop) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page when items per page changes
+    if (scrollToTop) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   if (items.length === 0) {
