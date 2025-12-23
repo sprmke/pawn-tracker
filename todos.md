@@ -43,3 +43,4 @@ Todos & Improvements:
 - ✅ I noticed that when we update a loan, it deleted the daily summary event and not recreated it for all the days that we have that loan.
 - ✅ Investors page card doesn't have view button and the card is not clickable on mobile
 - ✅ Improve mobile responsiveness of loans, transactions and investor detail page action buttons
+- I have an issue when clicking the pagination number on Investor detail page where it scroll the page to the top and down
