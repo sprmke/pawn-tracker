@@ -42,5 +42,5 @@ Todos & Improvements:
 - ✅ Improve export UX when we click Export, we will show a modal that displays all table columns on that page. By default, all columns are checked. User can uncheck column that they don't want to be included on exported CSV.
 - Update logo
 - ✅ I noticed that when we update a loan, it deleted the daily summary event and not recreated it for all the days that we have that loan.
-- Investors page card doesn't have view button and the card is not clickable on mobile
-- Improve mobile responsiveness of loans, transactions and investor detail page action buttons
+- ✅ Investors page card doesn't have view button and the card is not clickable on mobile
+- ✅ Improve mobile responsiveness of loans, transactions and investor detail page action buttons
