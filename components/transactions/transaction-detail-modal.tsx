@@ -249,7 +249,7 @@ export function TransactionDetailModal({
           <div className={isEditing ? '' : 'mt-4'}>
             {isEditing ? (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <h2 className="text-xl font-bold">Edit Transaction</h2>
                   <div className="flex gap-2">
                     <Button
@@ -257,6 +257,7 @@ export function TransactionDetailModal({
                       onClick={() => setIsEditing(false)}
                       disabled={isSubmitting}
                       size="sm"
+                      className="flex-1 sm:flex-none"
                     >
                       Cancel
                     </Button>
@@ -264,6 +265,7 @@ export function TransactionDetailModal({
                       onClick={handleUpdate}
                       disabled={isSubmitting}
                       size="sm"
+                      className="flex-1 sm:flex-none"
                     >
                       {isSubmitting ? 'Saving...' : 'Save'}
                     </Button>
