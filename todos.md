@@ -33,7 +33,6 @@ Todos & Improvements:
 - Update Status to Partially Paid when we a loan have multiple periods a period is marked a completed
 - Let's remove the update every transaction implementation for every loan/transaction create/update. I don't think we still need it.
 - We are showing investors that's not in a loan when we copy investor detail
-- Improve responsiveness of action buttons on modal
 - Let's revert and enable close modal on outside click and just prevent modal on outside click ONLY if we are submitting the form or we have dirty changes from the form
 - ✅ Let's update the date format from DD/MM/YYYY to MM/DD/YYYY on calendar picker input (Implemented: Created custom DatePicker component using react-day-picker with MM/DD/YYYY format. Updated all date inputs across the application including loans, transactions, and interest periods.)
 - ✅ It seems that the update transaction detection is not properly working because when I ONLY edit a notes from a loan, it's still updating every transaction.
