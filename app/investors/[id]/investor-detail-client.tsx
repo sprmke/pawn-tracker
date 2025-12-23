@@ -874,6 +874,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   items={filteredLoans}
                   itemsPerPage={10}
                   itemName="loans"
+                  scrollToTop={false}
                   renderItems={(paginatedLoans) => (
                     <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
                       {paginatedLoans.map((loan) => {
@@ -1250,6 +1251,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   items={filteredTransactions}
                   itemsPerPage={10}
                   itemName="transactions"
+                  scrollToTop={false}
                   renderItems={(paginatedTransactions) => (
                     <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
                       {paginatedTransactions.map((transaction) => (
