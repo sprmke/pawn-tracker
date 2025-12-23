@@ -41,15 +41,11 @@ export function CardPagination<T>({
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Scroll to top when page changes
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page when items per page changes
-    // Scroll to top when items per page changes
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (items.length === 0) {
