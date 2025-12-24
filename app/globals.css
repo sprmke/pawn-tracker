@@ -309,6 +309,20 @@
   .delay-1000 {
     animation-delay: 1s;
   }
+
+  /* Shimmer animation for loading progress */
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite linear;
+  }
 }
 
 /* React Day Picker Custom Styles - Override defaults */
