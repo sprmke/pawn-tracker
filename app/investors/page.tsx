@@ -361,9 +361,9 @@ export default function InvestorsPage() {
               size="default"
             />
             <Link href="/investors/new">
-              <Button className="w-full sm:w-auto">
-                <UserPlus className="mr-2 h-4 w-4" />
-                New Investor
+              <Button className="w-full sm:w-auto h-9 px-3">
+                <UserPlus className="h-4 w-4 xl:mr-2" />
+                <span className="hidden xl:inline">New Investor</span>
               </Button>
             </Link>
           </>
@@ -382,12 +382,12 @@ export default function InvestorsPage() {
               placeholder="Search investors by name or email..."
             />
 
-            {/* Loan Status Filter - Hidden on Mobile */}
+            {/* Loan Status Filter - Hidden on smaller screens */}
             <Select
               value={loanStatusFilter}
               onValueChange={(value) => setLoanStatusFilter(value)}
             >
-              <SelectTrigger className="hidden sm:flex w-full sm:w-[200px]">
+              <SelectTrigger className="hidden xl:flex w-full xl:w-[200px]">
                 <SelectValue placeholder="Loan Status" />
               </SelectTrigger>
               <SelectContent>
@@ -417,18 +417,18 @@ export default function InvestorsPage() {
                 variant="outline"
                 size="sm"
                 onClick={clearFilters}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap h-9 px-3"
               >
-                <X className="h-4 w-4 mr-2" />
-                Clear All
+                <X className="h-4 w-4 xl:mr-2" />
+                <span className="hidden xl:inline">Clear All</span>
               </Button>
             )}
           </div>
 
           {/* Amount Range Filters - Collapsible Content */}
           <CollapsibleContent isOpen={showMoreFilters}>
-            {/* Mobile-only Loan Status Filter */}
-            <div className="mb-3 pb-3 border-b sm:hidden">
+            {/* Loan Status Filter - visible on smaller screens */}
+            <div className="mb-3 pb-3 border-b xl:hidden">
               <label className="text-xs font-semibold mb-2 block">
                 Loan Status
               </label>
