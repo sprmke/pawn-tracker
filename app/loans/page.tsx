@@ -498,9 +498,9 @@ export default function LoansPage() {
               size="default"
             />
             <Link href="/loans/new">
-              <Button className="w-full sm:w-auto">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Loan
+              <Button className="w-full sm:w-auto h-9 px-3">
+                <PlusCircle className="h-4 w-4 xl:mr-2" />
+                <span className="hidden xl:inline">New Loan</span>
               </Button>
             </Link>
           </>
@@ -521,14 +521,14 @@ export default function LoansPage() {
               placeholder="Search loans by name or notes..."
             />
 
-            {/* Status Filter - Hidden on Mobile */}
+            {/* Status Filter - Hidden on smaller screens */}
             <Select
               value={statusFilter}
               onValueChange={(value) => {
                 setStatusFilter(value);
               }}
             >
-              <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
+              <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -542,14 +542,14 @@ export default function LoansPage() {
               </SelectContent>
             </Select>
 
-            {/* Type Filter - Hidden on Mobile */}
+            {/* Type Filter - Hidden on smaller screens */}
             <Select
               value={typeFilter}
               onValueChange={(value) => {
                 setTypeFilter(value);
               }}
             >
-              <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
+              <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
@@ -565,12 +565,12 @@ export default function LoansPage() {
               variant={showMoreFilters ? 'secondary' : 'outline'}
               size="sm"
               onClick={() => setShowMoreFilters(!showMoreFilters)}
-              className="whitespace-nowrap relative"
+              className="whitespace-nowrap relative h-9 px-3"
             >
-              <Filter className="h-4 w-4 mr-2" />
-              {showMoreFilters ? 'Less' : 'More'} Filters
+              <Filter className="h-4 w-4 xl:mr-2" />
+              <span className="hidden xl:inline">{showMoreFilters ? 'Less' : 'More'} Filters</span>
               {hasActiveAmountFilters && (
-                <span className="ml-2 flex h-2 w-2">
+                <span className="ml-1 xl:ml-2 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                 </span>
@@ -583,10 +583,10 @@ export default function LoansPage() {
                 variant="outline"
                 size="sm"
                 onClick={clearFilters}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap h-9 px-3"
               >
-                <X className="h-4 w-4 mr-2" />
-                Clear All
+                <X className="h-4 w-4 xl:mr-2" />
+                <span className="hidden xl:inline">Clear All</span>
               </Button>
             )}
           </div>
@@ -594,8 +594,8 @@ export default function LoansPage() {
           {/* Amount Range Filters - Collapsible */}
           {showMoreFilters && (
             <div className="space-y-3 p-4 border rounded-lg bg-muted/30 animate-in slide-in-from-top-2 duration-200">
-              {/* Mobile-only Basic Filters */}
-              <div className="grid grid-cols-2 gap-3 pb-3 border-b sm:hidden">
+              {/* Basic Filters - visible on smaller screens */}
+              <div className="grid grid-cols-2 gap-3 pb-3 border-b xl:hidden">
                 {/* Status Filter - Mobile */}
                 <div>
                   <label className="text-xs font-semibold mb-2 block">
