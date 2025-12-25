@@ -630,7 +630,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     value={loanTypeFilter}
                     onValueChange={setLoanTypeFilter}
                   >
-                    <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
+                    <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -646,7 +646,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     value={loanStatusFilter}
                     onValueChange={setLoanStatusFilter}
                   >
-                    <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
+                    <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -682,8 +682,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                       onClick={clearLoanFilters}
                       className="whitespace-nowrap"
                     >
-                      <X className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Clear All</span>
+                      <X className="h-4 w-4 xl:mr-2" />
+                      <span className="hidden xl:inline">Clear All</span>
                     </Button>
                   )}
 
@@ -696,17 +696,17 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     size="sm"
                   />
 
-                  <Button size="sm" onClick={() => setShowLoanModal(true)}>
-                    <Plus className="h-3 w-3 sm:mr-1" />
-                    <span className="hidden sm:inline">Add Loan</span>
+                  <Button size="sm" onClick={() => setShowLoanModal(true)} className="h-9 px-3">
+                    <Plus className="h-3 w-3 xl:mr-1" />
+                    <span className="hidden xl:inline">Add Loan</span>
                   </Button>
                 </div>
 
                 {/* Amount Range Filters - Collapsible Content */}
                 <CollapsibleContent isOpen={showMoreLoanFilters}>
                   <div className="space-y-3">
-                    {/* Mobile-only Basic Filters */}
-                    <div className="grid grid-cols-2 gap-3 pb-3 border-b sm:hidden">
+                    {/* Basic Filters - visible on smaller screens */}
+                    <div className="grid grid-cols-2 gap-3 pb-3 border-b xl:hidden">
                       {/* Type Filter - Mobile */}
                       <div>
                         <label className="text-xs font-semibold mb-2 block">
@@ -1029,7 +1029,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                       setShowPastTransactions(value === 'show')
                     }
                   >
-                    <SelectTrigger className="hidden sm:flex w-full sm:w-[200px]">
+                    <SelectTrigger className="hidden xl:flex w-full xl:w-[200px]">
                       <SelectValue placeholder="Past Transactions" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1043,7 +1043,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     value={transactionTypeFilter}
                     onValueChange={setTransactionTypeFilter}
                   >
-                    <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
+                    <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1058,7 +1058,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     value={transactionDirectionFilter}
                     onValueChange={setTransactionDirectionFilter}
                   >
-                    <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
+                    <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
                       <SelectValue placeholder="Direction" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1088,8 +1088,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                       onClick={clearTransactionFilters}
                       className="whitespace-nowrap"
                     >
-                      <X className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Clear All</span>
+                      <X className="h-4 w-4 xl:mr-2" />
+                      <span className="hidden xl:inline">Clear All</span>
                     </Button>
                   )}
 
@@ -1105,17 +1105,18 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   <Button
                     size="sm"
                     onClick={() => setShowTransactionModal(true)}
+                    className="h-9 px-3"
                   >
-                    <Plus className="h-3 w-3 sm:mr-1" />
-                    <span className="hidden sm:inline">Add Transaction</span>
+                    <Plus className="h-3 w-3 xl:mr-1" />
+                    <span className="hidden xl:inline">Add Transaction</span>
                   </Button>
                 </div>
 
                 {/* Amount Range Filters - Collapsible Content */}
                 <CollapsibleContent isOpen={showMoreFilters}>
                   <div className="space-y-3">
-                    {/* Mobile-only Basic Filters */}
-                    <div className="grid grid-cols-2 gap-3 pb-3 border-b sm:hidden">
+                    {/* Basic Filters - visible on smaller screens */}
+                    <div className="grid grid-cols-2 gap-3 pb-3 border-b xl:hidden">
                       {/* Past Transactions Filter - Mobile */}
                       <div>
                         <label className="text-xs font-semibold mb-2 block">
