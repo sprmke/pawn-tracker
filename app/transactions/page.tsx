@@ -285,10 +285,10 @@ export default function TransactionsPage() {
             />
             <DropdownMenu
               trigger={
-                <Button className="w-full sm:w-auto">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  New Transaction
-                  <ChevronDown className="ml-2 h-4 w-4" />
+                <Button className="w-full sm:w-auto h-9 px-3">
+                  <PlusCircle className="h-4 w-4 xl:mr-2" />
+                  <span className="hidden xl:inline">New Transaction</span>
+                  <ChevronDown className="ml-1 xl:ml-2 h-4 w-4" />
                 </Button>
               }
               items={[
@@ -324,7 +324,7 @@ export default function TransactionsPage() {
               placeholder="Search by name, investor, or notes..."
             />
 
-            {/* Show/Hide Past Transactions Filter - Hidden on Mobile & in calendar view */}
+            {/* Show/Hide Past Transactions Filter - Hidden on smaller screens & in calendar view */}
             {viewMode !== 'calendar' && (
               <Select
                 value={showPastTransactions ? 'show' : 'hide'}
@@ -333,7 +333,7 @@ export default function TransactionsPage() {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="hidden sm:flex w-full sm:w-[200px]">
+                <SelectTrigger className="hidden xl:flex w-full xl:w-[200px]">
                   <SelectValue placeholder="Past Transactions" />
                 </SelectTrigger>
                 <SelectContent>
@@ -343,7 +343,7 @@ export default function TransactionsPage() {
               </Select>
             )}
 
-            {/* Type Filter - Hidden on Mobile */}
+            {/* Type Filter - Hidden on smaller screens */}
             <Select
               value={typeFilter}
               onValueChange={(value) => {
@@ -351,7 +351,7 @@ export default function TransactionsPage() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
+              <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
@@ -361,7 +361,7 @@ export default function TransactionsPage() {
               </SelectContent>
             </Select>
 
-            {/* Direction Filter - Hidden on Mobile */}
+            {/* Direction Filter - Hidden on smaller screens */}
             <Select
               value={directionFilter}
               onValueChange={(value) => {
@@ -369,7 +369,7 @@ export default function TransactionsPage() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="hidden sm:flex w-full sm:w-[180px]">
+              <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
                 <SelectValue placeholder="Direction" />
               </SelectTrigger>
               <SelectContent>
@@ -384,12 +384,12 @@ export default function TransactionsPage() {
               variant={showMoreFilters ? 'secondary' : 'outline'}
               size="sm"
               onClick={() => setShowMoreFilters(!showMoreFilters)}
-              className="whitespace-nowrap relative"
+              className="whitespace-nowrap relative h-9 px-3"
             >
-              <Filter className="h-4 w-4 mr-2" />
-              {showMoreFilters ? 'Less' : 'More'} Filters
+              <Filter className="h-4 w-4 xl:mr-2" />
+              <span className="hidden xl:inline">{showMoreFilters ? 'Less' : 'More'} Filters</span>
               {hasActiveAmountFilters && (
-                <span className="ml-2 flex h-2 w-2">
+                <span className="ml-1 xl:ml-2 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                 </span>
@@ -402,10 +402,10 @@ export default function TransactionsPage() {
                 variant="outline"
                 size="sm"
                 onClick={clearFilters}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap h-9 px-3"
               >
-                <X className="h-4 w-4 mr-2" />
-                Clear All
+                <X className="h-4 w-4 xl:mr-2" />
+                <span className="hidden xl:inline">Clear All</span>
               </Button>
             )}
           </div>
@@ -413,8 +413,8 @@ export default function TransactionsPage() {
           {/* Amount Range Filters - Collapsible */}
           {showMoreFilters && (
             <div className="space-y-3 p-4 border rounded-lg bg-muted/30 animate-in slide-in-from-top-2 duration-200">
-              {/* Mobile-only Basic Filters */}
-              <div className="grid grid-cols-2 gap-3 pb-3 border-b sm:hidden">
+              {/* Basic Filters - visible on smaller screens */}
+              <div className="grid grid-cols-2 gap-3 pb-3 border-b xl:hidden">
                 {/* Past Transactions Filter - Mobile (only show when not in calendar view) */}
                 {viewMode !== 'calendar' && (
                   <div>
