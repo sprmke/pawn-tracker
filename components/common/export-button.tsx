@@ -62,8 +62,8 @@ export function ExportButton<T>({
           className={className}
           onClick={() => handleExportClick(true)}
         >
-          <Download className="h-4 w-4 sm:mr-2" />
-          <span className="hidden sm:inline">Export CSV</span>
+          <Download className="h-4 w-4 xl:mr-2" />
+          <span className="hidden xl:inline">Export CSV</span>
         </Button>
         <ExportColumnsModal
           open={showColumnsModal}
@@ -85,8 +85,8 @@ export function ExportButton<T>({
       <DropdownMenu
         trigger={
           <Button variant={variant} size={size} className={className}>
-            <Download className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Export CSV</span>
+            <Download className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Export CSV</span>
           </Button>
         }
         items={[
