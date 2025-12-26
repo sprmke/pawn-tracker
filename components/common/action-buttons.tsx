@@ -24,23 +24,23 @@ export function ToggleMoreButton({
       variant="ghost"
       size={buttonSize}
       className={`${
-        size === 'sm' ? 'h-7 text-xs' : 'h-8 text-xs'
+        size === 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
       } ${className}`}
       onClick={onToggle}
     >
       {isExpanded ? (
         <>
           <ChevronUp
-            className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} mr-1`}
+            className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
           />
-          Hide
+          <span className="hidden md:inline">Hide</span>
         </>
       ) : (
         <>
           <ChevronDown
-            className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} mr-1`}
+            className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
           />
-          More
+          <span className="hidden md:inline">More</span>
         </>
       )}
     </Button>
@@ -65,14 +65,14 @@ export function QuickViewButton({
       variant="ghost"
       size={buttonSize}
       className={`${
-        size === 'sm' ? 'h-7 text-xs' : 'h-8 text-xs'
+        size === 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
       } ${className}`}
       onClick={onClick}
     >
       <Maximize2
-        className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} mr-1`}
+        className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
       />
-      View
+      <span className="hidden md:inline">View</span>
     </Button>
   );
 }
@@ -107,12 +107,12 @@ export function ViewButton({
       variant="ghost"
       size={buttonSize}
       className={`${
-        size === 'sm' ? 'h-7 text-xs' : 'h-8 text-xs'
+        size === 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
       } ${className}`}
       onClick={handleClick}
     >
-      <Eye className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} mr-1`} />
-      View
+      <Eye className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`} />
+      <span className="hidden md:inline">View</span>
     </Button>
   );
 }
@@ -147,7 +147,7 @@ export function ActionButtonsGroup({
   return (
     <div
       className={`flex items-center ${
-        isCardSize ? 'gap-2' : 'justify-end gap-1'
+        isCardSize ? 'gap-1.5 md:gap-2' : 'justify-end gap-1 md:gap-1.5'
       } ${className}`}
     >
       {showToggle && onToggle && (
@@ -155,7 +155,7 @@ export function ActionButtonsGroup({
           isExpanded={isExpanded}
           onToggle={onToggle}
           size={size}
-          className={`${isCardSize ? 'flex-1' : ''} hidden lg:flex`}
+          className={`${isCardSize ? 'flex-1' : ''} hidden md:flex`}
         />
       )}
       {onQuickView && (
@@ -170,7 +170,7 @@ export function ActionButtonsGroup({
           href={viewHref}
           size={size}
           onClick={onViewClick}
-          className={`${isCardSize ? 'flex-1' : ''} ${hideViewOnMobile ? 'hidden lg:flex' : ''}`}
+          className={`${isCardSize ? 'flex-1' : ''} ${hideViewOnMobile ? 'hidden md:flex' : ''}`}
         />
       )}
     </div>
