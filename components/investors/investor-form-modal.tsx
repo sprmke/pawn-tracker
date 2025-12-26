@@ -113,17 +113,17 @@ export function InvestorFormModal({
             isSubmitting={isSubmitting}
           />
 
-          <div className="flex flex-col-reverse sm:flex-row gap-2 pt-4">
+          <div className="flex flex-col-reverse md:flex-row gap-1.5 md:gap-2 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={handleCancel}
-              className="flex-1"
+              className="flex-1 h-9 text-sm"
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="flex-1">
+            <Button type="submit" disabled={isSubmitting} className="flex-1 h-9 text-sm">
               {isSubmitting ? 'Creating...' : 'Create Investor'}
             </Button>
           </div>
