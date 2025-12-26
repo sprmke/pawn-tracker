@@ -3,6 +3,10 @@
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash2, CheckCircle, Wallet, Eye, X } from 'lucide-react';
 
+// Common styles for responsive icon buttons
+const btnClass = 'flex-shrink-0 h-8 px-2 md:px-3';
+const iconClass = 'h-4 w-4 md:mr-1.5';
+
 interface DetailModalHeaderProps {
   onEdit: () => void;
   onDelete: () => void;
@@ -31,11 +35,11 @@ export function DetailModalHeader({
   showViewLoan = false,
 }: DetailModalHeaderProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1.5 sm:gap-2">
       {canEdit && (
-        <Button variant="outline" size="sm" onClick={onEdit} className="flex-shrink-0">
-          <Pencil className="h-4 w-4 sm:mr-2" />
-          <span className="hidden sm:inline">Edit</span>
+        <Button variant="outline" size="sm" onClick={onEdit} className={btnClass}>
+          <Pencil className={iconClass} />
+          <span className="hidden md:inline text-xs">Edit</span>
         </Button>
       )}
       {showPayBalance && onPayBalance && (
@@ -43,10 +47,10 @@ export function DetailModalHeader({
           variant="default"
           size="sm"
           onClick={onPayBalance}
-          className="bg-yellow-500 hover:bg-yellow-600 flex-shrink-0"
+          className={`bg-yellow-500 hover:bg-yellow-600 ${btnClass}`}
         >
-          <Wallet className="h-4 w-4 sm:mr-2" />
-          <span className="hidden sm:inline">Pay Balance</span>
+          <Wallet className={iconClass} />
+          <span className="hidden md:inline text-xs">Pay</span>
         </Button>
       )}
       {showComplete && onComplete && (
@@ -54,26 +58,26 @@ export function DetailModalHeader({
           variant="default"
           size="sm"
           onClick={onComplete}
-          className="bg-blue-600 hover:bg-blue-700 flex-shrink-0"
+          className={`bg-blue-600 hover:bg-blue-700 ${btnClass}`}
         >
-          <CheckCircle className="h-4 w-4 sm:mr-2" />
-          <span className="hidden sm:inline">Complete</span>
+          <CheckCircle className={iconClass} />
+          <span className="hidden md:inline text-xs">Complete</span>
         </Button>
       )}
       {showViewLoan && onViewLoan && (
-        <Button variant="outline" size="sm" onClick={onViewLoan} className="flex-shrink-0">
-          <Eye className="h-4 w-4 sm:mr-2" />
-          <span className="hidden sm:inline">View Loan</span>
+        <Button variant="outline" size="sm" onClick={onViewLoan} className={btnClass}>
+          <Eye className={iconClass} />
+          <span className="hidden md:inline text-xs">Loan</span>
         </Button>
       )}
-      <Button variant="destructive" size="sm" onClick={onDelete} className="flex-shrink-0">
-        <Trash2 className="h-4 w-4 sm:mr-2" />
-        <span className="hidden sm:inline">Delete</span>
+      <Button variant="destructive" size="sm" onClick={onDelete} className={btnClass}>
+        <Trash2 className={iconClass} />
+        <span className="hidden md:inline text-xs">Delete</span>
       </Button>
       {onClose && (
-        <Button variant="outline" size="sm" onClick={onClose} className="flex-shrink-0">
-          <X className="h-4 w-4 sm:mr-2" />
-          <span className="hidden sm:inline">Close</span>
+        <Button variant="outline" size="sm" onClick={onClose} className={btnClass}>
+          <X className={iconClass} />
+          <span className="hidden md:inline text-xs">Close</span>
         </Button>
       )}
     </div>
