@@ -180,8 +180,8 @@ export function LoanDetailModal({
             </VisuallyHidden>
           ) : (
             <DialogHeader>
-              <div className="flex sm:flex-row flex-col items-start justify-between gap-4">
-                <DialogTitle className="text-xl font-semibold">
+              <div className="flex md:flex-row flex-col items-start justify-between gap-3 md:gap-4">
+                <DialogTitle className="text-lg md:text-xl font-semibold line-clamp-2 md:line-clamp-none">
                   {loan.loanName}
                 </DialogTitle>
                 <DetailModalHeader
