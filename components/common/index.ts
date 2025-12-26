@@ -34,6 +34,7 @@ export { Logo } from './logo';
 export { ExportButton } from './export-button';
 export { ExportColumnsModal } from './export-columns-modal';
 export { SyncCalendarButton } from './sync-calendar-button';
+export { NavigationProgressProvider, useNavigationProgress } from './navigation-progress';
 
 // Calendar components
 export * from './calendar';
