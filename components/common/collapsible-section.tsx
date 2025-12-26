@@ -30,20 +30,20 @@ export function CollapsibleSection({
       variant={isOpen ? 'secondary' : 'outline'}
       size="sm"
       onClick={onToggle}
-      className={`whitespace-nowrap relative ${className || ''}`}
+      className={`whitespace-nowrap relative h-9 px-3 ${className || ''}`}
     >
-      {TriggerIcon && <TriggerIcon className="h-4 w-4 mr-2" />}
-      {trigger.label}
+      {TriggerIcon && <TriggerIcon className="h-4 w-4 xl:mr-2" />}
+      <span className="hidden xl:inline">{trigger.label}</span>
       {trigger.showIndicator && (
-        <span className="ml-2 flex h-2 w-2">
+        <span className="ml-1 xl:ml-2 flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
         </span>
       )}
       {isOpen ? (
-        <ChevronUp className="h-4 w-4 ml-2" />
+        <ChevronUp className="h-4 w-4 ml-1 xl:ml-2" />
       ) : (
-        <ChevronDown className="h-4 w-4 ml-2" />
+        <ChevronDown className="h-4 w-4 ml-1 xl:ml-2" />
       )}
     </Button>
   );
