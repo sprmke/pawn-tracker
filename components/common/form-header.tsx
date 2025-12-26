@@ -1,5 +1,8 @@
 import { Button } from '@/components/ui/button';
 
+// Common button style for form actions
+const formBtnClass = 'flex-1 md:flex-none h-8 px-3 text-xs md:text-sm';
+
 interface FormHeaderProps {
   title: string;
   description?: string;
@@ -32,30 +35,30 @@ export function FormHeader({
   const displayTitle = isEditMode ? `Edit - ${title}` : title;
 
   return (
-    <div className="flex sm:flex-row flex-col items-start justify-between gap-4 mb-6">
+    <div className="flex md:flex-row flex-col items-start justify-between gap-3 md:gap-4 mb-6">
       <div className="flex-1">
-        <h1 className="text-xl font-semibold">{displayTitle}</h1>
+        <h1 className="text-lg md:text-xl font-semibold">{displayTitle}</h1>
         {description && (
-          <p className="text-muted-foreground mt-1">{description}</p>
+          <p className="text-sm text-muted-foreground mt-1">{description}</p>
         )}
       </div>
-      <div className="flex items-center gap-2 w-full sm:w-auto">
+      <div className="flex items-center gap-1.5 md:gap-2 w-full md:w-auto">
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="flex-1 sm:flex-none"
+          className={formBtnClass}
         >
           {cancelLabel}
         </Button>
-        <Button 
-          type="button" 
+        <Button
+          type="button"
           size="sm"
-          onClick={onSubmit} 
+          onClick={onSubmit}
           disabled={isSubmitting}
-          className="flex-1 sm:flex-none"
+          className={formBtnClass}
         >
           {submitLabel || defaultSubmitLabel}
         </Button>
