@@ -45,4 +45,4 @@ Todos & Improvements:
 - ✅ Improve mobile responsiveness of loans, transactions and investor detail page action buttons
 - I have an issue when clicking the pagination number on Investor detail page where it scroll the page to the top and down
 - ✅ Improve UI responsiveness on tablet screen specially for action buttons. Update and improve all pages and modals with action buttons
-- One major UX I noticed is when I click a link and the redirection takes a few seconds and we don't know if we successfully click it or not. There's no loading between page transition which results to very bad UI/UX
+- ✅ One major UX I noticed is when I click a link and the redirection takes a few seconds and we don't know if we successfully click it or not. There's no loading between page transition which results to very bad UI/UX
