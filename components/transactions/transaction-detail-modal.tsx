@@ -229,8 +229,8 @@ export function TransactionDetailModal({
             </VisuallyHidden>
           ) : (
             <DialogHeader>
-              <div className="flex sm:flex-row flex-col items-start justify-between gap-4">
-                <DialogTitle className="text-xl font-semibold">
+              <div className="flex md:flex-row flex-col items-start justify-between gap-3 md:gap-4">
+                <DialogTitle className="text-lg md:text-xl font-semibold line-clamp-2 md:line-clamp-none">
                   {transaction.name}
                 </DialogTitle>
                 <DetailModalHeader
@@ -249,15 +249,15 @@ export function TransactionDetailModal({
           <div className={isEditing ? '' : 'mt-4'}>
             {isEditing ? (
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <h2 className="text-xl font-bold">Edit Transaction</h2>
-                  <div className="flex gap-2">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <h2 className="text-lg md:text-xl font-bold">Edit Transaction</h2>
+                  <div className="flex gap-1.5 md:gap-2">
                     <Button
                       variant="outline"
                       onClick={() => setIsEditing(false)}
                       disabled={isSubmitting}
                       size="sm"
-                      className="flex-1 sm:flex-none"
+                      className="flex-1 md:flex-none h-8 px-3"
                     >
                       Cancel
                     </Button>
@@ -265,7 +265,7 @@ export function TransactionDetailModal({
                       onClick={handleUpdate}
                       disabled={isSubmitting}
                       size="sm"
-                      className="flex-1 sm:flex-none"
+                      className="flex-1 md:flex-none h-8 px-3"
                     >
                       {isSubmitting ? 'Saving...' : 'Save'}
                     </Button>
