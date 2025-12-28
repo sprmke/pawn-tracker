@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useRegisterDialogFormState } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -206,7 +207,7 @@ export function LoanForm({
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(loanSchema),
     defaultValues: existingLoan
@@ -224,6 +225,12 @@ export function LoanForm({
 
   const watchType = watch('type');
   const watchDueDate = watch('dueDate');
+
+  // Track if form has changes (including investor allocations)
+  const hasChanges = isDirty || selectedInvestors.length > 0;
+  
+  // Register form state with dialog to prevent accidental close
+  useRegisterDialogFormState(hasChanges, isSubmitting);
 
   // Helper function to calculate loan status automatically
   const calculateLoanStatus = ():
