@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  useRegisterDialogFormState,
 } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import {
@@ -96,6 +97,9 @@ export function TransactionDetailModal({
     investorId: 0,
     notes: '',
   });
+
+  // Register form state with dialog to prevent accidental close when editing
+  useRegisterDialogFormState(isEditing, isSubmitting);
 
   useEffect(() => {
     if (open && isEditing) {
