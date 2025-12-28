@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useRegisterDialogFormState } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { FormHeader } from '@/components/common';
 import { toLocalDateString } from '@/lib/date-utils';
@@ -106,7 +107,7 @@ export function TransactionForm({
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<any>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
@@ -118,6 +119,12 @@ export function TransactionForm({
       loanDate: toLocalDateString(new Date()),
     },
   });
+
+  // Track if form has changes (including investor selection)
+  const hasChanges = isDirty || selectedInvestorId !== null;
+  
+  // Register form state with dialog to prevent accidental close
+  useRegisterDialogFormState(hasChanges, isSubmitting);
 
   const watchTemplate = watch('template');
   const watchName = watch('name');
