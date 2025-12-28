@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  useRegisterDialogFormState,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { InvestorFormFields, InvestorFormData } from './investor-form-fields';
@@ -45,7 +46,7 @@ export function InvestorFormModal({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     reset,
   } = useForm<InvestorFormData>({
     resolver: zodResolver(investorSchema),
@@ -55,6 +56,9 @@ export function InvestorFormModal({
       contactNumber: '',
     },
   });
+
+  // Register form state with dialog to prevent accidental close
+  useRegisterDialogFormState(isDirty, isSubmitting);
 
   const onSubmit = async (data: z.infer<typeof investorSchema>) => {
     setIsSubmitting(true);
