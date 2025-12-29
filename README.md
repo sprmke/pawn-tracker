@@ -154,7 +154,6 @@ The application uses the following main tables:
 - `bun run db:migrate` - Run database migrations
 - `bun run db:push` - Push schema changes to database
 - `bun run db:studio` - Open Drizzle Studio (database GUI)
-- `bun run db:seed` - Seed database with default investors
 
 ## Code Architecture & DRY Principles
 

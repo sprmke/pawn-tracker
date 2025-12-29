@@ -37,6 +37,7 @@ import {
   MaturingLoansCard,
   PageHeader,
   ExportButton,
+  useNavigationProgress,
 } from '@/components/common';
 import { formatCurrency } from '@/lib/format';
 import { getTodayAtMidnight, normalizeToMidnight } from '@/lib/date-utils';
@@ -136,6 +137,7 @@ const getInvestorActivityData = (
 
 export default function InvestorsPage() {
   const router = useRouter();
+  const { startProgress } = useNavigationProgress();
   const [investors, setInvestors] = useState<InvestorWithLoans[]>([]);
   const [allLoans, setAllLoans] = useState<LoanWithInvestors[]>([]);
   const [loading, setLoading] = useState(true);
