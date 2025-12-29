@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Eye, Maximize2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useNavigationProgress } from './navigation-progress';
 
 interface ToggleMoreButtonProps {
   isExpanded: boolean;
@@ -91,6 +92,7 @@ export function ViewButton({
   onClick,
 }: ViewButtonProps) {
   const router = useRouter();
+  const { startProgress } = useNavigationProgress();
   const buttonSize = size === 'md' ? 'sm' : size;
 
   const handleClick = (e: React.MouseEvent) => {
@@ -98,6 +100,8 @@ export function ViewButton({
     if (onClick) {
       onClick(e);
     } else {
+      // Start progress bar before programmatic navigation
+      startProgress();
       router.push(href);
     }
   };
