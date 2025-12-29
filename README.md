@@ -13,7 +13,6 @@ A comprehensive web application for tracking pawn business loans and investor tr
 - **Investor notifications**: All investors are automatically added as attendees and receive email notifications
 - **Complete loan information**: Events include detailed loan data, amounts, and investor breakdowns
 - **Automatic synchronization**: Events are created, updated, and deleted automatically with loan changes
-- **Easy setup**: See [GOOGLE_CALENDAR_SETUP.md](./GOOGLE_CALENDAR_SETUP.md) for detailed setup instructions
 
 ### Module 1: Pawn Tracker
 
