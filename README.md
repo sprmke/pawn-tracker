@@ -165,16 +165,6 @@ This project follows **DRY (Don't Repeat Yourself)** principles with a well-orga
 - **calculations.ts**: Business logic for loan calculations, investor stats, and aggregations
 - **badge-config.ts**: Consistent badge styling across the app
 
-### Reusable Components (`/components/common/`)
-
-All common UI patterns are componentized (12 components):
-
-- StatCard, EmptyState, PageHeader, ViewModeToggle, LoadingState
-- SearchFilter, RangeFilter, FilterSection, CollapsibleSection
-- Pagination, SortButton, InvestorTransactionCard
-
-See `/components/common/README.md` for detailed documentation.
-
 ### Custom Hooks (`/hooks/`)
 
 Encapsulated logic for common patterns:

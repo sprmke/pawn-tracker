@@ -590,6 +590,7 @@ export default function InvestorsPage() {
                           const target = e.target as HTMLElement;
                           const isButton = target.closest('button');
                           if (!isButton && window.innerWidth < 1024) {
+                            startProgress();
                             router.push(`/investors/${investor.id}`);
                           }
                         }}
