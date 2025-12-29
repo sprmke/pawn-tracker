@@ -17,6 +17,7 @@ import {
 } from './';
 import { addDays, isAfter, isBefore, isPast } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { useNavigationProgress } from './navigation-progress';
 
 interface InvestorsTableProps {
   investors: InvestorWithLoans[];
@@ -34,6 +35,7 @@ export function InvestorsTable({
   onToggleExpand,
 }: InvestorsTableProps) {
   const router = useRouter();
+  const { startProgress } = useNavigationProgress();
 
   const columns: ColumnDef<InvestorWithLoans>[] = [
     {
@@ -257,7 +259,10 @@ export function InvestorsTable({
       getRowId={(investor) => investor.id}
       expandedContent={expandedContent}
       expandedRows={expandedRows}
-      onRowClick={(investor) => router.push(`/investors/${investor.id}`)}
+      onRowClick={(investor) => {
+        startProgress();
+        router.push(`/investors/${investor.id}`);
+      }}
       rowClickOnMobileOnly={true}
     />
   );
