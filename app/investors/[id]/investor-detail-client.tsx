@@ -482,7 +482,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
   if (isEditing) {
     return (
-      <div className="space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6">
         <Button
           variant="ghost"
           size="sm"
@@ -492,16 +492,14 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Investors
         </Button>
-        <div className="max-w-2xl">
-          <InvestorForm
-            existingInvestor={investor}
-            onSuccess={() => {
-              setIsEditing(false);
-              router.refresh();
-            }}
-            onCancel={() => setIsEditing(false)}
-          />
-        </div>
+        <InvestorForm
+          existingInvestor={investor}
+          onSuccess={() => {
+            setIsEditing(false);
+            router.refresh();
+          }}
+          onCancel={() => setIsEditing(false)}
+        />
       </div>
     );
   }
