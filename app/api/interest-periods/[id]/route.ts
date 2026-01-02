@@ -65,9 +65,38 @@ export async function PATCH(
       },
     });
 
+    // First, check and update any other pending periods that are past their due date
+    // This ensures we have an accurate view of which periods are actually overdue
+    const now = new Date();
+    for (const li of allLoanInvestors) {
+      if (li.hasMultipleInterest && li.interestPeriods) {
+        for (const p of li.interestPeriods) {
+          // Skip the period we just updated
+          if (p.id === periodId) continue;
+          
+          const periodDueDate = new Date(p.dueDate);
+          // If period is Pending and past due date, mark as Overdue
+          if (p.status === 'Pending' && now > periodDueDate) {
+            await db
+              .update(interestPeriods)
+              .set({ status: 'Overdue', updatedAt: now })
+              .where(eq(interestPeriods.id, p.id));
+          }
+        }
+      }
+    }
+
+    // Re-fetch all periods after potential updates to get accurate statuses
+    const updatedLoanInvestors = await db.query.loanInvestors.findMany({
+      where: eq(loanInvestors.loanId, loanId),
+      with: {
+        interestPeriods: true,
+      },
+    });
+
     // Collect all period statuses across all loan investors
     const allPeriods: Array<{ status: string }> = [];
-    allLoanInvestors.forEach((li) => {
+    updatedLoanInvestors.forEach((li) => {
       if (li.hasMultipleInterest && li.interestPeriods) {
         allPeriods.push(...li.interestPeriods);
       }
@@ -93,7 +122,7 @@ export async function PATCH(
       // Priority 2: If all periods are completed, automatically mark loan as completed
       else if (allPeriodsCompleted) {
         // Check if all loan investors are paid
-        const allPaid = allLoanInvestors.every((li) => li.isPaid);
+        const allPaid = updatedLoanInvestors.every((li) => li.isPaid);
         
         if (allPaid) {
           // All periods completed and all paid - loan should be Completed
