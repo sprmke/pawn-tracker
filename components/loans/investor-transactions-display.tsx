@@ -124,7 +124,6 @@ export function InvestorTransactionsDisplay({
     }
   };
 
-
   return (
     <div className="space-y-4">
       {investorsWithTransactions.map((item) => {
@@ -316,7 +315,7 @@ export function InvestorTransactionsDisplay({
                           <p className="text-muted-foreground">Rate</p>
                           <p className="font-medium">
                             {isFixedWithZeroCapital
-                              ? `Fixed ${formatCurrency(rate)}`
+                              ? 'Fixed'
                               : `${rate.toFixed(2)}%`}
                           </p>
                         </div>
