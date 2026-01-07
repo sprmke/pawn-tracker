@@ -725,8 +725,8 @@ export async function generateAllLoansCalendarEvents(
         // Only IN
         totalAmount = dayData.in.amount;
       } else {
-        // Only OUT
-        totalAmount = dayData.out.amount;
+        // Only OUT (disbursement) - should be negative
+        totalAmount = -dayData.out.amount;
       }
 
       // Always create summary (even for single event)
