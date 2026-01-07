@@ -50,4 +50,8 @@ Todos & Improvements:
 - ✅ The Edit Investor page looks broken now that we update the screen width sizing to container-fluid
 - When I created a new investor while creating a new loan, the form is being submitted and the created investor is not added on the loan
 - ✅ When rate is fixed. Let's only display "Fixed" and remove the amount on "Rate" column on Loan Preview
-- No google calendar event is being created when creating a new loan
+- No google calendar event is being created when creating a new loan on dev env
+- Support duplicating a loan and edit information before save
+- There's no daily summary created when updating a loan
+- Why is the daily summary is still + if the loan or transaction is disbursement
+- The daily summary is still + if the loan or transaction is disbursement on google calendar event. It should be -
