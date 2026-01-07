@@ -48,3 +48,5 @@ Todos & Improvements:
 - ✅ One major UX I noticed is when I click a link and the redirection takes a few seconds and we don't know if we successfully click it or not. There's no loading between page transition which results to very bad UI/UX
 - ✅ Why when I try to navigate from loans page to loan detail page, I don't have the page transition animation
 - ✅ The Edit Investor page looks broken now that we update the screen width sizing to container-fluid
+- When I created a new investor while creating a new loan, the form is being submitted and the created investor is not added on the loan
+- When rate is fixed. Let's only display "Fixed" and remove the amount on "Rate" column on Loan Preview
