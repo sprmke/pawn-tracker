@@ -3,7 +3,11 @@ import { db } from '@/db';
 import { loans, loanInvestors, investors, interestPeriods } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateLoanTransactions } from '@/lib/loan-transactions';
-import { generateLoanCalendarEvents } from '@/lib/google-calendar';
+import {
+  generateLoanCalendarEvents,
+  updateDailySummaryEvents,
+  getAffectedDatesFromLoan,
+} from '@/lib/google-calendar';
 import { auth } from '@/auth';
 
 export async function GET() {
@@ -219,6 +223,23 @@ export async function POST(request: Request) {
             .where(eq(loans.id, loanId));
           console.log('Calendar events created for loan:', calendarEventIds);
         }
+
+        // Update daily summary events for affected dates
+        const affectedDates = getAffectedDatesFromLoan(completeLoan);
+        // Fetch all loans to calculate correct daily totals
+        const allLoans = await db.query.loans.findMany({
+          where: eq(loans.userId, session.user.id),
+          with: {
+            loanInvestors: {
+              with: {
+                investor: true,
+                interestPeriods: true,
+              },
+            },
+          },
+        });
+        await updateDailySummaryEvents(affectedDates, allLoans);
+        console.log('Daily summary events updated for affected dates');
       }
     } catch (error) {
       console.error('Error creating calendar events for loan:', error);
