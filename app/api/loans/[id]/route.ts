@@ -12,6 +12,8 @@ import {
 import {
   generateLoanCalendarEvents,
   deleteMultipleCalendarEvents,
+  updateDailySummaryEvents,
+  getAffectedDatesFromLoan,
 } from '@/lib/google-calendar';
 import { hasLoanAccess } from '@/lib/access-control';
 import { requiresTransactionRegeneration } from '@/lib/loan-update-detector';
@@ -409,6 +411,45 @@ export async function PUT(
             .where(eq(loans.id, loanId));
           console.log('Calendar events updated for loan:', calendarEventIds);
         }
+
+        // Update daily summary events for affected dates
+        // Get affected dates from both the old and updated loan to handle date changes
+        const oldAffectedDates = getAffectedDatesFromLoan({
+          ...existingLoan,
+          loanInvestors: existingLoan.loanInvestors.map((li) => ({
+            ...li,
+            investor: { id: li.investorId, name: '' } as any,
+          })),
+        } as any);
+        const newAffectedDates = getAffectedDatesFromLoan(updatedLoan);
+
+        // Combine and deduplicate affected dates
+        const allAffectedDates = [...oldAffectedDates];
+        const dateSet = new Set(
+          oldAffectedDates.map((d) => d.toISOString().split('T')[0])
+        );
+        for (const date of newAffectedDates) {
+          const dateKey = date.toISOString().split('T')[0];
+          if (!dateSet.has(dateKey)) {
+            dateSet.add(dateKey);
+            allAffectedDates.push(date);
+          }
+        }
+
+        // Fetch all loans to calculate correct daily totals
+        const allLoans = await db.query.loans.findMany({
+          where: eq(loans.userId, session.user.id),
+          with: {
+            loanInvestors: {
+              with: {
+                investor: true,
+                interestPeriods: true,
+              },
+            },
+          },
+        });
+        await updateDailySummaryEvents(allAffectedDates, allLoans);
+        console.log('Daily summary events updated for affected dates');
       }
     } catch (error) {
       console.error('Error updating calendar events for loan:', error);
@@ -451,13 +492,25 @@ export async function DELETE(
       return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
     }
 
+    // Fetch complete loan data (including investors) BEFORE deletion for calendar updates
     const existingLoan = await db.query.loans.findFirst({
       where: eq(loans.id, loanId),
+      with: {
+        loanInvestors: {
+          with: {
+            investor: true,
+            interestPeriods: true,
+          },
+        },
+      },
     });
 
     if (!existingLoan) {
       return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
     }
+
+    // Get affected dates BEFORE deletion
+    const affectedDates = getAffectedDatesFromLoan(existingLoan);
 
     // Delete associated transactions first and get affected investors
     let affectedInvestorIds: number[] = [];
@@ -495,6 +548,22 @@ export async function DELETE(
         await deleteMultipleCalendarEvents(existingEventIds);
         console.log('Deleted calendar events for loan');
       }
+
+      // Update daily summary events for affected dates (already calculated before deletion)
+      // Fetch all remaining loans to calculate correct daily totals
+      const allLoans = await db.query.loans.findMany({
+        where: eq(loans.userId, session.user.id),
+        with: {
+          loanInvestors: {
+            with: {
+              investor: true,
+              interestPeriods: true,
+            },
+          },
+        },
+      });
+      await updateDailySummaryEvents(affectedDates, allLoans);
+      console.log('Daily summary events updated for affected dates after deletion');
     } catch (error) {
       console.error('Error deleting calendar events:', error);
       // Don't fail the loan deletion if calendar event deletion fails
