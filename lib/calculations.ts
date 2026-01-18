@@ -561,6 +561,135 @@ export function calculateLoanStats(loan: LoanWithInvestors): {
 }
 
 /**
+ * Calculate paid and pending amounts for loans with multiple interest periods
+ * Returns amounts based on period status (Completed vs Pending/Overdue)
+ */
+export function calculateMultipleInterestPaymentStatus(
+  loanInvestors: Array<{
+    amount: string;
+    interestRate: string;
+    interestType?: string;
+    hasMultipleInterest?: boolean;
+    interestPeriods?: Array<{
+      interestRate: string;
+      interestType?: string;
+      dueDate?: Date | string;
+      status?: string;
+    }>;
+    investor?: { id: number };
+    investorId?: number;
+  }>
+): {
+  hasMultipleDueDates: boolean;
+  totalPeriods: number;
+  completedPeriods: number;
+  pendingPeriods: number;
+  paidAmount: number;
+  pendingAmount: number;
+} {
+  // Check if loan has multiple interest periods
+  const hasMultipleDueDates = loanInvestors.some(
+    (li) =>
+      li.hasMultipleInterest &&
+      li.interestPeriods &&
+      li.interestPeriods.length > 1
+  );
+
+  if (!hasMultipleDueDates) {
+    return {
+      hasMultipleDueDates: false,
+      totalPeriods: 0,
+      completedPeriods: 0,
+      pendingPeriods: 0,
+      paidAmount: 0,
+      pendingAmount: 0,
+    };
+  }
+
+  // Group by investor to handle multiple interest correctly
+  const investorGroups = new Map<number, typeof loanInvestors>();
+
+  loanInvestors.forEach((li) => {
+    const investorId = li.investor?.id || li.investorId;
+    if (investorId) {
+      const existing = investorGroups.get(investorId) || [];
+      existing.push(li);
+      investorGroups.set(investorId, existing);
+    }
+  });
+
+  let paidAmount = 0;
+  let pendingAmount = 0;
+  let totalPeriods = 0;
+  let completedPeriods = 0;
+  let pendingPeriods = 0;
+
+  investorGroups.forEach((transactions) => {
+    // Calculate total capital for this investor
+    const investorTotalCapital = transactions.reduce(
+      (sum, t) => sum + parseFloat(t.amount),
+      0
+    );
+
+    // Find the transaction with multiple interest periods
+    const transactionWithPeriods = transactions.find(
+      (t) =>
+        t.hasMultipleInterest &&
+        t.interestPeriods &&
+        t.interestPeriods.length > 0
+    );
+
+    if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
+      const periods = [...transactionWithPeriods.interestPeriods].sort(
+        (a, b) =>
+          new Date(a.dueDate || 0).getTime() -
+          new Date(b.dueDate || 0).getTime()
+      );
+
+      totalPeriods += periods.length;
+
+      periods.forEach((period, index) => {
+        const periodInterest = calculateInterest(
+          investorTotalCapital,
+          parseFloat(period.interestRate),
+          period.interestType
+        );
+
+        const isLastPeriod = index === periods.length - 1;
+
+        if (period.status === 'Completed') {
+          completedPeriods++;
+          // For completed periods: add interest only (except last period which includes capital)
+          if (isLastPeriod) {
+            paidAmount += investorTotalCapital + periodInterest;
+          } else {
+            paidAmount += periodInterest;
+          }
+        } else {
+          // Pending or Overdue
+          pendingPeriods++;
+          // For pending periods: add interest only (except last period which includes capital)
+          if (isLastPeriod) {
+            pendingAmount += investorTotalCapital + periodInterest;
+          } else {
+            pendingAmount += periodInterest;
+          }
+        }
+      });
+    }
+  });
+
+  return {
+    hasMultipleDueDates,
+    totalPeriods,
+    completedPeriods,
+    pendingPeriods,
+    paidAmount,
+    pendingAmount,
+  };
+}
+
+/**
  * Calculate comprehensive stats for an investor
  */
 export function calculateInvestorStats(investor: InvestorWithLoans): {
