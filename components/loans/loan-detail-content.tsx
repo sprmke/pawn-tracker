@@ -13,6 +13,7 @@ import {
   calculateLoanDuration,
   countUniqueInvestors,
   groupByInvestor,
+  calculateMultipleInterestPaymentStatus,
 } from '@/lib/calculations';
 import { LoanSummarySection } from './loan-summary-section';
 import { LoanInvestorsSection } from './loan-investors-section';
@@ -49,6 +50,11 @@ export function LoanDetailContent({
 
   const balance = totalPrincipal - fundedCapital;
 
+  // Calculate multiple interest payment status
+  const multipleInterestPaymentStatus = calculateMultipleInterestPaymentStatus(
+    loan.loanInvestors
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -72,6 +78,7 @@ export function LoanDetailContent({
         status={loan.status}
         balance={balance}
         showStatus={false}
+        multipleInterestPaymentStatus={multipleInterestPaymentStatus}
       />
 
       {/* Loan Details */}
