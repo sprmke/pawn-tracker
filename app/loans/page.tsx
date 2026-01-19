@@ -41,6 +41,8 @@ import { LoanWithInvestors } from '@/lib/types';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import { LoanCalendarView } from '@/components/loans/loan-calendar-view';
 import { LoanDetailModal } from '@/components/loans/loan-detail-modal';
+import { LoanCreateModal } from '@/components/loans/loan-create-modal';
+import { useLoanDuplicateStore } from '@/stores/loan-duplicate-store';
 import {
   calculateTotalInterest,
   calculateAverageRate,
@@ -104,6 +106,10 @@ export default function LoansPage() {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Store for create modal (used when duplicating from detail modal)
+  const isCreateModalOpen = useLoanDuplicateStore((state) => state.isCreateModalOpen);
+  const closeCreateModal = useLoanDuplicateStore((state) => state.closeCreateModal);
 
   // Automatically check for overdue loans and periods
   useOverdueCheck();
@@ -1191,6 +1197,15 @@ export default function LoansPage() {
           onUpdate={fetchLoans}
         />
       )}
+
+      {/* Create/Duplicate Loan Modal */}
+      <LoanCreateModal
+        open={isCreateModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeCreateModal();
+        }}
+        onSuccess={fetchLoans}
+      />
     </div>
   );
 }
