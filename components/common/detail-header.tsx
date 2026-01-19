@@ -19,6 +19,7 @@ import {
   CheckCircle,
   Wallet,
   ExternalLink,
+  Copy,
 } from 'lucide-react';
 
 // Common styles for responsive icon buttons
@@ -46,6 +47,8 @@ interface DetailHeaderProps {
   showPayBalance?: boolean;
   onViewLoan?: () => void;
   showViewLoan?: boolean;
+  onDuplicate?: () => void;
+  showDuplicate?: boolean;
 }
 
 export function DetailHeader({
@@ -69,6 +72,8 @@ export function DetailHeader({
   showPayBalance = false,
   onViewLoan,
   showViewLoan = false,
+  onDuplicate,
+  showDuplicate = false,
 }: DetailHeaderProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -128,6 +133,12 @@ export function DetailHeader({
               <Button variant="outline" size="sm" onClick={onEdit} className={btnClass}>
                 <Edit className={iconClass} />
                 <span className="hidden md:inline text-xs">Edit</span>
+              </Button>
+            )}
+            {showDuplicate && onDuplicate && (
+              <Button variant="outline" size="sm" onClick={onDuplicate} className={btnClass}>
+                <Copy className={iconClass} />
+                <span className="hidden md:inline text-xs">Duplicate</span>
               </Button>
             )}
             {showPayBalance && onPayBalance && (
