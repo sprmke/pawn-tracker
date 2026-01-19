@@ -18,7 +18,7 @@ async function getInvestors(userId: string) {
 }
 
 interface NewLoanPageProps {
-  searchParams: Promise<{ investorId?: string }>;
+  searchParams: Promise<{ investorId?: string; duplicate?: string }>;
 }
 
 export default async function NewLoanPage({ searchParams }: NewLoanPageProps) {
@@ -33,11 +33,22 @@ export default async function NewLoanPage({ searchParams }: NewLoanPageProps) {
     ? parseInt(params.investorId)
     : undefined;
 
+  // Parse duplicate data if present
+  let duplicateData = undefined;
+  if (params.duplicate) {
+    try {
+      duplicateData = JSON.parse(atob(params.duplicate));
+    } catch (e) {
+      console.error('Failed to parse duplicate data:', e);
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       <LoanForm
         investors={allInvestors}
         preselectedInvestorId={preselectedInvestorId}
+        duplicateData={duplicateData}
       />
     </div>
   );
