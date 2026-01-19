@@ -54,6 +54,6 @@ Todos & Improvements:
 - Add another button to loan detail page header action buttons for "Duplicate". This will duplicate and copy all loan exact information. When user clicks this, it will automatically redirect it to create loan page and the Name would be empty by default and the input will be autofocus.
 - There's no daily summary event created on google calendar adding or updating a loan
 - ✅ The daily summary is + if the loan or transaction is disbursement on google calendar event. It should be -
-- On Loan detail page, if the loan is multiple due dates, we should display the amount already paid and the balance remaining. Let's compute and put it inside summary card section
+- ✅ On Loan detail page, if the loan is multiple due dates, we should display the amount already paid and the balance remaining. Let's compute and put it inside summary card section
 - I have an issue where if the investor has 0 amount of principal and have fixed interest. It's displaying the correct breakdown on preview section. But when I save it and reload the loan detail page, it displays "XXXX%" on the Rate and "P0.00" on the interest. loan preview and investors on loan detail page displays Rate of 2100.00%
 - I have an issue where if the investor has 0 amount of principal and have fixed interest. It's displaying the correct breakdown on preview section. But when I save it and reload the loan detail page, it displays "XXXX%" on the Rate and "P0.00" on the interest. We should keep and persist the "Fixed" for rate and display the saved fixed interest amount under "Interest".
