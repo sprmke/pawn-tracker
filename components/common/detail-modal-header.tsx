@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2, CheckCircle, Wallet, Eye, X } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle, Wallet, Eye, X, Copy } from 'lucide-react';
 
 // Common styles for responsive icon buttons
 const btnClass = 'flex-shrink-0 h-8 px-2 md:px-3';
@@ -19,6 +19,8 @@ interface DetailModalHeaderProps {
   showPayBalance?: boolean;
   onViewLoan?: () => void;
   showViewLoan?: boolean;
+  onDuplicate?: () => void;
+  showDuplicate?: boolean;
 }
 
 export function DetailModalHeader({
@@ -33,6 +35,8 @@ export function DetailModalHeader({
   showPayBalance = false,
   onViewLoan,
   showViewLoan = false,
+  onDuplicate,
+  showDuplicate = false,
 }: DetailModalHeaderProps) {
   return (
     <div className="flex flex-wrap gap-1.5 sm:gap-2">
@@ -40,6 +44,12 @@ export function DetailModalHeader({
         <Button variant="outline" size="sm" onClick={onEdit} className={btnClass}>
           <Pencil className={iconClass} />
           <span className="hidden md:inline text-xs">Edit</span>
+        </Button>
+      )}
+      {showDuplicate && onDuplicate && (
+        <Button variant="outline" size="sm" onClick={onDuplicate} className={btnClass}>
+          <Copy className={iconClass} />
+          <span className="hidden md:inline text-xs">Duplicate</span>
         </Button>
       )}
       {showPayBalance && onPayBalance && (
