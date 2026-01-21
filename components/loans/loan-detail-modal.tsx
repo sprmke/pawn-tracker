@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useLoanDuplicateStore, createDuplicateDataFromLoan } from '@/stores/loan-duplicate-store';
 
 interface LoanDetailModalProps {
   loan: LoanWithInvestors | null;
@@ -45,6 +46,9 @@ export function LoanDetailModal({
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [isLoadingInvestors, setIsLoadingInvestors] = useState(false);
   const [loan, setLoan] = useState<LoanWithInvestors | null>(initialLoan);
+
+  // Store for duplicate functionality
+  const openCreateModal = useLoanDuplicateStore((state) => state.openCreateModal);
 
   // Update local loan state when prop changes
   useEffect(() => {
@@ -71,7 +75,7 @@ export function LoanDetailModal({
     if (open && isEditing) {
       fetchInvestors();
     }
-  }, [isEditing]); // Only watch isEditing changes
+  }, [isEditing]);
 
   useEffect(() => {
     // Reset editing state when modal closes
@@ -164,6 +168,19 @@ export function LoanDetailModal({
     }
   };
 
+  const handleDuplicate = () => {
+    // Create duplicate data and store it
+    const duplicateData = createDuplicateDataFromLoan(loan);
+    
+    // Close this modal first
+    onOpenChange(false);
+    
+    // Then open the create modal via store (with a small delay for smoother transition)
+    setTimeout(() => {
+      openCreateModal(duplicateData);
+    }, 150);
+  };
+
   const isOverdue = loan.status === 'Overdue';
   const isPartiallyFunded = loan.status === 'Partially Funded';
 
@@ -195,6 +212,8 @@ export function LoanDetailModal({
                   showPayBalance={isPartiallyFunded}
                   onComplete={() => setShowCompleteDialog(true)}
                   showComplete={isOverdue}
+                  onDuplicate={handleDuplicate}
+                  showDuplicate={true}
                 />
               </div>
             </DialogHeader>
@@ -203,7 +222,7 @@ export function LoanDetailModal({
           <div className={isEditing ? '' : 'mt-4'}>
             {isEditing ? (
               <LoanForm
-                key={`loan-form-${investors.length}`}
+                key={`loan-form-edit-${investors.length}`}
                 investors={investors}
                 existingLoan={loan}
                 onSuccess={handleSuccess}
