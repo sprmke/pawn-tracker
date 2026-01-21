@@ -8,6 +8,7 @@ import { LoanWithInvestors, Investor } from '@/lib/types';
 import { LoanForm } from '@/components/loans/loan-form';
 import { LoanDetailContent } from '@/components/loans/loan-detail-content';
 import { DetailHeader } from '@/components/common';
+import { createDuplicateDataFromLoan } from '@/stores/loan-duplicate-store';
 
 interface LoanDetailClientProps {
   loan: LoanWithInvestors;
@@ -23,6 +24,15 @@ export function LoanDetailClient({ loan, investors }: LoanDetailClientProps) {
     if (investorsSection) {
       investorsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  };
+
+  const handleDuplicate = () => {
+    // Create duplicate data using the shared helper
+    const duplicateData = createDuplicateDataFromLoan(loan);
+
+    // For page view, navigate to the create page with encoded data
+    const encodedData = btoa(JSON.stringify(duplicateData));
+    router.push(`/loans/new?duplicate=${encodedData}`);
   };
 
   const handleDelete = async () => {
@@ -110,6 +120,8 @@ export function LoanDetailClient({ loan, investors }: LoanDetailClientProps) {
         onComplete={handleComplete}
         completeTitle="Complete Loan"
         completeDescription="Are you sure you want to mark this loan as completed? This will change the loan status to 'Completed'."
+        showDuplicate={true}
+        onDuplicate={handleDuplicate}
       />
 
       <LoanDetailContent
