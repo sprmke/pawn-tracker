@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -47,6 +47,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { CopyInvestorModal } from './copy-investor-modal';
+import { DuplicateLoanData } from '@/stores/loan-duplicate-store';
 
 const loanSchema = z.object({
   loanName: z.string().min(1, 'Loan name is required'),
@@ -80,6 +81,7 @@ interface LoanFormProps {
   onCancel?: () => void;
   preselectedInvestorId?: number;
   isLoadingInvestors?: boolean;
+  duplicateData?: DuplicateLoanData;
 }
 
 export function LoanForm({
@@ -89,10 +91,20 @@ export function LoanForm({
   onCancel,
   preselectedInvestorId,
   isLoadingInvestors = false,
+  duplicateData,
 }: LoanFormProps) {
   const router = useRouter();
   const isEditMode = !!existingLoan;
+  const isDuplicateMode = !!duplicateData;
   const formRef = useRef<HTMLFormElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Autofocus name input when duplicating
+  useEffect(() => {
+    if (isDuplicateMode && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [isDuplicateMode]);
 
   // State for investors list (can be updated when new investor is added)
   const [investors, setInvestors] = useState<Investor[]>(initialInvestors);
@@ -170,6 +182,70 @@ export function LoanForm({
       return result;
     }
 
+    // If duplicateData is provided, initialize from it
+    if (duplicateData) {
+      // Group loan investors by investor ID
+      const investorMap = new Map<number, Transaction[]>();
+
+      duplicateData.loanInvestors.forEach((li) => {
+        const transactions = investorMap.get(li.investorId) || [];
+
+        // If type is 'fixed', interestRate contains the fixed amount
+        // If type is 'rate', interestRate contains the percentage
+        const interestAmount =
+          li.interestType === 'fixed' ? li.interestRate : '';
+        const interestRate = li.interestType === 'rate' ? li.interestRate : '';
+
+        transactions.push({
+          id: `temp-${Date.now()}-${Math.random()}`,
+          amount: li.amount,
+          interestRate: interestRate,
+          interestAmount: interestAmount,
+          interestType: li.interestType,
+          sentDate: toLocalDateString(li.sentDate),
+          isPaid: li.isPaid,
+        });
+        investorMap.set(li.investorId, transactions);
+      });
+
+      // Convert map to array of InvestorAllocation
+      const result: InvestorAllocation[] = [];
+      investorMap.forEach((transactions, investorId) => {
+        const investor = initialInvestors.find((inv) => inv.id === investorId);
+
+        // Get the first loan investor record for this investor to check hasMultipleInterest
+        const firstLoanInvestor = duplicateData.loanInvestors.find(
+          (li) => li.investorId === investorId
+        );
+
+        // Convert interest periods if they exist
+        const interestPeriods: InterestPeriodData[] =
+          firstLoanInvestor?.interestPeriods
+            ? firstLoanInvestor.interestPeriods.map((ip) => ({
+                id: `temp-${Date.now()}-${Math.random()}`,
+                dueDate: toLocalDateString(ip.dueDate),
+                interestRate: ip.interestType === 'rate' ? ip.interestRate : '',
+                interestAmount:
+                  ip.interestType === 'fixed' ? ip.interestRate : '',
+                interestType: ip.interestType,
+                status: ip.status,
+              }))
+            : [];
+
+        if (investor) {
+          result.push({
+            investor,
+            transactions,
+            hasMultipleInterest:
+              firstLoanInvestor?.hasMultipleInterest || false,
+            interestPeriods: interestPeriods,
+          });
+        }
+      });
+
+      return result;
+    }
+
     // If preselectedInvestorId is provided, add that investor
     if (preselectedInvestorId) {
       const preselectedInvestor = initialInvestors.find(
@@ -218,9 +294,17 @@ export function LoanForm({
           freeLotSqm: existingLoan.freeLotSqm?.toString() || '',
           notes: existingLoan.notes || '',
         }
-      : {
-          type: 'Lot Title' as const,
-        },
+      : duplicateData
+        ? {
+            loanName: '', // Empty name for duplicate
+            type: duplicateData.type,
+            dueDate: toLocalDateString(duplicateData.dueDate),
+            freeLotSqm: duplicateData.freeLotSqm?.toString() || '',
+            notes: duplicateData.notes || '',
+          }
+        : {
+            type: 'Lot Title' as const,
+          },
   });
 
   const watchType = watch('type');
@@ -868,7 +952,12 @@ export function LoanForm({
               <Input
                 id="loanName"
                 {...register('loanName')}
+                ref={(e) => {
+                  register('loanName').ref(e);
+                  (nameInputRef as React.MutableRefObject<HTMLInputElement | null>).current = e;
+                }}
                 placeholder="e.g., Mexico, Pampanga"
+                autoFocus={isDuplicateMode}
               />
               {errors.loanName && (
                 <p className="text-sm text-red-600">
