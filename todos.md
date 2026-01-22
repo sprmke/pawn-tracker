@@ -59,3 +59,4 @@ Todos & Improvements:
 - I have an issue where if the investor has 0 amount of principal and have fixed interest. It's displaying the correct breakdown on preview section. But when I save it and reload the loan detail page, it displays "XXXX%" on the Rate and "P0.00" on the interest. We should keep and persist the "Fixed" for rate and display the saved fixed interest amount under "Interest".
 - Set the calendar view as default view instead of grid view for transactions and loans page
 - Can we support multiple selection when filtering the status, types, loan status for transactions, loans and investors pages
+- Add support to see cashflow trend chart by month, week and day
