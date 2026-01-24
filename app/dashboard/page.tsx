@@ -26,15 +26,21 @@ import {
   OverdueChecker,
 } from '@/components/common';
 import {
-  CurrencyLineChart,
   CurrencyBarChart,
   LoanTypePieChart,
+  CashflowTrendChart,
 } from '@/components/common/charts';
 import {
   format,
   subWeeks,
+  subDays,
+  subMonths,
   startOfWeek,
   endOfWeek,
+  startOfDay,
+  endOfDay,
+  startOfMonth,
+  endOfMonth,
   addDays,
   isBefore,
   isAfter,
@@ -241,6 +247,46 @@ async function getDashboardData(userId: string) {
       (t) => t.type === 'Investment'
     );
 
+    // Helper function to check if a transaction qualifies as valid inflow
+    // Inflow is only valid if:
+    // - No loan attached (general investment transaction), OR
+    // - Loan is attached AND loan status is 'Completed' (paid on time, not overdue)
+    const isValidInflow = (t: (typeof allTransactions)[0]) => {
+      if (t.direction !== 'In') return false;
+      // If no loan attached, it's a general transaction - count as inflow
+      if (!t.loan) return true;
+      // If loan is attached, only count if loan is completed (paid)
+      return t.loan.status === 'Completed';
+    };
+
+    // Calculate daily trend data (last 14 days)
+    const dailyData = [];
+    for (let i = 13; i >= 0; i--) {
+      const dayDate = subDays(new Date(), i);
+      const dayStart = startOfDay(dayDate);
+      const dayEnd = endOfDay(dayDate);
+
+      const dayTransactions = allTransactions.filter((t) => {
+        const tDate = new Date(t.date);
+        return tDate >= dayStart && tDate <= dayEnd;
+      });
+
+      const dayInflow = dayTransactions
+        .filter(isValidInflow)
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      const dayOutflow = dayTransactions
+        .filter((t) => t.direction === 'Out')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      dailyData.push({
+        label: format(dayStart, 'MMM dd'),
+        inflow: dayInflow,
+        outflow: dayOutflow,
+        net: dayInflow - dayOutflow,
+      });
+    }
+
     // Calculate weekly trend data (last 8 weeks)
     const weeklyData = [];
     for (let i = 7; i >= 0; i--) {
@@ -254,7 +300,7 @@ async function getDashboardData(userId: string) {
       });
 
       const weekInflow = weekTransactions
-        .filter((t) => t.direction === 'In')
+        .filter(isValidInflow)
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
       const weekOutflow = weekTransactions
@@ -262,10 +308,38 @@ async function getDashboardData(userId: string) {
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
       weeklyData.push({
-        week: format(weekStart, 'MMM dd'),
+        label: format(weekStart, 'MMM dd'),
         inflow: weekInflow,
         outflow: weekOutflow,
         net: weekInflow - weekOutflow,
+      });
+    }
+
+    // Calculate monthly trend data (last 6 months)
+    const monthlyData = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = subMonths(new Date(), i);
+      const monthStart = startOfMonth(monthDate);
+      const monthEnd = endOfMonth(monthDate);
+
+      const monthTransactions = allTransactions.filter((t) => {
+        const tDate = new Date(t.date);
+        return tDate >= monthStart && tDate <= monthEnd;
+      });
+
+      const monthInflow = monthTransactions
+        .filter(isValidInflow)
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      const monthOutflow = monthTransactions
+        .filter((t) => t.direction === 'Out')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      monthlyData.push({
+        label: format(monthStart, 'MMM yyyy'),
+        inflow: monthInflow,
+        outflow: monthOutflow,
+        net: monthInflow - monthOutflow,
       });
     }
 
@@ -412,7 +486,9 @@ async function getDashboardData(userId: string) {
       loanTransactions: loanTransactions.length,
       investmentTransactions: investmentTransactions.length,
       // Chart data
+      dailyData,
       weeklyData,
+      monthlyData,
       loanTypeData,
       loanStatusData,
       investorCapitalData,
@@ -437,7 +513,9 @@ async function getDashboardData(userId: string) {
       totalOutflow: 0,
       loanTransactions: 0,
       investmentTransactions: 0,
+      dailyData: [],
       weeklyData: [],
+      monthlyData: [],
       loanTypeData: [],
       loanStatusData: [],
       investorCapitalData: [],
@@ -560,17 +638,13 @@ export default async function DashboardPage() {
 
       {/* Charts Section */}
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* Weekly Cashflow Trend */}
-        <CurrencyLineChart
-          data={data.weeklyData}
-          title="Weekly Cashflow Trend"
-          xAxisKey="week"
-          dataKeys={[
-            { key: 'inflow', label: 'Inflow', color: '#34d399' }, // Pastel Emerald
-            { key: 'outflow', label: 'Outflow', color: '#fcd34d' }, // Pastel Amber
-            { key: 'net', label: 'Net', color: '#5986f9' }, // Pastel Blue
-          ]}
-          emptyMessage="No weekly cashflow data"
+        {/* Cashflow Trend */}
+        <CashflowTrendChart
+          dailyData={data.dailyData}
+          weeklyData={data.weeklyData}
+          monthlyData={data.monthlyData}
+          title="Cashflow Trend"
+          emptyMessage="No cashflow data"
         />
 
         {/* Top Investors by Capital */}
