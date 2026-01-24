@@ -43,6 +43,7 @@ import {
   LoansTable,
   SearchFilter,
   RangeFilter,
+  MultiSelectFilter,
   CollapsibleSection,
   CollapsibleContent,
   InlineLoader,
@@ -105,9 +106,9 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const [transactionSearchQuery, setTransactionSearchQuery] = useState('');
   const [showPastTransactions, setShowPastTransactions] = useState(false);
   const [transactionTypeFilter, setTransactionTypeFilter] =
-    useState<string>('all');
+    useState<string[]>([]);
   const [transactionDirectionFilter, setTransactionDirectionFilter] =
-    useState<string>('all');
+    useState<string[]>([]);
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
   const [minBalance, setMinBalance] = useState<string>('');
@@ -116,8 +117,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
   // Loan filters
   const [loanSearchQuery, setLoanSearchQuery] = useState('');
-  const [loanTypeFilter, setLoanTypeFilter] = useState<string>('all');
-  const [loanStatusFilter, setLoanStatusFilter] = useState<string>('all');
+  const [loanTypeFilter, setLoanTypeFilter] = useState<string[]>([]);
+  const [loanStatusFilter, setLoanStatusFilter] = useState<string[]>([]);
   const [freeLotFilter, setFreeLotFilter] = useState<string>('all');
   const [minPrincipal, setMinPrincipal] = useState<string>('');
   const [maxPrincipal, setMaxPrincipal] = useState<string>('');
@@ -213,8 +214,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const clearTransactionFilters = () => {
     setTransactionSearchQuery('');
     setShowPastTransactions(false);
-    setTransactionTypeFilter('all');
-    setTransactionDirectionFilter('all');
+    setTransactionTypeFilter([]);
+    setTransactionDirectionFilter([]);
     setMinAmount('');
     setMaxAmount('');
     setMinBalance('');
@@ -224,8 +225,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   // Clear loan filters
   const clearLoanFilters = () => {
     setLoanSearchQuery('');
-    setLoanTypeFilter('all');
-    setLoanStatusFilter('all');
+    setLoanTypeFilter([]);
+    setLoanStatusFilter([]);
     setFreeLotFilter('all');
     setMinPrincipal('');
     setMaxPrincipal('');
@@ -246,8 +247,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
   const hasActiveTransactionFilters =
     transactionSearchQuery !== '' ||
-    transactionTypeFilter !== 'all' ||
-    transactionDirectionFilter !== 'all' ||
+    transactionTypeFilter.length > 0 ||
+    transactionDirectionFilter.length > 0 ||
     showPastTransactions !== false ||
     hasActiveAmountFilters;
 
@@ -264,8 +265,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
   const hasActiveLoanFilters =
     loanSearchQuery !== '' ||
-    loanTypeFilter !== 'all' ||
-    loanStatusFilter !== 'all' ||
+    loanTypeFilter.length > 0 ||
+    loanStatusFilter.length > 0 ||
     hasActiveLoanAmountFilters;
 
   // Transform transactions to include investor data
@@ -305,18 +306,18 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         }
       }
 
-      // Type filter
+      // Type filter (multi-select)
       if (
-        transactionTypeFilter !== 'all' &&
-        transaction.type !== transactionTypeFilter
+        transactionTypeFilter.length > 0 &&
+        !transactionTypeFilter.includes(transaction.type)
       ) {
         return false;
       }
 
-      // Direction filter
+      // Direction filter (multi-select)
       if (
-        transactionDirectionFilter !== 'all' &&
-        transaction.direction !== transactionDirectionFilter
+        transactionDirectionFilter.length > 0 &&
+        !transactionDirectionFilter.includes(transaction.direction)
       ) {
         return false;
       }
@@ -353,13 +354,13 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
       if (!matchesName && !matchesNotes) return false;
     }
 
-    // Type filter
-    if (loanTypeFilter !== 'all' && loan.type !== loanTypeFilter) {
+    // Type filter (multi-select)
+    if (loanTypeFilter.length > 0 && !loanTypeFilter.includes(loan.type)) {
       return false;
     }
 
-    // Status filter
-    if (loanStatusFilter !== 'all' && loan.status !== loanStatusFilter) {
+    // Status filter (multi-select)
+    if (loanStatusFilter.length > 0 && !loanStatusFilter.includes(loan.status)) {
       return false;
     }
 
@@ -624,39 +625,33 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   />
 
                   {/* Type Filter - Hidden on Mobile */}
-                  <Select
-                    value={loanTypeFilter}
-                    onValueChange={setLoanTypeFilter}
-                  >
-                    <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="Lot Title">Lot Title</SelectItem>
-                      <SelectItem value="OR/CR">OR/CR</SelectItem>
-                      <SelectItem value="Agent">Agent</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <MultiSelectFilter
+                    options={[
+                      { value: 'Lot Title', label: 'Lot Title' },
+                      { value: 'OR/CR', label: 'OR/CR' },
+                      { value: 'Agent', label: 'Agent' },
+                    ]}
+                    selected={loanTypeFilter}
+                    onChange={setLoanTypeFilter}
+                    placeholder="Select Type"
+                    allLabel="All Types"
+                    triggerClassName="hidden xl:flex w-full xl:w-[180px]"
+                  />
 
                   {/* Status Filter - Hidden on Mobile */}
-                  <Select
-                    value={loanStatusFilter}
-                    onValueChange={setLoanStatusFilter}
-                  >
-                    <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="Fully Funded">Fully Funded</SelectItem>
-                      <SelectItem value="Partially Funded">
-                        Partially Funded
-                      </SelectItem>
-                      <SelectItem value="Completed">Completed</SelectItem>
-                      <SelectItem value="Overdue">Overdue</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <MultiSelectFilter
+                    options={[
+                      { value: 'Fully Funded', label: 'Fully Funded' },
+                      { value: 'Partially Funded', label: 'Partially Funded' },
+                      { value: 'Completed', label: 'Completed' },
+                      { value: 'Overdue', label: 'Overdue' },
+                    ]}
+                    selected={loanStatusFilter}
+                    onChange={setLoanStatusFilter}
+                    placeholder="Select Status"
+                    allLabel="All Status"
+                    triggerClassName="hidden xl:flex w-full xl:w-[180px]"
+                  />
 
                   {/* More Filters Button */}
                   <CollapsibleSection
@@ -710,20 +705,18 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                         <label className="text-xs font-semibold mb-2 block">
                           Type
                         </label>
-                        <Select
-                          value={loanTypeFilter}
-                          onValueChange={setLoanTypeFilter}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Types</SelectItem>
-                            <SelectItem value="Lot Title">Lot Title</SelectItem>
-                            <SelectItem value="OR/CR">OR/CR</SelectItem>
-                            <SelectItem value="Agent">Agent</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MultiSelectFilter
+                          options={[
+                            { value: 'Lot Title', label: 'Lot Title' },
+                            { value: 'OR/CR', label: 'OR/CR' },
+                            { value: 'Agent', label: 'Agent' },
+                          ]}
+                          selected={loanTypeFilter}
+                          onChange={setLoanTypeFilter}
+                          placeholder="Select Type"
+                          allLabel="All Types"
+                          triggerClassName="w-full"
+                        />
                       </div>
 
                       {/* Status Filter - Mobile */}
@@ -731,25 +724,19 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                         <label className="text-xs font-semibold mb-2 block">
                           Status
                         </label>
-                        <Select
-                          value={loanStatusFilter}
-                          onValueChange={setLoanStatusFilter}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="Fully Funded">
-                              Fully Funded
-                            </SelectItem>
-                            <SelectItem value="Partially Funded">
-                              Partially Funded
-                            </SelectItem>
-                            <SelectItem value="Completed">Completed</SelectItem>
-                            <SelectItem value="Overdue">Overdue</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MultiSelectFilter
+                          options={[
+                            { value: 'Fully Funded', label: 'Fully Funded' },
+                            { value: 'Partially Funded', label: 'Partially Funded' },
+                            { value: 'Completed', label: 'Completed' },
+                            { value: 'Overdue', label: 'Overdue' },
+                          ]}
+                          selected={loanStatusFilter}
+                          onChange={setLoanStatusFilter}
+                          placeholder="Select Status"
+                          allLabel="All Status"
+                          triggerClassName="w-full"
+                        />
                       </div>
                     </div>
 
@@ -1037,34 +1024,30 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   </Select>
 
                   {/* Type Filter - Hidden on Mobile */}
-                  <Select
-                    value={transactionTypeFilter}
-                    onValueChange={setTransactionTypeFilter}
-                  >
-                    <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="Investment">Investment</SelectItem>
-                      <SelectItem value="Loan">Loan</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <MultiSelectFilter
+                    options={[
+                      { value: 'Investment', label: 'Investment' },
+                      { value: 'Loan', label: 'Loan' },
+                    ]}
+                    selected={transactionTypeFilter}
+                    onChange={setTransactionTypeFilter}
+                    placeholder="Select Type"
+                    allLabel="All Types"
+                    triggerClassName="hidden xl:flex w-full xl:w-[180px]"
+                  />
 
                   {/* Direction Filter - Hidden on Mobile */}
-                  <Select
-                    value={transactionDirectionFilter}
-                    onValueChange={setTransactionDirectionFilter}
-                  >
-                    <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
-                      <SelectValue placeholder="Direction" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Directions</SelectItem>
-                      <SelectItem value="In">In</SelectItem>
-                      <SelectItem value="Out">Out</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <MultiSelectFilter
+                    options={[
+                      { value: 'In', label: 'In' },
+                      { value: 'Out', label: 'Out' },
+                    ]}
+                    selected={transactionDirectionFilter}
+                    onChange={setTransactionDirectionFilter}
+                    placeholder="Select Direction"
+                    allLabel="All Directions"
+                    triggerClassName="hidden xl:flex w-full xl:w-[180px]"
+                  />
 
                   {/* More Filters Button */}
                   <CollapsibleSection
@@ -1141,21 +1124,17 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                         <label className="text-xs font-semibold mb-2 block">
                           Type
                         </label>
-                        <Select
-                          value={transactionTypeFilter}
-                          onValueChange={setTransactionTypeFilter}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Types</SelectItem>
-                            <SelectItem value="Investment">
-                              Investment
-                            </SelectItem>
-                            <SelectItem value="Loan">Loan</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MultiSelectFilter
+                          options={[
+                            { value: 'Investment', label: 'Investment' },
+                            { value: 'Loan', label: 'Loan' },
+                          ]}
+                          selected={transactionTypeFilter}
+                          onChange={setTransactionTypeFilter}
+                          placeholder="Select Type"
+                          allLabel="All Types"
+                          triggerClassName="w-full"
+                        />
                       </div>
 
                       {/* Direction Filter - Mobile */}
@@ -1163,19 +1142,17 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                         <label className="text-xs font-semibold mb-2 block">
                           Direction
                         </label>
-                        <Select
-                          value={transactionDirectionFilter}
-                          onValueChange={setTransactionDirectionFilter}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Direction" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Directions</SelectItem>
-                            <SelectItem value="In">In</SelectItem>
-                            <SelectItem value="Out">Out</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MultiSelectFilter
+                          options={[
+                            { value: 'In', label: 'In' },
+                            { value: 'Out', label: 'Out' },
+                          ]}
+                          selected={transactionDirectionFilter}
+                          onChange={setTransactionDirectionFilter}
+                          placeholder="Select Direction"
+                          allLabel="All Directions"
+                          triggerClassName="w-full"
+                        />
                       </div>
                     </div>
 
