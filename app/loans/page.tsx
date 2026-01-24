@@ -90,7 +90,7 @@ export default function LoansPage() {
   // Use responsive view mode hook for SSR-safe view mode detection
   const { viewMode, setViewMode, isReady: isViewModeReady } = useResponsiveViewMode<
     'cards' | 'table' | 'calendar'
-  >({ includeCalendar: true });
+  >({ includeCalendar: true, defaultDesktopMode: 'calendar', defaultMobileMode: 'calendar' });
   const [sortField, setSortField] = useState<SortField>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const itemsPerPage = 10;

@@ -54,7 +54,7 @@ export default function TransactionsPage() {
   // Use responsive view mode hook for SSR-safe view mode detection
   const { viewMode, setViewMode, isReady: isViewModeReady } = useResponsiveViewMode<
     'cards' | 'table' | 'calendar'
-  >({ includeCalendar: true });
+  >({ includeCalendar: true, defaultDesktopMode: 'calendar', defaultMobileMode: 'calendar' });
   const itemsPerPage = 10;
 
   // Store the previous showPastTransactions state when switching to calendar view
