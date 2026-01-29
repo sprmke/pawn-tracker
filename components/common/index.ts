@@ -6,6 +6,7 @@ export { ViewModeToggle } from './view-mode-toggle';
 export { LoadingState, InlineLoader } from './loading-state';
 export { SearchFilter } from './search-filter';
 export { RangeFilter } from './range-filter';
+export { MultiSelectFilter, type MultiSelectOption } from './multi-select-filter';
 export { FilterSection } from './filter-section';
 export { CollapsibleSection, CollapsibleContent } from './collapsible-section';
 export { Pagination } from './pagination';
