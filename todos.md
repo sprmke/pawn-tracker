@@ -52,10 +52,10 @@ Todos & Improvements:
 - ✅ When rate is fixed. Let's only display "Fixed" and remove the amount on "Rate" column on Loan Preview
 - ✅ No google calendar event is being created when creating a new loan on dev env
 - ✅ Add another button to loan detail page header action buttons for "Duplicate". This will duplicate and copy all loan exact information. When user clicks this, it will automatically redirect it to create loan page and the Name would be empty by default and the input will be autofocus.
-- There's no daily summary event created on google calendar adding or updating a loan
+- ✅ There's no daily summary event created on google calendar adding or updating a loan
 - ✅ The daily summary is + if the loan or transaction is disbursement on google calendar event. It should be -
 - ✅ On Loan detail page, if the loan is multiple due dates, we should display the amount already paid and the balance remaining. Let's compute and put it inside summary card section
-- I have an issue where if the investor has 0 amount of principal and have fixed interest. It's displaying the correct breakdown on preview section. But when I save it and reload the loan detail page, it displays "XXXX%" on the Rate and "P0.00" on the interest. We should keep and persist the "Fixed" for rate and display the saved fixed interest amount under "Interest".
-- Set the calendar view as default view instead of grid view for transactions and loans page
-- Can we support multiple selection when filtering the status, types, loan status for transactions, loans and investors pages. So, we support checkboxes for the filter list instead of one selection
-- Add support to see cashflow trend chart by month, week and day
+- ✅ I have an issue where if the investor has 0 amount of principal and have fixed interest. It's displaying the correct breakdown on preview section. But when I save it and reload the loan detail page, it displays "XXXX%" on the Rate and "P0.00" on the interest. We should keep and persist the "Fixed" for rate and display the saved fixed interest amount under "Interest". (Fixed: Updated API routes to explicitly check for 'fixed' interestType instead of using truthy/falsy fallback)
+- ✅ Set the calendar view as default view instead of grid view for transactions and loans page
+- ✅ Can we support multiple selection when filtering the status, types, loan status for transactions, loans and investors pages. So, we support checkboxes for the filter list instead of one selection. Apply to all pages that has filters
+- ✅ Add support to see cashflow trend chart by month, week and month to dashboard page
