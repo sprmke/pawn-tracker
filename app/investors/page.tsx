@@ -30,6 +30,7 @@ import {
   ActionButtonsGroup,
   SearchFilter,
   RangeFilter,
+  MultiSelectFilter,
   CardPagination,
   InlineLoader,
   PastDueLoansCard,
@@ -159,7 +160,7 @@ export default function InvestorsPage() {
   useOverdueCheck();
 
   // Filter states
-  const [loanStatusFilter, setLoanStatusFilter] = useState<string>('all');
+  const [loanStatusFilter, setLoanStatusFilter] = useState<string[]>([]);
   const [minBalance, setMinBalance] = useState<string>('');
   const [maxBalance, setMaxBalance] = useState<string>('');
   const [minCapital, setMinCapital] = useState<string>('');
@@ -221,7 +222,7 @@ export default function InvestorsPage() {
 
   const clearFilters = () => {
     setSearchQuery('');
-    setLoanStatusFilter('all');
+    setLoanStatusFilter([]);
     setMinBalance('');
     setMaxBalance('');
     setMinCapital('');
@@ -243,7 +244,7 @@ export default function InvestorsPage() {
     maxGain !== '';
 
   const hasActiveFilters =
-    searchQuery !== '' || loanStatusFilter !== 'all' || hasActiveAmountFilters;
+    searchQuery !== '' || loanStatusFilter.length > 0 || hasActiveAmountFilters;
 
   // Filter investors based on search and filters
   const filteredInvestors = investors.filter((investor) => {
@@ -257,22 +258,23 @@ export default function InvestorsPage() {
       if (!matchesName && !matchesEmail) return false;
     }
 
-    // Loan status filter
-    if (loanStatusFilter !== 'all') {
-      switch (loanStatusFilter) {
-        case 'active':
-          if (stats.activeLoans === 0) return false;
-          break;
-        case 'completed':
-          if (stats.completedLoans === 0) return false;
-          break;
-        case 'overdue':
-          if (stats.overdueLoans === 0) return false;
-          break;
-        case 'no-loans':
-          if (stats.totalLoans > 0) return false;
-          break;
-      }
+    // Loan status filter (multi-select)
+    if (loanStatusFilter.length > 0) {
+      const matchesFilter = loanStatusFilter.some((filter) => {
+        switch (filter) {
+          case 'active':
+            return stats.activeLoans > 0;
+          case 'completed':
+            return stats.completedLoans > 0;
+          case 'overdue':
+            return stats.overdueLoans > 0;
+          case 'no-loans':
+            return stats.totalLoans === 0;
+          default:
+            return false;
+        }
+      });
+      if (!matchesFilter) return false;
     }
 
     // Balance range filter
@@ -385,21 +387,19 @@ export default function InvestorsPage() {
             />
 
             {/* Loan Status Filter - Hidden on smaller screens */}
-            <Select
-              value={loanStatusFilter}
-              onValueChange={(value) => setLoanStatusFilter(value)}
-            >
-              <SelectTrigger className="hidden xl:flex w-full xl:w-[200px]">
-                <SelectValue placeholder="Loan Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Loan Status</SelectItem>
-                <SelectItem value="active">Has Active Loans</SelectItem>
-                <SelectItem value="completed">Has Completed Loans</SelectItem>
-                <SelectItem value="overdue">Has Overdue Loans</SelectItem>
-                <SelectItem value="no-loans">No Loans</SelectItem>
-              </SelectContent>
-            </Select>
+            <MultiSelectFilter
+              options={[
+                { value: 'active', label: 'Has Active Loans' },
+                { value: 'completed', label: 'Has Completed Loans' },
+                { value: 'overdue', label: 'Has Overdue Loans' },
+                { value: 'no-loans', label: 'No Loans' },
+              ]}
+              selected={loanStatusFilter}
+              onChange={setLoanStatusFilter}
+              placeholder="Select Loan Status"
+              allLabel="All Loan Status"
+              triggerClassName="hidden xl:flex w-full xl:w-[200px]"
+            />
 
             {/* More Filters Button */}
             <CollapsibleSection
@@ -434,21 +434,19 @@ export default function InvestorsPage() {
               <label className="text-xs font-semibold mb-2 block">
                 Loan Status
               </label>
-              <Select
-                value={loanStatusFilter}
-                onValueChange={(value) => setLoanStatusFilter(value)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Loan Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Loan Status</SelectItem>
-                  <SelectItem value="active">Has Active Loans</SelectItem>
-                  <SelectItem value="completed">Has Completed Loans</SelectItem>
-                  <SelectItem value="overdue">Has Overdue Loans</SelectItem>
-                  <SelectItem value="no-loans">No Loans</SelectItem>
-                </SelectContent>
-              </Select>
+              <MultiSelectFilter
+                options={[
+                  { value: 'active', label: 'Has Active Loans' },
+                  { value: 'completed', label: 'Has Completed Loans' },
+                  { value: 'overdue', label: 'Has Overdue Loans' },
+                  { value: 'no-loans', label: 'No Loans' },
+                ]}
+                selected={loanStatusFilter}
+                onChange={setLoanStatusFilter}
+                placeholder="Select Loan Status"
+                allLabel="All Loan Status"
+                triggerClassName="w-full"
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
