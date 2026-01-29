@@ -55,6 +55,7 @@ import {
   ActionButtonsGroup,
   SearchFilter,
   RangeFilter,
+  MultiSelectFilter,
   CardPagination,
   InlineLoader,
   ViewModeToggle,
@@ -98,8 +99,8 @@ export default function LoansPage() {
     new Set()
   );
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [freeLotFilter, setFreeLotFilter] = useState<string>('all');
   const [selectedInvestors, setSelectedInvestors] = useState<number[]>([]);
   const [selectedLoan, setSelectedLoan] = useState<LoanWithInvestors | null>(
@@ -136,12 +137,13 @@ export default function LoansPage() {
   // Reset to table view if no data and currently on cards/calendar view
   useEffect(() => {
     if (
+      !loading &&
       loans.length === 0 &&
       (viewMode === 'cards' || viewMode === 'calendar')
     ) {
       setViewMode('table');
     }
-  }, [loans.length, viewMode]);
+  }, [loading, loans.length, viewMode]);
 
   const fetchLoans = async () => {
     try {
@@ -239,8 +241,8 @@ export default function LoansPage() {
 
   const clearFilters = () => {
     setSearchQuery('');
-    setStatusFilter('all');
-    setTypeFilter('all');
+    setStatusFilter([]);
+    setTypeFilter([]);
     setFreeLotFilter('all');
     setSelectedInvestors([]);
     setMinPrincipal('');
@@ -271,8 +273,8 @@ export default function LoansPage() {
 
   const hasActiveFilters =
     searchQuery !== '' ||
-    statusFilter !== 'all' ||
-    typeFilter !== 'all' ||
+    statusFilter.length > 0 ||
+    typeFilter.length > 0 ||
     hasActiveAmountFilters ||
     !!dueDateFilter;
 
@@ -286,13 +288,13 @@ export default function LoansPage() {
       if (!matchesName && !matchesNotes) return false;
     }
 
-    // Status filter
-    if (statusFilter !== 'all' && loan.status !== statusFilter) {
+    // Status filter (multi-select)
+    if (statusFilter.length > 0 && !statusFilter.includes(loan.status)) {
       return false;
     }
 
-    // Type filter
-    if (typeFilter !== 'all' && loan.type !== typeFilter) {
+    // Type filter (multi-select)
+    if (typeFilter.length > 0 && !typeFilter.includes(loan.type)) {
       return false;
     }
 
@@ -528,43 +530,33 @@ export default function LoansPage() {
             />
 
             {/* Status Filter - Hidden on smaller screens */}
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => {
-                setStatusFilter(value);
-              }}
-            >
-              <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Fully Funded">Fully Funded</SelectItem>
-                <SelectItem value="Partially Funded">
-                  Partially Funded
-                </SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-                <SelectItem value="Overdue">Overdue</SelectItem>
-              </SelectContent>
-            </Select>
+            <MultiSelectFilter
+              options={[
+                { value: 'Fully Funded', label: 'Fully Funded' },
+                { value: 'Partially Funded', label: 'Partially Funded' },
+                { value: 'Completed', label: 'Completed' },
+                { value: 'Overdue', label: 'Overdue' },
+              ]}
+              selected={statusFilter}
+              onChange={setStatusFilter}
+              placeholder="Select Status"
+              allLabel="All Status"
+              triggerClassName="hidden xl:flex w-full xl:w-[180px]"
+            />
 
             {/* Type Filter - Hidden on smaller screens */}
-            <Select
-              value={typeFilter}
-              onValueChange={(value) => {
-                setTypeFilter(value);
-              }}
-            >
-              <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="Lot Title">Lot Title</SelectItem>
-                <SelectItem value="OR/CR">OR/CR</SelectItem>
-                <SelectItem value="Agent">Agent</SelectItem>
-              </SelectContent>
-            </Select>
+            <MultiSelectFilter
+              options={[
+                { value: 'Lot Title', label: 'Lot Title' },
+                { value: 'OR/CR', label: 'OR/CR' },
+                { value: 'Agent', label: 'Agent' },
+              ]}
+              selected={typeFilter}
+              onChange={setTypeFilter}
+              placeholder="Select Type"
+              allLabel="All Types"
+              triggerClassName="hidden xl:flex w-full xl:w-[180px]"
+            />
 
             {/* More Filters Button */}
             <Button
@@ -607,25 +599,19 @@ export default function LoansPage() {
                   <label className="text-xs font-semibold mb-2 block">
                     Status
                   </label>
-                  <Select
-                    value={statusFilter}
-                    onValueChange={(value) => {
-                      setStatusFilter(value);
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="Fully Funded">Fully Funded</SelectItem>
-                      <SelectItem value="Partially Funded">
-                        Partially Funded
-                      </SelectItem>
-                      <SelectItem value="Completed">Completed</SelectItem>
-                      <SelectItem value="Overdue">Overdue</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <MultiSelectFilter
+                    options={[
+                      { value: 'Fully Funded', label: 'Fully Funded' },
+                      { value: 'Partially Funded', label: 'Partially Funded' },
+                      { value: 'Completed', label: 'Completed' },
+                      { value: 'Overdue', label: 'Overdue' },
+                    ]}
+                    selected={statusFilter}
+                    onChange={setStatusFilter}
+                    placeholder="Select Status"
+                    allLabel="All Status"
+                    triggerClassName="w-full"
+                  />
                 </div>
 
                 {/* Type Filter - Mobile */}
@@ -633,22 +619,18 @@ export default function LoansPage() {
                   <label className="text-xs font-semibold mb-2 block">
                     Type
                   </label>
-                  <Select
-                    value={typeFilter}
-                    onValueChange={(value) => {
-                      setTypeFilter(value);
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="Lot Title">Lot Title</SelectItem>
-                      <SelectItem value="OR/CR">OR/CR</SelectItem>
-                      <SelectItem value="Agent">Agent</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <MultiSelectFilter
+                    options={[
+                      { value: 'Lot Title', label: 'Lot Title' },
+                      { value: 'OR/CR', label: 'OR/CR' },
+                      { value: 'Agent', label: 'Agent' },
+                    ]}
+                    selected={typeFilter}
+                    onChange={setTypeFilter}
+                    placeholder="Select Type"
+                    allLabel="All Types"
+                    triggerClassName="w-full"
+                  />
                 </div>
               </div>
 
