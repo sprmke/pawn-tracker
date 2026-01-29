@@ -31,6 +31,7 @@ import {
 import {
   SearchFilter,
   RangeFilter,
+  MultiSelectFilter,
   EmptyState,
   CardPagination,
   InlineLoader,
@@ -62,8 +63,8 @@ export default function TransactionsPage() {
   const [wasCalendarView, setWasCalendarView] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPastTransactions, setShowPastTransactions] = useState(false);
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [directionFilter, setDirectionFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [directionFilter, setDirectionFilter] = useState<string[]>([]);
   const [selectedInvestors, setSelectedInvestors] = useState<number[]>([]);
   const [selectedTransaction, setSelectedTransaction] =
     useState<TransactionWithInvestor | null>(null);
@@ -85,12 +86,13 @@ export default function TransactionsPage() {
   // Reset to table view if no data and currently on cards/calendar view
   useEffect(() => {
     if (
+      !loading &&
       transactions.length === 0 &&
       (viewMode === 'cards' || viewMode === 'calendar')
     ) {
       setViewMode('table');
     }
-  }, [transactions.length, viewMode]);
+  }, [loading, transactions.length, viewMode]);
 
   // Handle view mode changes for calendar view
   useEffect(() => {
@@ -143,8 +145,8 @@ export default function TransactionsPage() {
     if (viewMode !== 'calendar') {
       setShowPastTransactions(false);
     }
-    setTypeFilter('all');
-    setDirectionFilter('all');
+    setTypeFilter([]);
+    setDirectionFilter([]);
     setSelectedInvestors([]);
     setMinAmount('');
     setMaxAmount('');
@@ -164,8 +166,8 @@ export default function TransactionsPage() {
     searchQuery !== '' ||
     // Don't count showPastTransactions as active filter in calendar view (it's always true)
     (viewMode !== 'calendar' && showPastTransactions !== false) ||
-    typeFilter !== 'all' ||
-    directionFilter !== 'all' ||
+    typeFilter.length > 0 ||
+    directionFilter.length > 0 ||
     hasActiveAmountFilters;
 
   // Filter transactions based on search and filters
@@ -194,15 +196,15 @@ export default function TransactionsPage() {
       }
     }
 
-    // Type filter
-    if (typeFilter !== 'all' && transaction.type !== typeFilter) {
+    // Type filter (multi-select)
+    if (typeFilter.length > 0 && !typeFilter.includes(transaction.type)) {
       return false;
     }
 
-    // Direction filter
+    // Direction filter (multi-select)
     if (
-      directionFilter !== 'all' &&
-      transaction.direction !== directionFilter
+      directionFilter.length > 0 &&
+      !directionFilter.includes(transaction.direction)
     ) {
       return false;
     }
@@ -344,40 +346,36 @@ export default function TransactionsPage() {
             )}
 
             {/* Type Filter - Hidden on smaller screens */}
-            <Select
-              value={typeFilter}
-              onValueChange={(value) => {
+            <MultiSelectFilter
+              options={[
+                { value: 'Investment', label: 'Investment' },
+                { value: 'Loan', label: 'Loan' },
+              ]}
+              selected={typeFilter}
+              onChange={(value) => {
                 setTypeFilter(value);
                 setCurrentPage(1);
               }}
-            >
-              <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="Investment">Investment</SelectItem>
-                <SelectItem value="Loan">Loan</SelectItem>
-              </SelectContent>
-            </Select>
+              placeholder="Select Type"
+              allLabel="All Types"
+              triggerClassName="hidden xl:flex w-full xl:w-[180px]"
+            />
 
             {/* Direction Filter - Hidden on smaller screens */}
-            <Select
-              value={directionFilter}
-              onValueChange={(value) => {
+            <MultiSelectFilter
+              options={[
+                { value: 'In', label: 'In' },
+                { value: 'Out', label: 'Out' },
+              ]}
+              selected={directionFilter}
+              onChange={(value) => {
                 setDirectionFilter(value);
                 setCurrentPage(1);
               }}
-            >
-              <SelectTrigger className="hidden xl:flex w-full xl:w-[180px]">
-                <SelectValue placeholder="Direction" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Directions</SelectItem>
-                <SelectItem value="In">In</SelectItem>
-                <SelectItem value="Out">Out</SelectItem>
-              </SelectContent>
-            </Select>
+              placeholder="Select Direction"
+              allLabel="All Directions"
+              triggerClassName="hidden xl:flex w-full xl:w-[180px]"
+            />
 
             {/* More Filters Button */}
             <Button
@@ -444,22 +442,20 @@ export default function TransactionsPage() {
                   <label className="text-xs font-semibold mb-2 block">
                     Type
                   </label>
-                  <Select
-                    value={typeFilter}
-                    onValueChange={(value) => {
+                  <MultiSelectFilter
+                    options={[
+                      { value: 'Investment', label: 'Investment' },
+                      { value: 'Loan', label: 'Loan' },
+                    ]}
+                    selected={typeFilter}
+                    onChange={(value) => {
                       setTypeFilter(value);
                       setCurrentPage(1);
                     }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="Investment">Investment</SelectItem>
-                      <SelectItem value="Loan">Loan</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select Type"
+                    allLabel="All Types"
+                    triggerClassName="w-full"
+                  />
                 </div>
 
                 {/* Direction Filter - Mobile */}
@@ -467,22 +463,20 @@ export default function TransactionsPage() {
                   <label className="text-xs font-semibold mb-2 block">
                     Direction
                   </label>
-                  <Select
-                    value={directionFilter}
-                    onValueChange={(value) => {
+                  <MultiSelectFilter
+                    options={[
+                      { value: 'In', label: 'In' },
+                      { value: 'Out', label: 'Out' },
+                    ]}
+                    selected={directionFilter}
+                    onChange={(value) => {
                       setDirectionFilter(value);
                       setCurrentPage(1);
                     }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Direction" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Directions</SelectItem>
-                      <SelectItem value="In">In</SelectItem>
-                      <SelectItem value="Out">Out</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select Direction"
+                    allLabel="All Directions"
+                    triggerClassName="w-full"
+                  />
                 </div>
               </div>
 
