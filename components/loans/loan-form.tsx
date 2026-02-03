@@ -146,12 +146,12 @@ export function LoanForm({
       const result: InvestorAllocation[] = [];
       investorMap.forEach((transactions, investorId) => {
         const investor = existingLoan.loanInvestors.find(
-          (li) => li.investor.id === investorId
+          (li) => li.investor.id === investorId,
         )?.investor;
 
         // Get the first loan investor record for this investor to check hasMultipleInterest
         const firstLoanInvestor = existingLoan.loanInvestors.find(
-          (li) => li.investor.id === investorId
+          (li) => li.investor.id === investorId,
         );
 
         // Convert interest periods if they exist (from the first transaction)
@@ -215,7 +215,7 @@ export function LoanForm({
 
         // Get the first loan investor record for this investor to check hasMultipleInterest
         const firstLoanInvestor = duplicateData.loanInvestors.find(
-          (li) => li.investorId === investorId
+          (li) => li.investorId === investorId,
         );
 
         // Convert interest periods if they exist
@@ -249,7 +249,7 @@ export function LoanForm({
     // If preselectedInvestorId is provided, add that investor
     if (preselectedInvestorId) {
       const preselectedInvestor = initialInvestors.find(
-        (inv) => inv.id === preselectedInvestorId
+        (inv) => inv.id === preselectedInvestorId,
       );
       if (preselectedInvestor) {
         return [
@@ -312,7 +312,7 @@ export function LoanForm({
 
   // Track if form has changes (including investor allocations)
   const hasChanges = isDirty || selectedInvestors.length > 0;
-  
+
   // Register form state with dialog to prevent accidental close
   useRegisterDialogFormState(hasChanges, isSubmitting);
 
@@ -325,7 +325,7 @@ export function LoanForm({
 
     // Check if any transaction is unpaid
     const hasUnpaidTransactions = selectedInvestors.some((si) =>
-      si.transactions.some((t) => !t.isPaid)
+      si.transactions.some((t) => !t.isPaid),
     );
 
     // Check if loan is overdue
@@ -347,7 +347,7 @@ export function LoanForm({
 
   // Check if there are unpaid transactions for displaying warning
   const hasUnpaidTransactions = selectedInvestors.some((si) =>
-    si.transactions.some((t) => !t.isPaid)
+    si.transactions.some((t) => !t.isPaid),
   );
 
   const addInvestor = (investorId: string) => {
@@ -427,7 +427,7 @@ export function LoanForm({
 
   const removeInvestor = (investorId: number) => {
     setSelectedInvestors(
-      selectedInvestors.filter((si) => si.investor.id !== investorId)
+      selectedInvestors.filter((si) => si.investor.id !== investorId),
     );
   };
 
@@ -450,8 +450,8 @@ export function LoanForm({
                 },
               ],
             }
-          : si
-      )
+          : si,
+      ),
     );
   };
 
@@ -462,11 +462,11 @@ export function LoanForm({
           ? {
               ...si,
               transactions: si.transactions.filter(
-                (t) => t.id !== transactionId
+                (t) => t.id !== transactionId,
               ),
             }
-          : si
-      )
+          : si,
+      ),
     );
   };
 
@@ -474,8 +474,37 @@ export function LoanForm({
     investorId: number,
     transactionId: string,
     field: keyof Omit<Transaction, 'id'>,
-    value: string
+    value: string,
   ) => {
+    // Calculate total principal from all investors for 0-amount rate calculations
+    // We need to calculate this before the state update, excluding the current transaction's old amount
+    const calculateTotalPrincipalForSync = (
+      excludeInvestorId: number,
+      excludeTransactionId: string,
+      newAmount?: number,
+    ) => {
+      return selectedInvestors.reduce((total, si) => {
+        return (
+          total +
+          si.transactions.reduce((sum, t) => {
+            if (
+              si.investor.id === excludeInvestorId &&
+              t.id === excludeTransactionId
+            ) {
+              // Use the new amount if provided, otherwise include current amount
+              return (
+                sum +
+                (newAmount !== undefined
+                  ? newAmount
+                  : parseFloat(t.amount) || 0)
+              );
+            }
+            return sum + (parseFloat(t.amount) || 0);
+          }, 0)
+        );
+      }, 0);
+    };
+
     setSelectedInvestors(
       selectedInvestors.map((si) =>
         si.investor.id === investorId
@@ -500,19 +529,57 @@ export function LoanForm({
                 if (field === 'interestRate') {
                   // When rate changes, calculate and update fixed amount
                   const rate = parseFloat(value) || 0;
-                  const fixedAmount = amount * (rate / 100);
-                  updatedTransaction.interestAmount = fixedAmount.toFixed(2);
+                  // If amount is 0, use total principal from all investors
+                  if (amount === 0) {
+                    const totalPrincipal = calculateTotalPrincipalForSync(
+                      investorId,
+                      transactionId,
+                      0,
+                    );
+                    const fixedAmount = totalPrincipal * (rate / 100);
+                    updatedTransaction.interestAmount = fixedAmount.toFixed(2);
+                  } else {
+                    const fixedAmount = amount * (rate / 100);
+                    updatedTransaction.interestAmount = fixedAmount.toFixed(2);
+                  }
                 } else if (field === 'interestAmount') {
                   // When fixed amount changes, calculate and update rate
                   const fixedAmount = parseFloat(value) || 0;
-                  const rate = amount > 0 ? (fixedAmount / amount) * 100 : 0;
-                  updatedTransaction.interestRate = rate.toFixed(2);
+                  // If amount is 0, calculate rate based on total principal
+                  if (amount === 0) {
+                    const totalPrincipal = calculateTotalPrincipalForSync(
+                      investorId,
+                      transactionId,
+                      0,
+                    );
+                    const rate =
+                      totalPrincipal > 0
+                        ? (fixedAmount / totalPrincipal) * 100
+                        : 0;
+                    updatedTransaction.interestRate = rate.toFixed(2);
+                  } else {
+                    const rate = amount > 0 ? (fixedAmount / amount) * 100 : 0;
+                    updatedTransaction.interestRate = rate.toFixed(2);
+                  }
                 } else if (field === 'amount') {
                   // When amount changes, recalculate based on current interest type
                   if (t.interestType === 'rate') {
                     const rate = parseFloat(t.interestRate) || 0;
-                    const fixedAmount = amount * (rate / 100);
-                    updatedTransaction.interestAmount = fixedAmount.toFixed(2);
+                    // If new amount is 0, use total principal from all investors
+                    if (amount === 0) {
+                      const totalPrincipal = calculateTotalPrincipalForSync(
+                        investorId,
+                        transactionId,
+                        0,
+                      );
+                      const fixedAmount = totalPrincipal * (rate / 100);
+                      updatedTransaction.interestAmount =
+                        fixedAmount.toFixed(2);
+                    } else {
+                      const fixedAmount = amount * (rate / 100);
+                      updatedTransaction.interestAmount =
+                        fixedAmount.toFixed(2);
+                    }
                   } else {
                     const fixedAmount = parseFloat(t.interestAmount) || 0;
                     const rate = amount > 0 ? (fixedAmount / amount) * 100 : 0;
@@ -523,9 +590,21 @@ export function LoanForm({
                 return updatedTransaction;
               }),
             }
-          : si
-      )
+          : si,
+      ),
     );
+  };
+
+  // Calculate total principal from all investors (used for 0-amount rate calculations)
+  const getTotalPrincipal = () => {
+    return selectedInvestors.reduce((total, si) => {
+      return (
+        total +
+        si.transactions.reduce((sum, t) => {
+          return sum + (parseFloat(t.amount) || 0);
+        }, 0)
+      );
+    }, 0);
   };
 
   const calculatePreview = () => {
@@ -539,6 +618,9 @@ export function LoanForm({
       total: number;
     }> = [];
 
+    // Get total principal for 0-amount rate calculations
+    const totalPrincipal = getTotalPrincipal();
+
     selectedInvestors.forEach((si) => {
       si.transactions.forEach((transaction) => {
         const capital = parseFloat(transaction.amount) || 0;
@@ -551,7 +633,9 @@ export function LoanForm({
           si.interestPeriods.forEach((period) => {
             if (period.interestType === 'rate') {
               const rate = parseFloat(period.interestRate) || 0;
-              interest += capital * (rate / 100);
+              // If capital is 0, use total principal from all investors
+              const baseAmount = capital === 0 ? totalPrincipal : capital;
+              interest += baseAmount * (rate / 100);
             } else {
               interest += parseFloat(period.interestAmount) || 0;
             }
@@ -560,12 +644,17 @@ export function LoanForm({
           // Calculate average rate
           if (capital > 0) {
             interestRate = (interest / capital) * 100;
+          } else if (totalPrincipal > 0) {
+            // For 0-capital with rate%, show the rate based on total principal
+            interestRate = (interest / totalPrincipal) * 100;
           }
         } else {
           // Single interest calculation
           if (transaction.interestType === 'rate') {
             interestRate = parseFloat(transaction.interestRate) || 0;
-            interest = capital * (interestRate / 100);
+            // If capital is 0, use total principal from all investors
+            const baseAmount = capital === 0 ? totalPrincipal : capital;
+            interest = baseAmount * (interestRate / 100);
           } else {
             interest = parseFloat(transaction.interestAmount) || 0;
             // Calculate the equivalent rate from fixed amount
@@ -640,8 +729,11 @@ export function LoanForm({
       return;
     }
 
+    // Calculate total principal for validation
+    const totalPrincipalForValidation = getTotalPrincipal();
+
     // Validate that all transactions have valid amounts
-    // Allow 0 principal if there's a fixed interest amount (single or multiple interest)
+    // Allow 0 principal if there's a fixed interest amount, multiple interest periods, or rate % with total principal available
     const hasInvalidTransactions = selectedInvestors.some((si) =>
       si.transactions.some((t) => {
         const amount = parseFloat(t.amount);
@@ -657,29 +749,36 @@ export function LoanForm({
                 const fixedAmount = parseFloat(period.interestAmount);
                 return !isNaN(fixedAmount) && fixedAmount > 0;
               } else {
+                // For rate %, allow if there's total principal and rate > 0
                 const rate = parseFloat(period.interestRate);
-                return !isNaN(rate) && rate > 0;
+                return (
+                  !isNaN(rate) && rate > 0 && totalPrincipalForValidation > 0
+                );
               }
             });
             return !hasValidInterestPeriod;
           } else {
-            // Single interest - must be fixed type with a value
-            return (
-              t.interestType !== 'fixed' ||
-              !t.interestAmount ||
-              parseFloat(t.interestAmount) <= 0
-            );
+            // Single interest - allow fixed type with value OR rate % with total principal available
+            if (t.interestType === 'fixed') {
+              return !t.interestAmount || parseFloat(t.interestAmount) <= 0;
+            } else {
+              // Rate % type - valid if rate > 0 and there's total principal from other investors
+              const rate = parseFloat(t.interestRate);
+              return (
+                isNaN(rate) || rate <= 0 || totalPrincipalForValidation <= 0
+              );
+            }
           }
         }
 
         // For non-zero amounts, just check if valid
         return !isValidAmount || amount < 0;
-      })
+      }),
     );
 
     if (hasInvalidTransactions) {
       toast.error(
-        'Please enter valid amounts for all transactions. Transactions with 0 principal must have a fixed interest amount or multiple interest periods configured.'
+        'Please enter valid amounts for all transactions. Transactions with 0 principal must have interest configured (fixed amount, rate % with other investors, or multiple interest periods).',
       );
       return;
     }
@@ -715,27 +814,60 @@ export function LoanForm({
         }>;
       }> = [];
 
+      // Get total principal for 0-amount rate calculations
+      const totalPrincipalForSave = getTotalPrincipal();
+
       selectedInvestors.forEach((si) => {
+        // Calculate investor's total capital for interest period calculations
+        const investorTotalCapital = si.transactions.reduce(
+          (sum, t) => sum + (parseFloat(t.amount) || 0),
+          0,
+        );
+
         // Prepare interest periods if multiple interest is enabled (at investor level)
         const interestPeriods = si.hasMultipleInterest
-          ? si.interestPeriods.map((period) => ({
-              dueDate: new Date(period.dueDate),
-              interestRate:
-                period.interestType === 'fixed'
-                  ? period.interestAmount
-                  : period.interestRate,
-              interestType: period.interestType,
-              status: period.status,
-            }))
+          ? si.interestPeriods.map((period) => {
+              // For 0-capital rate%, convert to fixed with calculated interest
+              const isZeroPeriodCapitalWithRate =
+                investorTotalCapital === 0 && period.interestType === 'rate';
+
+              if (isZeroPeriodCapitalWithRate) {
+                const rate = parseFloat(period.interestRate) || 0;
+                const calculatedInterest = totalPrincipalForSave * (rate / 100);
+                return {
+                  dueDate: new Date(period.dueDate),
+                  interestRate: calculatedInterest.toFixed(2),
+                  interestType: 'fixed' as const,
+                  status: period.status,
+                };
+              }
+
+              return {
+                dueDate: new Date(period.dueDate),
+                interestRate:
+                  period.interestType === 'fixed'
+                    ? period.interestAmount
+                    : period.interestRate,
+                interestType: period.interestType,
+                status: period.status,
+              };
+            })
           : undefined;
 
         si.transactions.forEach((transaction) => {
+          const amount = parseFloat(transaction.amount) || 0;
           let interestRate = transaction.interestRate;
           let interestType: 'rate' | 'fixed' = 'rate';
 
           // If user chose fixed amount, store the fixed amount directly in interestRate
           if (transaction.interestType === 'fixed') {
             interestRate = transaction.interestAmount;
+            interestType = 'fixed';
+          } else if (amount === 0 && transaction.interestType === 'rate') {
+            // For 0-amount with rate%, calculate interest based on total principal and save as fixed
+            const rate = parseFloat(transaction.interestRate) || 0;
+            const calculatedInterest = totalPrincipalForSave * (rate / 100);
+            interestRate = calculatedInterest.toFixed(2);
             interestType = 'fixed';
           }
 
@@ -773,10 +905,10 @@ export function LoanForm({
     } catch (error) {
       console.error(
         `Error ${isEditMode ? 'updating' : 'creating'} loan:`,
-        error
+        error,
       );
       toast.error(
-        `Failed to ${isEditMode ? 'update' : 'create'} loan. Please try again.`
+        `Failed to ${isEditMode ? 'update' : 'create'} loan. Please try again.`,
       );
     } finally {
       setIsSubmitting(false);
@@ -784,7 +916,7 @@ export function LoanForm({
   };
 
   const availableInvestors = investors.filter(
-    (inv) => !selectedInvestors.find((si) => si.investor.id === inv.id)
+    (inv) => !selectedInvestors.find((si) => si.investor.id === inv.id),
   );
 
   const preview = calculatePreview();
@@ -808,7 +940,7 @@ export function LoanForm({
 
   const handleCopyConfirm = (targetInvestorIds: number[]) => {
     const sourceInvestor = selectedInvestors.find(
-      (si) => si.investor.id === copySourceInvestorId
+      (si) => si.investor.id === copySourceInvestorId,
     );
 
     if (!sourceInvestor) {
@@ -821,7 +953,7 @@ export function LoanForm({
     // Separate target investors into new and existing
     targetInvestorIds.forEach((targetId) => {
       const isAlreadySelected = selectedInvestors.some(
-        (si) => si.investor.id === targetId
+        (si) => si.investor.id === targetId,
       );
       const investor = investors.find((inv) => inv.id === targetId);
       if (isAlreadySelected) {
@@ -913,7 +1045,7 @@ export function LoanForm({
     toast.success(
       `Configuration copied to ${targetInvestorIds.length} investor${
         targetInvestorIds.length !== 1 ? 's' : ''
-      }`
+      }`,
     );
   };
 
@@ -936,8 +1068,8 @@ export function LoanForm({
               ? 'Updating...'
               : 'Creating...'
             : isEditMode
-            ? 'Update Loan'
-            : 'Create Loan'
+              ? 'Update Loan'
+              : 'Create Loan'
         }
       />
 
@@ -954,7 +1086,9 @@ export function LoanForm({
                 {...register('loanName')}
                 ref={(e) => {
                   register('loanName').ref(e);
-                  (nameInputRef as React.MutableRefObject<HTMLInputElement | null>).current = e;
+                  (
+                    nameInputRef as React.MutableRefObject<HTMLInputElement | null>
+                  ).current = e;
                 }}
                 placeholder="e.g., Mexico, Pampanga"
                 autoFocus={isDuplicateMode}
@@ -1094,8 +1228,8 @@ export function LoanForm({
                       selectedInvestors.map((inv) =>
                         inv.investor.id === si.investor.id
                           ? { ...inv, interestPeriods: periods }
-                          : inv
-                      )
+                          : inv,
+                      ),
                     );
                   }}
                   onModeChange={(mode) => {
@@ -1106,8 +1240,8 @@ export function LoanForm({
                               ...inv,
                               hasMultipleInterest: mode === 'multiple',
                             }
-                          : inv
-                      )
+                          : inv,
+                      ),
                     );
                   }}
                   onCopy={handleCopy}
@@ -1156,7 +1290,7 @@ export function LoanForm({
                       (transactions) => {
                         const investorId = transactions[0].investor.id;
                         const investorData = selectedInvestors.find(
-                          (si) => si.investor.id === investorId
+                          (si) => si.investor.id === investorId,
                         );
 
                         return {
@@ -1165,18 +1299,26 @@ export function LoanForm({
                             // Find the original transaction to get the actual interestType
                             const originalTransaction =
                               investorData?.transactions.find(
-                                (ot) => ot.sentDate === t.sentDate
+                                (ot) => ot.sentDate === t.sentDate,
                               );
+
+                            // For 0-capital with rate %, pass the calculated interest as fixed amount
+                            // so the display component shows the correct pre-calculated value
+                            const isZeroCapitalWithRate =
+                              t.capital === 0 &&
+                              originalTransaction?.interestType === 'rate';
 
                             return {
                               id: `preview-${t.investor.id}-${index}`,
                               amount: t.capital.toString(),
-                              interestRate:
-                                originalTransaction?.interestType === 'fixed'
+                              interestRate: isZeroCapitalWithRate
+                                ? t.interest.toString() // Pass calculated interest as fixed amount
+                                : originalTransaction?.interestType === 'fixed'
                                   ? originalTransaction.interestAmount
                                   : t.interestRate.toString(),
-                              interestType:
-                                originalTransaction?.interestType || 'rate',
+                              interestType: isZeroCapitalWithRate
+                                ? 'fixed' // Treat as fixed so display component uses the value directly
+                                : originalTransaction?.interestType || 'rate',
                               sentDate: t.sentDate,
                               isPaid: t.isPaid,
                             };
@@ -1184,19 +1326,46 @@ export function LoanForm({
                           hasMultipleInterest:
                             investorData?.hasMultipleInterest || false,
                           interestPeriods: investorData?.interestPeriods
-                            ? investorData.interestPeriods.map((period) => ({
-                                id: period.id,
-                                dueDate: period.dueDate,
-                                // For fixed type, use interestAmount; for rate type, use interestRate
-                                interestRate:
-                                  period.interestType === 'fixed'
-                                    ? period.interestAmount
-                                    : period.interestRate,
-                                interestType: period.interestType,
-                              }))
+                            ? investorData.interestPeriods.map((period) => {
+                                // For 0-total-capital with rate %, pass calculated interest as fixed
+                                const investorTotalCapital =
+                                  investorData.transactions.reduce(
+                                    (sum, t) =>
+                                      sum + (parseFloat(t.amount) || 0),
+                                    0,
+                                  );
+                                const isZeroPeriodCapitalWithRate =
+                                  investorTotalCapital === 0 &&
+                                  period.interestType === 'rate';
+
+                                if (isZeroPeriodCapitalWithRate) {
+                                  const totalPrincipal = getTotalPrincipal();
+                                  const rate =
+                                    parseFloat(period.interestRate) || 0;
+                                  const calculatedInterest =
+                                    totalPrincipal * (rate / 100);
+                                  return {
+                                    id: period.id,
+                                    dueDate: period.dueDate,
+                                    interestRate: calculatedInterest.toString(),
+                                    interestType: 'fixed' as const,
+                                  };
+                                }
+
+                                return {
+                                  id: period.id,
+                                  dueDate: period.dueDate,
+                                  // For fixed type, use interestAmount; for rate type, use interestRate
+                                  interestRate:
+                                    period.interestType === 'fixed'
+                                      ? period.interestAmount
+                                      : period.interestRate,
+                                  interestType: period.interestType,
+                                };
+                              })
                             : [],
                         };
-                      }
+                      },
                     );
                   })()}
                   showEmail={false}
@@ -1236,8 +1405,8 @@ export function LoanForm({
               ? 'Updating...'
               : 'Creating...'
             : isEditMode
-            ? 'Update Loan'
-            : 'Create Loan'}
+              ? 'Update Loan'
+              : 'Create Loan'}
         </Button>
       </div>
 
@@ -1252,7 +1421,7 @@ export function LoanForm({
       {copySourceInvestorId &&
         (() => {
           const sourceInvestorData = selectedInvestors.find(
-            (si) => si.investor.id === copySourceInvestorId
+            (si) => si.investor.id === copySourceInvestorId,
           )!;
           const configsMap = new Map(
             selectedInvestors.map((si) => [
@@ -1262,7 +1431,7 @@ export function LoanForm({
                 hasMultipleInterest: si.hasMultipleInterest,
                 interestPeriods: si.interestPeriods,
               },
-            ])
+            ]),
           );
           return (
             <CopyInvestorModal
@@ -1277,10 +1446,10 @@ export function LoanForm({
                 interestPeriods: sourceInvestorData.interestPeriods,
               }}
               availableInvestors={investors.filter(
-                (inv) => inv.id !== copySourceInvestorId
+                (inv) => inv.id !== copySourceInvestorId,
               )}
               selectedInvestorIds={selectedInvestors.map(
-                (si) => si.investor.id
+                (si) => si.investor.id,
               )}
               selectedInvestorsConfigs={configsMap}
               onCopy={handleCopyConfirm}
