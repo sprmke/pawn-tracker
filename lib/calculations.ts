@@ -14,7 +14,7 @@ import {
  * Calculate total principal amount for a loan
  */
 export function calculateTotalPrincipal(
-  loanInvestors: Array<{ amount: string }>
+  loanInvestors: Array<{ amount: string }>,
 ): number {
   return loanInvestors.reduce((sum, li) => sum + parseFloat(li.amount), 0);
 }
@@ -34,7 +34,7 @@ export function calculateTotalInterest(
     }>;
     investor?: { id: number };
     investorId?: number;
-  }>
+  }>,
 ): number {
   // Group by investor to handle multiple interest correctly
   const investorGroups = new Map<number, typeof loanInvestors>();
@@ -56,14 +56,14 @@ export function calculateTotalInterest(
       (t) =>
         t.hasMultipleInterest &&
         t.interestPeriods &&
-        t.interestPeriods.length > 0
+        t.interestPeriods.length > 0,
     );
 
     if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
       // Calculate total capital for this investor
       const investorTotalCapital = transactions.reduce(
         (sum, t) => sum + parseFloat(t.amount),
-        0
+        0,
       );
 
       // Apply interest periods to total investor capital
@@ -76,7 +76,7 @@ export function calculateTotalInterest(
               : investorTotalCapital * (rateValue / 100);
           return periodSum + interest;
         },
-        0
+        0,
       );
 
       totalInterest += investorInterest;
@@ -108,7 +108,7 @@ export function calculateTotalAmount(
       interestRate: string;
       interestType?: string;
     }>;
-  }>
+  }>,
 ): number {
   const principal = calculateTotalPrincipal(loanInvestors);
   const interest = calculateTotalInterest(loanInvestors);
@@ -130,7 +130,7 @@ export function calculateAverageRate(
     }>;
     investor?: { id: number };
     investorId?: number;
-  }>
+  }>,
 ): number {
   const totalPrincipal = calculateTotalPrincipal(loanInvestors);
   if (totalPrincipal === 0) return 0;
@@ -145,7 +145,7 @@ export function calculateAverageRate(
 export function calculateInterest(
   amount: string | number,
   interestRate: string | number,
-  interestType?: string
+  interestType?: string,
 ): number {
   const capital = typeof amount === 'string' ? parseFloat(amount) : amount;
   const rateValue =
@@ -174,7 +174,7 @@ export function calculateAmountDueOnDate(
     }>;
     investor?: { id: number };
     investorId?: number;
-  }>
+  }>,
 ): number {
   // Group by investor to handle multiple interest correctly
   const investorGroups = new Map<number, typeof loanInvestors>();
@@ -194,7 +194,7 @@ export function calculateAmountDueOnDate(
     // Calculate total capital for this investor
     const investorTotalCapital = transactions.reduce(
       (sum, t) => sum + parseFloat(t.amount),
-      0
+      0,
     );
 
     // Find if any transaction has multiple interest periods
@@ -202,7 +202,7 @@ export function calculateAmountDueOnDate(
       (t) =>
         t.hasMultipleInterest &&
         t.interestPeriods &&
-        t.interestPeriods.length > 0
+        t.interestPeriods.length > 0,
     );
 
     if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
@@ -213,7 +213,7 @@ export function calculateAmountDueOnDate(
       const finalPeriodInterest = calculateInterest(
         investorTotalCapital,
         parseFloat(finalPeriod.interestRate),
-        finalPeriod.interestType
+        finalPeriod.interestType,
       );
 
       // Capital + final period interest only
@@ -235,9 +235,10 @@ export function calculateAmountDueOnDate(
 }
 
 /**
- * Calculate the amount due for overdue loans
- * For multiple interest periods: sum of all overdue period interests + capital if final period is overdue
- * For single interest: capital + total interest
+ * Calculate the amount due for overdue loans (unpaid overdue items only).
+ * - Multiple interest periods: sum of interest for periods with status 'Overdue' only;
+ *   capital is included only if the final period is overdue. Future pending balances are not included.
+ * - Single interest: capital + total interest (one due date; when overdue, full amount is overdue).
  */
 export function calculateOverdueAmount(
   loanInvestors: Array<{
@@ -253,7 +254,7 @@ export function calculateOverdueAmount(
     }>;
     investor?: { id: number };
     investorId?: number;
-  }>
+  }>,
 ): number {
   // Group by investor to handle multiple interest correctly
   const investorGroups = new Map<number, typeof loanInvestors>();
@@ -273,7 +274,7 @@ export function calculateOverdueAmount(
     // Calculate total capital for this investor
     const investorTotalCapital = transactions.reduce(
       (sum, t) => sum + parseFloat(t.amount),
-      0
+      0,
     );
 
     // Find if any transaction has multiple interest periods
@@ -281,7 +282,7 @@ export function calculateOverdueAmount(
       (t) =>
         t.hasMultipleInterest &&
         t.interestPeriods &&
-        t.interestPeriods.length > 0
+        t.interestPeriods.length > 0,
     );
 
     if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
@@ -289,7 +290,7 @@ export function calculateOverdueAmount(
       const periods = [...transactionWithPeriods.interestPeriods].sort(
         (a, b) =>
           new Date(a.dueDate || 0).getTime() -
-          new Date(b.dueDate || 0).getTime()
+          new Date(b.dueDate || 0).getTime(),
       );
       const overduePeriods = periods.filter((p) => p.status === 'Overdue');
 
@@ -305,7 +306,7 @@ export function calculateOverdueAmount(
             calculateInterest(
               investorTotalCapital,
               parseFloat(period.interestRate),
-              period.interestType
+              period.interestType,
             )
           );
         }, 0);
@@ -315,15 +316,8 @@ export function calculateOverdueAmount(
           ? investorTotalCapital + overdueInterest
           : overdueInterest;
       } else {
-        // No overdue periods, but loan might be overdue based on main due date
-        // In this case, return capital + final period interest
-        const finalPeriod = periods[periods.length - 1];
-        const finalPeriodInterest = calculateInterest(
-          investorTotalCapital,
-          parseFloat(finalPeriod.interestRate),
-          finalPeriod.interestType
-        );
-        totalAmount += investorTotalCapital + finalPeriodInterest;
+        // No overdue periods: only include amounts for periods with status 'Overdue'.
+        // Do not include future pending balances or full principal + interest.
       }
     } else {
       // No multiple interest - calculate capital + total interest
@@ -347,7 +341,7 @@ export function calculateOverdueAmount(
 export function calculateInvestmentTotal(
   amount: string | number,
   interestRate: string | number,
-  interestType?: string
+  interestType?: string,
 ): number {
   const capital = typeof amount === 'string' ? parseFloat(amount) : amount;
   const interest = calculateInterest(amount, interestRate, interestType);
@@ -358,7 +352,7 @@ export function calculateInvestmentTotal(
  * Count unique investors in a loan
  */
 export function countUniqueInvestors(
-  loanInvestors: Array<{ investor: { id: number } }>
+  loanInvestors: Array<{ investor: { id: number } }>,
 ): number {
   return new Set(loanInvestors.map((li) => li.investor.id)).size;
 }
@@ -367,7 +361,7 @@ export function countUniqueInvestors(
  * Group loan investors by investor ID
  */
 export function groupByInvestor<
-  T extends { investor: Investor; amount: string; interestRate: string }
+  T extends { investor: Investor; amount: string; interestRate: string },
 >(loanInvestors: T[]): Map<number, T[]> {
   const investorMap = new Map<number, T[]>();
 
@@ -393,7 +387,7 @@ export function calculateTransactionStats(
       interestRate: string;
       interestType?: string;
     }>;
-  }>
+  }>,
 ): {
   totalPrincipal: number;
   totalInterest: number;
@@ -427,7 +421,7 @@ export function calculateGroupedLoanInvestorStats(
       interestRate: string;
       interestType?: string;
     }>;
-  }>
+  }>,
 ): {
   totalPrincipal: number;
   totalInterest: number;
@@ -442,7 +436,7 @@ export function calculateGroupedLoanInvestorStats(
  */
 export function calculateLoanDuration(
   dueDate: Date | string,
-  startDate?: Date | string
+  startDate?: Date | string,
 ): string {
   // If no start date provided, use today's date (for backward compatibility)
   const start = startDate
@@ -515,7 +509,7 @@ export function getBalanceStatus(balance: number): {
  * Balance = Total Principal - Funded Capital (where isPaid is true)
  */
 export function calculateLoanBalance(
-  loanInvestors: Array<{ amount: string; isPaid: boolean }>
+  loanInvestors: Array<{ amount: string; isPaid: boolean }>,
 ): number {
   const totalPrincipal = calculateTotalPrincipal(loanInvestors);
 
@@ -530,7 +524,7 @@ export function calculateLoanBalance(
  * Check if a loan has any unpaid transactions
  */
 export function hasUnpaidTransactions(
-  loanInvestors: Array<{ isPaid: boolean }>
+  loanInvestors: Array<{ isPaid: boolean }>,
 ): boolean {
   return loanInvestors.some((li) => !li.isPaid);
 }
@@ -578,7 +572,7 @@ export function calculateMultipleInterestPaymentStatus(
     }>;
     investor?: { id: number };
     investorId?: number;
-  }>
+  }>,
 ): {
   hasMultipleDueDates: boolean;
   totalPeriods: number;
@@ -592,7 +586,7 @@ export function calculateMultipleInterestPaymentStatus(
     (li) =>
       li.hasMultipleInterest &&
       li.interestPeriods &&
-      li.interestPeriods.length > 1
+      li.interestPeriods.length > 1,
   );
 
   if (!hasMultipleDueDates) {
@@ -628,7 +622,7 @@ export function calculateMultipleInterestPaymentStatus(
     // Calculate total capital for this investor
     const investorTotalCapital = transactions.reduce(
       (sum, t) => sum + parseFloat(t.amount),
-      0
+      0,
     );
 
     // Find the transaction with multiple interest periods
@@ -636,14 +630,14 @@ export function calculateMultipleInterestPaymentStatus(
       (t) =>
         t.hasMultipleInterest &&
         t.interestPeriods &&
-        t.interestPeriods.length > 0
+        t.interestPeriods.length > 0,
     );
 
     if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
       const periods = [...transactionWithPeriods.interestPeriods].sort(
         (a, b) =>
           new Date(a.dueDate || 0).getTime() -
-          new Date(b.dueDate || 0).getTime()
+          new Date(b.dueDate || 0).getTime(),
       );
 
       totalPeriods += periods.length;
@@ -652,7 +646,7 @@ export function calculateMultipleInterestPaymentStatus(
         const periodInterest = calculateInterest(
           investorTotalCapital,
           parseFloat(period.interestRate),
-          period.interestType
+          period.interestType,
         );
 
         const isLastPeriod = index === periods.length - 1;
@@ -707,22 +701,23 @@ export function calculateInvestorStats(investor: InvestorWithLoans): {
 
   const activeLoans = investor.loanInvestors.filter(
     (li) =>
-      li.loan.status === 'Fully Funded' || li.loan.status === 'Partially Funded'
+      li.loan.status === 'Fully Funded' ||
+      li.loan.status === 'Partially Funded',
   ).length;
 
   const completedLoans = investor.loanInvestors.filter(
-    (li) => li.loan.status === 'Completed'
+    (li) => li.loan.status === 'Completed',
   ).length;
 
   const overdueLoans = investor.loanInvestors.filter(
-    (li) => li.loan.status === 'Overdue'
+    (li) => li.loan.status === 'Overdue',
   ).length;
 
   // Get latest balance from transactions
   const latestTransaction =
     investor.transactions.length > 0
       ? investor.transactions.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
         )[0]
       : null;
 
