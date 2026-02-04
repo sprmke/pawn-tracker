@@ -1,12 +1,14 @@
 /**
- * Converts a Date object to a local date string in YYYY-MM-DD format
- * This prevents timezone issues when converting dates for form inputs
+ * Converts a Date object to a date string in YYYY-MM-DD format
+ * Uses UTC methods to ensure consistency since dates are stored as UTC midnight
+ * This prevents timezone-related date shifts when converting dates for form inputs
  */
 export function toLocalDateString(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  // Use UTC methods to extract the date since dates are stored as midnight UTC
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -25,7 +27,7 @@ export function fromLocalDateString(dateString: string): Date {
  */
 export function getMonthsBetweenDates(
   startDate: Date | string,
-  endDate: Date | string
+  endDate: Date | string,
 ): number {
   const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
   const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
@@ -50,7 +52,7 @@ export function getMonthsBetweenDates(
  */
 export function isMoreThanOneMonth(
   startDate: Date | string,
-  endDate: Date | string
+  endDate: Date | string,
 ): boolean {
   return getMonthsBetweenDates(startDate, endDate) > 1;
 }
@@ -61,17 +63,17 @@ export function isMoreThanOneMonth(
  */
 export function isMoreThanOneMonthAndFifteenDays(
   startDate: Date | string,
-  endDate: Date | string
+  endDate: Date | string,
 ): boolean {
   const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
   const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
-  
+
   // Calculate the difference in milliseconds
   const diffMs = end.getTime() - start.getTime();
-  
+
   // Convert to days (45 days = 1 month + 15 days)
   const diffDays = diffMs / (1000 * 60 * 60 * 24);
-  
+
   return diffDays > 45;
 }
 
@@ -82,17 +84,21 @@ export function isMoreThanOneMonthAndFifteenDays(
 export function addMonths(date: Date | string, months: number): Date {
   const d = typeof date === 'string' ? new Date(date) : new Date(date);
   const originalDay = d.getDate();
-  
+
   // Set to the first day to avoid issues with month boundaries
   d.setDate(1);
   d.setMonth(d.getMonth() + months);
-  
+
   // Get the last day of the target month
-  const lastDayOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  
+  const lastDayOfMonth = new Date(
+    d.getFullYear(),
+    d.getMonth() + 1,
+    0,
+  ).getDate();
+
   // Use the original day or the last day of the month, whichever is smaller
   d.setDate(Math.min(originalDay, lastDayOfMonth));
-  
+
   return d;
 }
 
@@ -117,15 +123,19 @@ function getLastDayOfMonth(year: number, month: number): number {
  * If sent date is 15th, use 15th (or last day if month doesn't have 15 days)
  * Otherwise, use the sent date's day
  */
-function calculatePeriodDay(sentDate: Date, targetMonth: number, targetYear: number): number {
+function calculatePeriodDay(
+  sentDate: Date,
+  targetMonth: number,
+  targetYear: number,
+): number {
   const sentDay = sentDate.getDate();
   const lastDayOfTargetMonth = getLastDayOfMonth(targetYear, targetMonth);
-  
+
   // If sent date is the 1st, use last day of the month
   if (sentDay === 1) {
     return lastDayOfTargetMonth;
   }
-  
+
   // For any other date, use the sent day or last day of month, whichever is smaller
   return Math.min(sentDay, lastDayOfTargetMonth);
 }
@@ -139,16 +149,22 @@ function calculatePeriodDay(sentDate: Date, targetMonth: number, targetYear: num
  */
 export function generateDefaultInterestPeriods(
   sentDate: Date | string,
-  dueDate: Date | string
+  dueDate: Date | string,
 ): Array<{ dueDate: Date; monthNumber: number }> {
-  const start = typeof sentDate === 'string' ? fromLocalDateString(sentDate) : normalizeToMidnight(sentDate);
-  const end = typeof dueDate === 'string' ? fromLocalDateString(dueDate) : normalizeToMidnight(dueDate);
-  
+  const start =
+    typeof sentDate === 'string'
+      ? fromLocalDateString(sentDate)
+      : normalizeToMidnight(sentDate);
+  const end =
+    typeof dueDate === 'string'
+      ? fromLocalDateString(dueDate)
+      : normalizeToMidnight(dueDate);
+
   const periods: Array<{ dueDate: Date; monthNumber: number }> = [];
-  
+
   // Calculate the number of full months between the dates
   const months = getMonthsBetweenDates(start, end);
-  
+
   // If there are no full months, just return the final due date
   if (months === 0) {
     periods.push({
@@ -157,25 +173,27 @@ export function generateDefaultInterestPeriods(
     });
     return periods;
   }
-  
+
   // Generate periods by adding months to the sent date
   // Start from month 0 (current month) to include the first period
   let monthsToAdd = 0;
   let periodNumber = 1;
-  
+
   while (true) {
     // Calculate the target date by adding months to the sent date
     const targetDate = new Date(start);
     targetDate.setMonth(start.getMonth() + monthsToAdd);
-    
+
     const targetYear = targetDate.getFullYear();
     const targetMonth = targetDate.getMonth();
-    
+
     // Calculate the appropriate day for this period
     const periodDay = calculatePeriodDay(start, targetMonth, targetYear);
-    
-    const periodDueDate = normalizeToMidnight(new Date(targetYear, targetMonth, periodDay));
-    
+
+    const periodDueDate = normalizeToMidnight(
+      new Date(targetYear, targetMonth, periodDay),
+    );
+
     // Only add the period if it's after the sent date and before the due date
     if (periodDueDate > start && periodDueDate < end) {
       periods.push({
@@ -183,18 +201,18 @@ export function generateDefaultInterestPeriods(
         monthNumber: periodNumber++,
       });
     }
-    
+
     // If we've reached or passed the due date, stop
     if (periodDueDate >= end) {
       break;
     }
-    
+
     monthsToAdd++;
-    
+
     // Safety check to prevent infinite loop
     if (monthsToAdd > 120) break; // Max 10 years
   }
-  
+
   // Always add the final period (the actual loan due date)
   periods.push({
     dueDate: end,
@@ -225,13 +243,15 @@ export function getTodayAtMidnight(): Date {
 
 /**
  * Format a date to MM/DD/YYYY string
+ * Uses UTC methods to ensure consistency since dates are stored as UTC midnight
  * This is the display format for date pickers
  */
 export function formatToMMDDYYYY(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const year = d.getFullYear();
+  // Use UTC methods to extract the date since dates are stored as midnight UTC
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const year = d.getUTCFullYear();
   return `${month}/${day}/${year}`;
 }
 
@@ -242,7 +262,7 @@ export function formatToMMDDYYYY(date: Date | string): string {
 export function parseMMDDYYYY(dateString: string): string {
   const match = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (!match) return '';
-  
+
   const [, month, day, year] = match;
   const monthNum = parseInt(month, 10);
   const dayNum = parseInt(day, 10);
@@ -260,6 +280,6 @@ export function parseMMDDYYYY(dateString: string): string {
       return `${year}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
     }
   }
-  
+
   return '';
 }
