@@ -79,7 +79,7 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
     accessor: (loan) => {
       // Get unique investor names
       const uniqueInvestors = Array.from(
-        new Set(loan.loanInvestors.map((li) => li.investor.name))
+        new Set(loan.loanInvestors.map((li) => li.investor.name)),
       ).sort();
       return uniqueInvestors.join(', ');
     },
@@ -88,7 +88,7 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
     header: 'Sent Dates',
     accessor: (loan) => {
       const uniqueDates = Array.from(
-        new Set(loan.loanInvestors.map((li) => formatDateForCSV(li.sentDate)))
+        new Set(loan.loanInvestors.map((li) => formatDateForCSV(li.sentDate))),
       ).sort();
       return uniqueDates.join('; ');
     },
@@ -246,74 +246,7 @@ export const transactionsCSVColumns: CSVColumn<TransactionWithInvestor>[] = [
     summable: true,
   },
   {
-    header: 'Investor Balance',
-    accessor: (transaction) => formatCurrencyForCSV(transaction.balance),
-  },
-  {
     header: 'Notes',
     accessor: (transaction) => transaction.notes || '',
   },
 ];
-
-/**
- * Helper function to calculate overall balance for transactions export
- */
-export function createTransactionsCSVColumnsWithOverallBalance(
-  allTransactions: TransactionWithInvestor[]
-): CSVColumn<TransactionWithInvestor>[] {
-  const calculateOverallBalance = (
-    currentTransaction: TransactionWithInvestor
-  ): number => {
-    // Get all transactions up to and including the current transaction
-    const transactionsUpTo = allTransactions.filter((tx) => {
-      const txDate = new Date(tx.date);
-      const currentDate = new Date(currentTransaction.date);
-
-      return (
-        txDate < currentDate ||
-        (txDate.getTime() === currentDate.getTime() &&
-          tx.id <= currentTransaction.id)
-      );
-    });
-
-    // Group by investor and get the latest transaction for each
-    const latestByInvestor = new Map<number, TransactionWithInvestor>();
-
-    transactionsUpTo.forEach((tx) => {
-      const investorId = tx.investor.id;
-      const existing = latestByInvestor.get(investorId);
-
-      if (!existing) {
-        latestByInvestor.set(investorId, tx);
-      } else {
-        const existingDate = new Date(existing.date);
-        const txDate = new Date(tx.date);
-
-        if (
-          txDate > existingDate ||
-          (txDate.getTime() === existingDate.getTime() && tx.id > existing.id)
-        ) {
-          latestByInvestor.set(investorId, tx);
-        }
-      }
-    });
-
-    return Array.from(latestByInvestor.values()).reduce(
-      (sum, tx) => sum + parseFloat(tx.balance),
-      0
-    );
-  };
-
-  return [
-    ...transactionsCSVColumns.slice(0, 7), // Include all columns up to Investor Balance
-    {
-      header: 'Overall Balance',
-      accessor: (transaction) => {
-        const balance = calculateOverallBalance(transaction);
-        return formatCurrencyForCSV(balance);
-      },
-      summable: false, // Overall balance shouldn't be summed as it's a running total
-    },
-    ...transactionsCSVColumns.slice(7), // Include remaining columns (Notes)
-  ];
-}
