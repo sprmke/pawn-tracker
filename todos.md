@@ -59,4 +59,6 @@ Todos & Improvements:
 - ✅ Set the calendar view as default view instead of grid view for transactions and loans page
 - ✅ Can we support multiple selection when filtering the status, types, loan status for transactions, loans and investors pages. So, we support checkboxes for the filter list instead of one selection. Apply to all pages that has filters
 - ✅ Add support to see cashflow trend chart by month, week and month to dashboard page
-- let's remove saving/updating of each transaction whenever we add/update a loan/transaction. we don't need that anymore. remove the balance computation on transactions page/module.
+- ✅ Let's remove saving/updating of each transaction whenever we add/update a loan/transaction. we don't need to do that anymore. Remove the balance computation, investor balance and overall balance on transactions page/module as well.
+- ✅ Improve table pagination
+- It looks like when we create a new loan on dev env, we are not creating any google event calendar
