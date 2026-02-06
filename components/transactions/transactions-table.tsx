@@ -22,53 +22,6 @@ export function TransactionsTable({
   itemsPerPage = 10,
   onQuickView,
 }: TransactionsTableProps) {
-  // Helper function to calculate overall balance at a specific point in time
-  const calculateOverallBalance = (
-    currentTransaction: TransactionWithInvestor,
-    allTransactions: TransactionWithInvestor[]
-  ): number => {
-    // Get all transactions up to and including the current transaction
-    const transactionsUpTo = allTransactions.filter((tx) => {
-      const txDate = new Date(tx.date);
-      const currentDate = new Date(currentTransaction.date);
-
-      // Include if date is before, or same date but id is <= current
-      return (
-        txDate < currentDate ||
-        (txDate.getTime() === currentDate.getTime() &&
-          tx.id <= currentTransaction.id)
-      );
-    });
-
-    // Group by investor and get the latest transaction for each
-    const latestByInvestor = new Map<number, TransactionWithInvestor>();
-
-    transactionsUpTo.forEach((tx) => {
-      const investorId = tx.investor.id;
-      const existing = latestByInvestor.get(investorId);
-
-      if (!existing) {
-        latestByInvestor.set(investorId, tx);
-      } else {
-        const existingDate = new Date(existing.date);
-        const txDate = new Date(tx.date);
-
-        if (
-          txDate > existingDate ||
-          (txDate.getTime() === existingDate.getTime() && tx.id > existing.id)
-        ) {
-          latestByInvestor.set(investorId, tx);
-        }
-      }
-    });
-
-    // Sum up the balances from the latest transaction of each investor
-    return Array.from(latestByInvestor.values()).reduce(
-      (sum, tx) => sum + parseFloat(tx.balance),
-      0
-    );
-  };
-
   const columns: ColumnDef<TransactionWithInvestor>[] = [
     {
       id: 'date',
@@ -163,49 +116,6 @@ export function TransactionsTable({
           {formatCurrency(transaction.amount)}
         </span>
       ),
-    },
-    {
-      id: 'investorBalance',
-      header: 'Investor Balance',
-      accessorFn: (transaction) => parseFloat(transaction.balance),
-      sortable: true,
-      className: 'hidden 2xl:table-cell',
-      headerClassName: 'hidden 2xl:table-cell',
-      sortFn: (a, b, direction) => {
-        const aValue = parseFloat(a.balance);
-        const bValue = parseFloat(b.balance);
-        return direction === 'asc' ? aValue - bValue : bValue - aValue;
-      },
-      cell: (transaction) => (
-        <span className="font-medium truncate">
-          {formatCurrency(transaction.balance)}
-        </span>
-      ),
-    },
-    {
-      id: 'overallBalance',
-      header: 'Overall Balance',
-      accessorFn: (transaction) =>
-        calculateOverallBalance(transaction, transactions),
-      sortable: true,
-      className: 'hidden 2xl:table-cell',
-      headerClassName: 'hidden 2xl:table-cell',
-      sortFn: (a, b, direction) => {
-        const aValue = calculateOverallBalance(a, transactions);
-        const bValue = calculateOverallBalance(b, transactions);
-        return direction === 'asc' ? aValue - bValue : bValue - aValue;
-      },
-      cell: (transaction) => {
-        const overallBalance = calculateOverallBalance(
-          transaction,
-          transactions
-        );
-        return (
-          <span className="font-medium truncate">
-            {formatCurrency(overallBalance.toString())}
-          </span>
-        );
-      },
     },
     {
       id: 'actions',
