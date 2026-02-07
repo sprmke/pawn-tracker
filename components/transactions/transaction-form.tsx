@@ -95,10 +95,10 @@ export function TransactionForm({
   // State for investors list (can be updated when new investor is added)
   const [investors, setInvestors] = useState<Investor[]>(initialInvestors);
   const [selectedInvestorId, setSelectedInvestorId] = useState<number | null>(
-    preselectedInvestorId || null
+    preselectedInvestorId || null,
   );
   const [investorSelectValue, setInvestorSelectValue] = useState<string>(
-    preselectedInvestorId ? preselectedInvestorId.toString() : ''
+    preselectedInvestorId ? preselectedInvestorId.toString() : '',
   );
   const [showInvestorModal, setShowInvestorModal] = useState(false);
 
@@ -122,7 +122,7 @@ export function TransactionForm({
 
   // Track if form has changes (including investor selection)
   const hasChanges = isDirty || selectedInvestorId !== null;
-  
+
   // Register form state with dialog to prevent accidental close
   useRegisterDialogFormState(hasChanges, isSubmitting);
 
@@ -144,7 +144,7 @@ export function TransactionForm({
     startDate: string,
     numTransactions: string,
     interval: string,
-    name: string = ''
+    name: string = '',
   ): RecurringDate[] => {
     if (!startDate || !numTransactions || !interval) return [];
 
@@ -202,7 +202,7 @@ export function TransactionForm({
     loanDate: string,
     dueDate: string,
     duration: string,
-    name: string = ''
+    name: string = '',
   ): RecurringDate[] => {
     if (!loanDate || !dueDate || !duration) return [];
 
@@ -240,7 +240,7 @@ export function TransactionForm({
         watchLoanDate,
         watchDueDates,
         watchCreditCardDuration,
-        watchName
+        watchName,
       );
       setRecurringDates(dates);
     } else if (isRecurring) {
@@ -248,7 +248,7 @@ export function TransactionForm({
         watchTransactionDate,
         watchDuration,
         watchInterval,
-        watchName
+        watchName,
       );
       setRecurringDates(dates);
     } else {
@@ -415,7 +415,7 @@ export function TransactionForm({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(transaction),
-        })
+        }),
       );
 
       await Promise.all(createPromises);
@@ -423,7 +423,7 @@ export function TransactionForm({
       toast.success(
         `Successfully created ${transactions.length} transaction${
           transactions.length > 1 ? 's' : ''
-        }!`
+        }!`,
       );
 
       if (onSuccess) {
@@ -516,7 +516,7 @@ export function TransactionForm({
               <Input
                 id="name"
                 {...register('name')}
-                placeholder="e.g., Salary, Expenses, Credit Card"
+                placeholder="e.g., Payment, Salary, Expenses, Credit Card"
               />
               {errors.name && (
                 <p className="text-sm text-red-600">
@@ -865,13 +865,13 @@ export function TransactionForm({
                     ? parseFloat(watch('loanAmount') || '0')
                     : (() => {
                         const loanAmount = parseFloat(
-                          watch('loanAmount') || '0'
+                          watch('loanAmount') || '0',
                         );
                         const duration = parseInt(
-                          watchCreditCardDuration || '1'
+                          watchCreditCardDuration || '1',
                         );
                         const interestValue = parseFloat(
-                          watch('interestValue') || '0'
+                          watch('interestValue') || '0',
                         );
                         const otherFees = parseFloat(watchOtherFees || '0');
                         const monthlyInterest =
@@ -947,7 +947,7 @@ export function TransactionForm({
                         style: 'currency',
                         currency: 'PHP',
                       }).format(
-                        parseFloat(watchAmount || '0') * recurringDates.length
+                        parseFloat(watchAmount || '0') * recurringDates.length,
                       )}
                     </span>
                   </div>
@@ -958,7 +958,7 @@ export function TransactionForm({
                   const loanAmount = parseFloat(watch('loanAmount') || '0');
                   const duration = parseInt(watchCreditCardDuration || '1');
                   const interestValue = parseFloat(
-                    watch('interestValue') || '0'
+                    watch('interestValue') || '0',
                   );
                   const otherFees = parseFloat(watchOtherFees || '0');
                   const monthlyInterest =
