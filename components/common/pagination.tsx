@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 
 interface PaginationProps {
   currentPage: number;
@@ -19,6 +19,52 @@ interface PaginationProps {
   itemsPerPage?: number;
   itemsPerPageOptions?: number[];
   onItemsPerPageChange?: (itemsPerPage: number) => void;
+}
+
+type PageItem = number | 'ellipsis-start' | 'ellipsis-end';
+
+/**
+ * Generate page numbers with ellipsis for smart pagination
+ * Shows: first page, last page, current page, and 1 neighbor on each side
+ * Uses ellipsis (...) for gaps
+ */
+function getPageNumbers(currentPage: number, totalPages: number): PageItem[] {
+  // If 7 or fewer pages, show all
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages: PageItem[] = [];
+  const siblings = 1; // Number of pages to show on each side of current
+
+  // Always include first page
+  pages.push(1);
+
+  // Calculate range around current page
+  const rangeStart = Math.max(2, currentPage - siblings);
+  const rangeEnd = Math.min(totalPages - 1, currentPage + siblings);
+
+  // Add ellipsis after first page if needed
+  if (rangeStart > 2) {
+    pages.push('ellipsis-start');
+  }
+
+  // Add pages in range
+  for (let i = rangeStart; i <= rangeEnd; i++) {
+    pages.push(i);
+  }
+
+  // Add ellipsis before last page if needed
+  if (rangeEnd < totalPages - 1) {
+    pages.push('ellipsis-end');
+  }
+
+  // Always include last page
+  if (totalPages > 1) {
+    pages.push(totalPages);
+  }
+
+  return pages;
 }
 
 export function Pagination({
@@ -34,6 +80,8 @@ export function Pagination({
   onItemsPerPageChange,
 }: PaginationProps) {
   if (totalPages <= 1 && !itemsPerPage) return null;
+
+  const pageItems = getPageNumbers(currentPage, totalPages);
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 py-4 border-t">
@@ -76,17 +124,26 @@ export function Pagination({
             Previous
           </Button>
           <div className="flex items-center gap-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onPageChange(page)}
-                className="w-8 h-8 p-0"
-              >
-                {page}
-              </Button>
-            ))}
+            {pageItems.map((item, index) =>
+              typeof item === 'number' ? (
+                <Button
+                  key={item}
+                  variant={currentPage === item ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => onPageChange(item)}
+                  className="w-8 h-8 p-0"
+                >
+                  {item}
+                </Button>
+              ) : (
+                <span
+                  key={item}
+                  className="flex items-center justify-center w-8 h-8 text-muted-foreground"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </span>
+              ),
+            )}
           </div>
           <Button
             variant="outline"
