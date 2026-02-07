@@ -6,10 +6,7 @@ import { DataTable, ColumnDef } from './data-table';
 import { Badge } from '@/components/ui/badge';
 import { ActionButtonsGroup } from './action-buttons';
 import { formatCurrency } from '@/lib/format';
-import {
-  calculateLoanStats,
-  calculateTransactionStats,
-} from '@/lib/calculations';
+import { calculateTransactionStats } from '@/lib/calculations';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import { InvestorTransactionCard } from './investor-transaction-card';
 import { DateListWithViewMore } from './date-list-with-view-more';
@@ -21,6 +18,8 @@ interface LoansTableProps {
   expandedRows?: Set<string | number>;
   onToggleExpand?: (loanId: string | number) => void;
   onQuickView?: (loan: LoanWithInvestors) => void;
+  /** When provided, shows investor-specific stats instead of loan totals */
+  investorId?: number;
 }
 
 export function LoansTable({
@@ -30,7 +29,22 @@ export function LoansTable({
   expandedRows,
   onToggleExpand,
   onQuickView,
+  investorId,
 }: LoansTableProps) {
+  // Helper to get investor-specific loan investors or all if no investorId
+  const getRelevantLoanInvestors = (loan: LoanWithInvestors) => {
+    if (investorId) {
+      return loan.loanInvestors.filter((li) => li.investor.id === investorId);
+    }
+    return loan.loanInvestors;
+  };
+
+  // Helper to calculate stats for the relevant investors
+  const getStats = (loan: LoanWithInvestors) => {
+    const relevantInvestors = getRelevantLoanInvestors(loan);
+    return calculateTransactionStats(relevantInvestors);
+  };
+
   const columns: ColumnDef<LoanWithInvestors>[] = [
     {
       id: 'loanName',
@@ -86,17 +100,17 @@ export function LoansTable({
       headerClassName: 'hidden 2xl:table-cell',
       accessorFn: (loan) => {
         const dates = loan.loanInvestors.map((li) =>
-          new Date(li.sentDate).getTime()
+          new Date(li.sentDate).getTime(),
         );
         return dates.length > 0 ? Math.min(...dates) : 0;
       },
       sortable: true,
       sortFn: (a, b, direction) => {
         const aDates = a.loanInvestors.map((li) =>
-          new Date(li.sentDate).getTime()
+          new Date(li.sentDate).getTime(),
         );
         const bDates = b.loanInvestors.map((li) =>
-          new Date(li.sentDate).getTime()
+          new Date(li.sentDate).getTime(),
         );
         const aValue = aDates.length > 0 ? Math.min(...aDates) : 0;
         const bValue = bDates.length > 0 ? Math.min(...bDates) : 0;
@@ -107,9 +121,9 @@ export function LoansTable({
         const uniqueDates = Array.from(
           new Set(
             loan.loanInvestors.map(
-              (li) => new Date(li.sentDate).toISOString().split('T')[0]
-            )
-          )
+              (li) => new Date(li.sentDate).toISOString().split('T')[0],
+            ),
+          ),
         )
           .map((dateStr) => new Date(dateStr))
           .sort((a, b) => a.getTime() - b.getTime());
@@ -132,7 +146,7 @@ export function LoansTable({
               return loan.loanInvestors.some(
                 (li) =>
                   new Date(li.sentDate).toISOString().split('T')[0] ===
-                    dateStr && !li.isPaid
+                    dateStr && !li.isPaid,
               );
             }}
           />
@@ -164,7 +178,7 @@ export function LoansTable({
           if (li.hasMultipleInterest && li.interestPeriods) {
             li.interestPeriods.forEach((period) => {
               dueDateSet.add(
-                new Date(period.dueDate).toISOString().split('T')[0]
+                new Date(period.dueDate).toISOString().split('T')[0],
               );
             });
           }
@@ -191,67 +205,65 @@ export function LoansTable({
     },
     {
       id: 'totalPrincipal',
-      header: 'Total Principal',
+      header: investorId ? 'Inv. Principal' : 'Total Principal',
       hidden: hideFields.includes('totalPrincipal'),
-      accessorFn: (loan) => calculateLoanStats(loan).totalPrincipal,
+      accessorFn: (loan) => getStats(loan).totalPrincipal,
       sortable: true,
       sortFn: (a, b, direction) => {
-        const aValue = calculateLoanStats(a).totalPrincipal;
-        const bValue = calculateLoanStats(b).totalPrincipal;
+        const aValue = getStats(a).totalPrincipal;
+        const bValue = getStats(b).totalPrincipal;
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
         <span className="font-semibold">
-          {formatCurrency(calculateLoanStats(loan).totalPrincipal)}
+          {formatCurrency(getStats(loan).totalPrincipal)}
         </span>
       ),
     },
     {
       id: 'avgRate',
-      header: 'Avg. Rate',
+      header: investorId ? 'Inv. Rate' : 'Avg. Rate',
       hidden: hideFields.includes('avgRate'),
-      accessorFn: (loan) => calculateLoanStats(loan).avgRate,
+      accessorFn: (loan) => getStats(loan).averageRate,
       sortable: true,
       sortFn: (a, b, direction) => {
-        const aValue = calculateLoanStats(a).avgRate;
-        const bValue = calculateLoanStats(b).avgRate;
+        const aValue = getStats(a).averageRate;
+        const bValue = getStats(b).averageRate;
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
-      cell: (loan) => (
-        <span>{calculateLoanStats(loan).avgRate.toFixed(2)}%</span>
-      ),
+      cell: (loan) => <span>{getStats(loan).averageRate.toFixed(2)}%</span>,
     },
     {
       id: 'totalInterest',
-      header: 'Total Interest',
+      header: investorId ? 'Inv. Interest' : 'Total Interest',
       hidden: hideFields.includes('totalInterest'),
-      accessorFn: (loan) => calculateLoanStats(loan).totalInterest,
+      accessorFn: (loan) => getStats(loan).totalInterest,
       sortable: true,
       sortFn: (a, b, direction) => {
-        const aValue = calculateLoanStats(a).totalInterest;
-        const bValue = calculateLoanStats(b).totalInterest;
+        const aValue = getStats(a).totalInterest;
+        const bValue = getStats(b).totalInterest;
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
         <span className="font-medium">
-          {formatCurrency(calculateLoanStats(loan).totalInterest)}
+          {formatCurrency(getStats(loan).totalInterest)}
         </span>
       ),
     },
     {
       id: 'totalAmount',
-      header: 'Total Amount',
+      header: investorId ? 'Inv. Total' : 'Total Amount',
       hidden: hideFields.includes('totalAmount'),
-      accessorFn: (loan) => calculateLoanStats(loan).totalAmount,
+      accessorFn: (loan) => getStats(loan).total,
       sortable: true,
       sortFn: (a, b, direction) => {
-        const aValue = calculateLoanStats(a).totalAmount;
-        const bValue = calculateLoanStats(b).totalAmount;
+        const aValue = getStats(a).total;
+        const bValue = getStats(b).total;
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
         <span className="font-bold">
-          {formatCurrency(calculateLoanStats(loan).totalAmount)}
+          {formatCurrency(getStats(loan).total)}
         </span>
       ),
     },

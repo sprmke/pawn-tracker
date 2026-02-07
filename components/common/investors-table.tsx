@@ -1,6 +1,6 @@
 'use client';
 
-import { InvestorWithLoans, LoanWithInvestors } from '@/lib/types';
+import { InvestorWithLoans, LoanWithInvestors, LoanType } from '@/lib/types';
 import { DataTable, ColumnDef } from './data-table';
 import { ActionButtonsGroup } from './action-buttons';
 import { formatCurrency } from '@/lib/format';
@@ -147,12 +147,12 @@ export function InvestorsTable({
 
       // Get investor's loan IDs
       const investorLoanIds = new Set(
-        investor.loanInvestors.map((li) => li.loan.id)
+        investor.loanInvestors.map((li) => li.loan.id),
       );
 
       // Filter loans to only those this investor is part of
       const investorLoans = allLoans.filter((loan) =>
-        investorLoanIds.has(loan.id)
+        investorLoanIds.has(loan.id),
       );
 
       // Completed loans
@@ -160,7 +160,7 @@ export function InvestorsTable({
         .filter((loan) => loan.status === 'Completed')
         .sort(
           (a, b) =>
-            new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+            new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime(),
         );
 
       // Overdue loans
@@ -168,11 +168,11 @@ export function InvestorsTable({
         .filter(
           (loan) =>
             loan.status === 'Overdue' ||
-            (loan.status !== 'Completed' && isPast(new Date(loan.dueDate)))
+            (loan.status !== 'Completed' && isPast(new Date(loan.dueDate))),
         )
         .sort(
           (a, b) =>
-            new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+            new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
         );
 
       // Pending disbursements
@@ -180,6 +180,7 @@ export function InvestorsTable({
         id: number;
         loanId: number;
         loanName: string;
+        loanType: LoanType;
         investorName: string;
         amount: string;
         sentDate: Date;
@@ -193,6 +194,7 @@ export function InvestorsTable({
               id: li.id,
               loanId: loan.id,
               loanName: loan.loanName,
+              loanType: loan.type,
               investorName: li.investor.name,
               amount: li.amount,
               sentDate: li.sentDate,
@@ -202,7 +204,7 @@ export function InvestorsTable({
 
       const pendingDisbursements = unpaidLoanTransactions.sort(
         (a, b) =>
-          new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
+          new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime(),
       );
 
       // Maturing loans
@@ -218,7 +220,7 @@ export function InvestorsTable({
         })
         .sort(
           (a, b) =>
-            new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+            new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
         );
 
       return {
