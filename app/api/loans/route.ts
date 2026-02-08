@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { loans, loanInvestors, investors, interestPeriods } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateLoanTransactions } from '@/lib/loan-transactions';
 import {
   generateLoanCalendarEvents,
   updateDailySummaryEvents,
@@ -58,17 +57,18 @@ export async function GET() {
           },
         },
       });
-      sharedLoans = loanInvestments.map(li => li.loan);
+      sharedLoans = loanInvestments.map((li) => li.loan);
     }
 
     // Combine and deduplicate loans
     const allLoansMap = new Map();
-    [...ownedLoans, ...sharedLoans].forEach(loan => {
+    [...ownedLoans, ...sharedLoans].forEach((loan) => {
       allLoansMap.set(loan.id, loan);
     });
 
     const allLoans = Array.from(allLoansMap.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     return NextResponse.json(allLoans);
@@ -76,7 +76,7 @@ export async function GET() {
     console.error('Error fetching loans:', error);
     return NextResponse.json(
       { error: 'Failed to fetch loans' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -163,7 +163,7 @@ export async function POST(request: Request) {
         await db.insert(interestPeriods).values(periodData);
         console.log(
           'Interest periods inserted for loan investor:',
-          loanInvestorId
+          loanInvestorId,
         );
 
         processedInvestors.add(investorId);
@@ -184,37 +184,6 @@ export async function POST(request: Request) {
     });
 
     console.log('Complete loan fetched:', completeLoan);
-
-    // Generate transactions for the loan
-    try {
-      await generateLoanTransactions(
-        {
-          loanName: processedLoanData.loanName,
-          dueDate: processedLoanData.dueDate,
-        },
-        investorData.map((inv: any, index: number) => ({
-          investorId: Number(inv.investorId),
-          amount: String(inv.amount),
-          sentDate: new Date(inv.sentDate),
-          interestRate: String(inv.interestRate),
-          // Explicitly check for 'fixed' to ensure proper enum value is used
-          interestType: inv.interestType === 'fixed' ? 'fixed' : 'rate',
-          hasMultipleInterest: inv.hasMultipleInterest || false,
-          interestPeriods: inv.interestPeriods?.map((period: any) => ({
-            dueDate: new Date(period.dueDate),
-            interestRate: String(period.interestRate),
-            // Explicitly check for 'fixed' to ensure proper enum value is used
-            interestType: period.interestType === 'fixed' ? 'fixed' : 'rate',
-          })),
-        })),
-        loanId,
-        session.user.id
-      );
-      console.log('Transactions created for loan');
-    } catch (error) {
-      console.error('Error creating transactions for loan:', error);
-      // Don't fail the loan creation if transaction creation fails
-    }
 
     // Generate Google Calendar events for this loan only
     try {
@@ -263,7 +232,7 @@ export async function POST(request: Request) {
         error: 'Failed to create loan',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
