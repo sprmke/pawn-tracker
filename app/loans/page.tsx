@@ -84,19 +84,25 @@ export default function LoansPage() {
   const searchParams = useSearchParams();
   const [loans, setLoans] = useState<LoanWithInvestors[]>([]);
   const [investors, setInvestors] = useState<{ id: number; name: string }[]>(
-    []
+    [],
   );
   const [loading, setLoading] = useState(true);
-  
+
   // Use responsive view mode hook for SSR-safe view mode detection
-  const { viewMode, setViewMode, isReady: isViewModeReady } = useResponsiveViewMode<
-    'cards' | 'table' | 'calendar'
-  >({ includeCalendar: true, defaultDesktopMode: 'calendar', defaultMobileMode: 'calendar' });
+  const {
+    viewMode,
+    setViewMode,
+    isReady: isViewModeReady,
+  } = useResponsiveViewMode<'cards' | 'table' | 'calendar'>({
+    includeCalendar: true,
+    defaultDesktopMode: 'calendar',
+    defaultMobileMode: 'calendar',
+  });
   const [sortField, setSortField] = useState<SortField>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const itemsPerPage = 10;
   const [expandedInvestors, setExpandedInvestors] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -104,13 +110,17 @@ export default function LoansPage() {
   const [freeLotFilter, setFreeLotFilter] = useState<string>('all');
   const [selectedInvestors, setSelectedInvestors] = useState<number[]>([]);
   const [selectedLoan, setSelectedLoan] = useState<LoanWithInvestors | null>(
-    null
+    null,
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Store for create modal (used when duplicating from detail modal)
-  const isCreateModalOpen = useLoanDuplicateStore((state) => state.isCreateModalOpen);
-  const closeCreateModal = useLoanDuplicateStore((state) => state.closeCreateModal);
+  const isCreateModalOpen = useLoanDuplicateStore(
+    (state) => state.isCreateModalOpen,
+  );
+  const closeCreateModal = useLoanDuplicateStore(
+    (state) => state.closeCreateModal,
+  );
 
   // Automatically check for overdue loans and periods
   useOverdueCheck();
@@ -128,6 +138,27 @@ export default function LoansPage() {
 
   // Get due date filter from URL query parameter
   const dueDateFilter = searchParams.get('dueDate');
+
+  // Initialize filters from URL query parameters
+  useEffect(() => {
+    const viewParam = searchParams.get('view');
+    const typeParams = searchParams.getAll('type');
+    const statusParams = searchParams.getAll('status');
+
+    if (
+      viewParam === 'table' ||
+      viewParam === 'cards' ||
+      viewParam === 'calendar'
+    ) {
+      setViewMode(viewParam);
+    }
+    if (typeParams.length > 0) {
+      setTypeFilter(typeParams);
+    }
+    if (statusParams.length > 0) {
+      setStatusFilter(statusParams);
+    }
+  }, [searchParams, setViewMode]);
 
   useEffect(() => {
     fetchLoans();
@@ -212,7 +243,7 @@ export default function LoansPage() {
   const getTotalPrincipal = (loan: LoanWithInvestors) => {
     return loan.loanInvestors.reduce(
       (sum, li) => sum + parseFloat(li.amount),
-      0
+      0,
     );
   };
 
@@ -307,7 +338,7 @@ export default function LoansPage() {
     // Investor filter (multiple selection)
     if (selectedInvestors.length > 0) {
       const hasSelectedInvestor = loan.loanInvestors.some((li) =>
-        selectedInvestors.includes(li.investor.id)
+        selectedInvestors.includes(li.investor.id),
       );
       if (!hasSelectedInvestor) return false;
     }
@@ -566,7 +597,9 @@ export default function LoansPage() {
               className="whitespace-nowrap relative h-9 px-3"
             >
               <Filter className="h-4 w-4 xl:mr-2" />
-              <span className="hidden xl:inline">{showMoreFilters ? 'Less' : 'More'} Filters</span>
+              <span className="hidden xl:inline">
+                {showMoreFilters ? 'Less' : 'More'} Filters
+              </span>
               {hasActiveAmountFilters && (
                 <span className="ml-1 xl:ml-2 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
@@ -739,9 +772,10 @@ export default function LoansPage() {
                         {selectedInvestors.length === 0
                           ? 'All Investors'
                           : selectedInvestors.length === 1
-                          ? investors.find((i) => i.id === selectedInvestors[0])
-                              ?.name
-                          : `${selectedInvestors.length} investors selected`}
+                            ? investors.find(
+                                (i) => i.id === selectedInvestors[0],
+                              )?.name
+                            : `${selectedInvestors.length} investors selected`}
                       </span>
                     </SelectTrigger>
                     <SelectContent>
@@ -772,7 +806,7 @@ export default function LoansPage() {
                                 setSelectedInvestors((prev) => {
                                   if (prev.includes(investor.id)) {
                                     return prev.filter(
-                                      (id) => id !== investor.id
+                                      (id) => id !== investor.id,
                                     );
                                   } else {
                                     return [...prev, investor.id];
@@ -823,11 +857,15 @@ export default function LoansPage() {
             {dueDateFilter && (
               <Badge variant="secondary" className="gap-2">
                 <Calendar className="h-3 w-3" />
-                Due on: {new Date(dueDateFilter + 'T00:00:00').toLocaleDateString('en-PH', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
+                Due on:{' '}
+                {new Date(dueDateFilter + 'T00:00:00').toLocaleDateString(
+                  'en-PH',
+                  {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  },
+                )}
                 <button
                   onClick={() => router.push('/loans')}
                   className="ml-1 hover:text-foreground"
@@ -929,7 +967,7 @@ export default function LoansPage() {
                             </p>
                             <p className="text-sm font-medium break-words">
                               {formatCurrency(
-                                getTotalPrincipal(loan).toString()
+                                getTotalPrincipal(loan).toString(),
                               )}
                             </p>
                           </div>
@@ -947,7 +985,7 @@ export default function LoansPage() {
                             </p>
                             <p className="text-sm font-medium break-words">
                               {formatCurrency(
-                                getTotalInterest(loan).toString()
+                                getTotalInterest(loan).toString(),
                               )}
                             </p>
                           </div>
@@ -971,9 +1009,9 @@ export default function LoansPage() {
                                     (li) =>
                                       new Date(li.sentDate)
                                         .toISOString()
-                                        .split('T')[0]
-                                  )
-                                )
+                                        .split('T')[0],
+                                  ),
+                                ),
                               )
                                 .map((dateStr) => new Date(dateStr))
                                 .sort((a, b) => a.getTime() - b.getTime());
@@ -1002,7 +1040,7 @@ export default function LoansPage() {
                                         new Date(li.sentDate)
                                           .toISOString()
                                           .split('T')[0] === dateStr &&
-                                        !li.isPaid
+                                        !li.isPaid,
                                     );
                                   }}
                                 />
@@ -1021,7 +1059,7 @@ export default function LoansPage() {
                               dueDateSet.add(
                                 new Date(loan.dueDate)
                                   .toISOString()
-                                  .split('T')[0]
+                                  .split('T')[0],
                               );
 
                               // Add interest period due dates
@@ -1034,7 +1072,7 @@ export default function LoansPage() {
                                     dueDateSet.add(
                                       new Date(period.dueDate)
                                         .toISOString()
-                                        .split('T')[0]
+                                        .split('T')[0],
                                     );
                                   });
                                 }
@@ -1109,7 +1147,7 @@ export default function LoansPage() {
                                         // Calculate totals
                                         const stats =
                                           calculateTransactionStats(
-                                            transactions
+                                            transactions,
                                           );
                                         const totalPrincipal =
                                           stats.totalPrincipal;
@@ -1129,7 +1167,7 @@ export default function LoansPage() {
                                             total={total}
                                           />
                                         );
-                                      }
+                                      },
                                     );
                                   })()}
                                 </div>
