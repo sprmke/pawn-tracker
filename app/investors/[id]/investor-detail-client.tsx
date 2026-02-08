@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useResponsiveViewMode } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,14 +21,13 @@ import {
   Mail,
   User,
   Phone,
-  Percent,
   Plus,
   Filter,
   MapPin,
   X,
   Users,
 } from 'lucide-react';
-import { InvestorWithLoans, LoanWithInvestors } from '@/lib/types';
+import { InvestorWithLoans, LoanWithInvestors, LoanType } from '@/lib/types';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import { InvestorForm } from '@/components/investors/investor-form';
 import { formatCurrency, formatDate } from '@/lib/format';
@@ -39,6 +38,7 @@ import {
 } from '@/lib/calculations';
 import {
   StatCard,
+  SummaryCard,
   DetailHeader,
   LoansTable,
   SearchFilter,
@@ -63,7 +63,7 @@ import {
 import { LoanCreateModal, LoanDetailModal } from '@/components/loans';
 import type { TransactionWithInvestor } from '@/lib/types';
 import { addDays, isAfter, isBefore, isPast } from 'date-fns';
-import { loansCSVColumns, createTransactionsCSVColumnsWithOverallBalance } from '@/lib/csv-columns';
+import { loansCSVColumns, transactionsCSVColumns } from '@/lib/csv-columns';
 
 interface InvestorDetailClientProps {
   investor: InvestorWithLoans;
@@ -82,33 +82,35 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const [showTransactionDetailModal, setShowTransactionDetailModal] =
     useState(false);
   const [selectedLoan, setSelectedLoan] = useState<LoanWithInvestors | null>(
-    null
+    null,
   );
   const [showLoanDetailModal, setShowLoanDetailModal] = useState(false);
 
   // View modes - using responsive hook for SSR-safe view mode detection
-  const { 
-    viewMode: loansViewMode, 
-    setViewMode: setLoansViewMode, 
-    isReady: isLoansViewModeReady 
+  const {
+    viewMode: loansViewMode,
+    setViewMode: setLoansViewMode,
+    isReady: isLoansViewModeReady,
   } = useResponsiveViewMode<'cards' | 'table'>();
-  
-  const { 
-    viewMode: transactionsViewMode, 
-    setViewMode: setTransactionsViewMode, 
-    isReady: isTransactionsViewModeReady 
+
+  const {
+    viewMode: transactionsViewMode,
+    setViewMode: setTransactionsViewMode,
+    isReady: isTransactionsViewModeReady,
   } = useResponsiveViewMode<'cards' | 'table'>();
-  
+
   // Combined ready state for view modes
   const isViewModeReady = isLoansViewModeReady && isTransactionsViewModeReady;
 
   // Transaction filters
   const [transactionSearchQuery, setTransactionSearchQuery] = useState('');
   const [showPastTransactions, setShowPastTransactions] = useState(false);
-  const [transactionTypeFilter, setTransactionTypeFilter] =
-    useState<string[]>([]);
-  const [transactionDirectionFilter, setTransactionDirectionFilter] =
-    useState<string[]>([]);
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string[]>(
+    [],
+  );
+  const [transactionDirectionFilter, setTransactionDirectionFilter] = useState<
+    string[]
+  >([]);
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
   const [minBalance, setMinBalance] = useState<string>('');
@@ -130,13 +132,54 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const [maxTotalAmount, setMaxTotalAmount] = useState<string>('');
   const [showMoreLoanFilters, setShowMoreLoanFilters] = useState(false);
 
+  // Ref for scrolling to loans section
+  const loansSectionRef = useRef<HTMLDivElement>(null);
+
+  // Handle type filter click from activity cards - filters loans table and scrolls to it
+  const handleActivityTypeFilterClick = useCallback(
+    (type: LoanType, status: string | string[]) => {
+      // Set filters
+      setLoanTypeFilter([type]);
+      setLoanStatusFilter(Array.isArray(status) ? status : [status]);
+      // Switch to table view
+      setLoansViewMode('table');
+      // Scroll to loans section after a brief delay to allow state updates
+      setTimeout(() => {
+        loansSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 100);
+    },
+    [setLoansViewMode],
+  );
+
+  // Handle view all click from activity cards - filters by status only (no type filter)
+  const handleActivityViewAllClick = useCallback(
+    (status: string | string[]) => {
+      // Clear type filter and set status filter only
+      setLoanTypeFilter([]);
+      setLoanStatusFilter(Array.isArray(status) ? status : [status]);
+      // Switch to table view
+      setLoansViewMode('table');
+      // Scroll to loans section after a brief delay to allow state updates
+      setTimeout(() => {
+        loansSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 100);
+    },
+    [setLoansViewMode],
+  );
+
   // Fetch complete loan data with all investors
   const fetchLoansData = async () => {
     try {
       setLoansLoading(true);
       // Get unique loan IDs from investor's loan investors
       const loanIds = Array.from(
-        new Set(investor.loanInvestors.map((li) => li.loan.id))
+        new Set(investor.loanInvestors.map((li) => li.loan.id)),
       );
 
       // Fetch all loans data
@@ -145,7 +188,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
       // Filter to only loans that this investor is part of
       const investorLoans = allLoans.filter((loan) =>
-        loanIds.includes(loan.id)
+        loanIds.includes(loan.id),
       );
 
       setLoans(investorLoans);
@@ -161,10 +204,9 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [investor.id]);
 
-
   // Calculate unique loan count
   const uniqueLoanCount = Array.from(
-    new Set(investor.loanInvestors.map((li) => li.loan.id))
+    new Set(investor.loanInvestors.map((li) => li.loan.id)),
   ).length;
 
   // Calculate stats
@@ -173,10 +215,37 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const avgRate = calculateAverageRate(investor.loanInvestors);
   const totalGains = totalCapital + totalInterest;
 
+  // Calculate completed loans stats (only from loans with status 'Completed')
+  const completedLoanInvestors = investor.loanInvestors.filter(
+    (li) => li.loan.status === 'Completed',
+  );
+  const completedCapital = calculateTotalPrincipal(completedLoanInvestors);
+  const completedInterest = calculateTotalInterest(completedLoanInvestors);
+  const totalEarnings = completedCapital + completedInterest;
+  const activeCapital = totalCapital - completedCapital;
+
+  // Count active and completed loans
+  const activeLoanIds = new Set(
+    investor.loanInvestors
+      .filter(
+        (li) =>
+          li.loan.status === 'Fully Funded' ||
+          li.loan.status === 'Partially Funded',
+      )
+      .map((li) => li.loan.id),
+  );
+  const completedLoanIds = new Set(
+    completedLoanInvestors.map((li) => li.loan.id),
+  );
+  const activeLoansCount = activeLoanIds.size;
+  const completedLoansCount = completedLoanIds.size;
+
   // Helper function to extract depacto value from notes
-  const extractDepactoFromNotes = (notes: string | null | undefined): number => {
+  const extractDepactoFromNotes = (
+    notes: string | null | undefined,
+  ): number => {
     if (!notes) return 0;
-    
+
     // Look for patterns like "100 sqm", "100sqm", "100.5 sqm", etc.
     const match = notes.match(/(\d+(?:\.\d+)?)\s*sqm/i);
     return match ? parseFloat(match[1]) : 0;
@@ -341,7 +410,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
       }
 
       return true;
-    }
+    },
   );
 
   // Filter loans
@@ -360,7 +429,10 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     }
 
     // Status filter (multi-select)
-    if (loanStatusFilter.length > 0 && !loanStatusFilter.includes(loan.status)) {
+    if (
+      loanStatusFilter.length > 0 &&
+      !loanStatusFilter.includes(loan.status)
+    ) {
       return false;
     }
 
@@ -370,13 +442,16 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
       if (freeLotFilter === 'without' && loan.freeLotSqm) return false;
     }
 
-    // Calculate loan amounts for filtering
-    const totalPrincipal = loan.loanInvestors.reduce(
-      (sum, li) => sum + parseFloat(li.amount),
-      0
+    // Calculate investor-specific amounts for filtering
+    const investorLoanInvestors = loan.loanInvestors.filter(
+      (li) => li.investor.id === investor.id,
     );
-    const totalInterest = calculateTotalInterest(loan.loanInvestors);
-    const avgRate = calculateAverageRate(loan.loanInvestors);
+    const totalPrincipal = investorLoanInvestors.reduce(
+      (sum, li) => sum + parseFloat(li.amount),
+      0,
+    );
+    const totalInterest = calculateTotalInterest(investorLoanInvestors);
+    const avgRate = calculateAverageRate(investorLoanInvestors);
     const totalAmount = totalPrincipal + totalInterest;
 
     // Principal range filter
@@ -422,7 +497,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const completedLoans = loans
     .filter((loan) => loan.status === 'Completed')
     .sort(
-      (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+      (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime(),
     );
 
   // Overdue loans (status overdue or past due date for this investor's loans)
@@ -430,10 +505,10 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     .filter(
       (loan) =>
         loan.status === 'Overdue' ||
-        (loan.status !== 'Completed' && isPast(new Date(loan.dueDate)))
+        (loan.status !== 'Completed' && isPast(new Date(loan.dueDate))),
     )
     .sort(
-      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
     );
 
   // Pending disbursements (unpaid loan investor transactions for this investor)
@@ -441,6 +516,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     id: number;
     loanId: number;
     loanName: string;
+    loanType: LoanType;
     investorName: string;
     amount: string;
     sentDate: Date;
@@ -454,6 +530,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
           id: li.id,
           loanId: loan.id,
           loanName: loan.loanName,
+          loanType: loan.type,
           investorName: li.investor.name,
           amount: li.amount,
           sentDate: li.sentDate,
@@ -461,10 +538,9 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
       });
   });
 
-  const pendingDisbursements = unpaidLoanTransactions
-    .sort(
-      (a, b) => new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
-    );
+  const pendingDisbursements = unpaidLoanTransactions.sort(
+    (a, b) => new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime(),
+  );
 
   // Maturing loans (loans due within next 14 days for this investor)
   const maturingLoans = loans
@@ -478,7 +554,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
       );
     })
     .sort(
-      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
     );
 
   if (isEditing) {
@@ -551,32 +627,52 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         </CardContent>
       </Card>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Total Capital" value={formatCurrency(totalCapital)} />
-
-        <StatCard title="Avg. Interest Rate" value={`${avgRate.toFixed(2)}%`} />
-
-        <StatCard
-          title="Total Interest"
-          value={formatCurrency(totalInterest)}
-        />
-
-        <StatCard title="Total Amount" value={formatCurrency(totalGains)} />
-      </div>
-
-      {/* Lot Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-2">
-        <StatCard 
-          title="Total Lot" 
-          value={totalLot > 0 ? `${totalLot.toLocaleString()} sqm` : '-'} 
-        />
-
-        <StatCard 
-          title="Total Lot with Depacto" 
-          value={totalLotWithDepacto > 0 ? `${totalLotWithDepacto.toLocaleString()} sqm` : '-'} 
-        />
-      </div>
+      {/* Summary Card - Compact horizontal layout */}
+      <SummaryCard
+        metrics={[
+          {
+            label: 'Total Capital',
+            value: formatCurrency(totalCapital),
+            subValue: `${uniqueLoanCount} loans`,
+          },
+          {
+            label: 'Active',
+            value: formatCurrency(activeCapital),
+            subValue: `${activeLoansCount} loans`,
+          },
+          {
+            label: 'Completed',
+            value: formatCurrency(completedCapital),
+            subValue: `${completedLoansCount} loans`,
+          },
+          {
+            label: 'Interest Earned',
+            value: formatCurrency(completedInterest),
+            subValue: `of ${formatCurrency(totalInterest)}`,
+          },
+          {
+            label: 'Total Earnings',
+            value: formatCurrency(totalEarnings),
+            subValue: 'Capital + Interest Earned',
+            valueClassName: 'text-emerald-600 dark:text-emerald-500',
+          },
+          ...(totalLot > 0 || totalLotWithDepacto > 0
+            ? [
+                {
+                  label: 'Total Lot',
+                  value:
+                    totalLotWithDepacto > totalLot
+                      ? `${totalLot.toLocaleString()} + ${(totalLotWithDepacto - totalLot).toLocaleString()}`
+                      : `${totalLot.toLocaleString()} sqm`,
+                  subValue:
+                    totalLotWithDepacto > totalLot
+                      ? `= ${totalLotWithDepacto.toLocaleString()} sqm`
+                      : undefined,
+                },
+              ]
+            : []),
+        ]}
+      />
 
       {/* Activity Cards */}
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
@@ -584,25 +680,71 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
           loans={completedLoans}
           loading={loansLoading}
           investorId={investor.id}
+          onLoanClick={(loan) => {
+            setSelectedLoan(loan);
+            setShowLoanDetailModal(true);
+          }}
+          onTypeFilterClick={(type) =>
+            handleActivityTypeFilterClick(type, 'Completed')
+          }
+          onViewAllClick={() => handleActivityViewAllClick('Completed')}
         />
         <PastDueLoansCard
           loans={overdueLoans}
           loading={loansLoading}
           investorId={investor.id}
+          onLoanClick={(loan) => {
+            setSelectedLoan(loan);
+            setShowLoanDetailModal(true);
+          }}
+          onTypeFilterClick={(type) =>
+            handleActivityTypeFilterClick(type, 'Overdue')
+          }
+          onViewAllClick={() => handleActivityViewAllClick('Overdue')}
         />
         <PendingDisbursementsCard
           disbursements={pendingDisbursements}
           loading={loansLoading}
+          onDisbursementClick={async (loanId) => {
+            // Find the loan in the already loaded loans array
+            const loan = loans.find((l) => l.id === loanId);
+            if (loan) {
+              setSelectedLoan(loan);
+              setShowLoanDetailModal(true);
+            }
+          }}
+          onTypeFilterClick={(type) =>
+            handleActivityTypeFilterClick(type, [
+              'Fully Funded',
+              'Partially Funded',
+            ])
+          }
+          onViewAllClick={() =>
+            handleActivityViewAllClick(['Fully Funded', 'Partially Funded'])
+          }
         />
         <MaturingLoansCard
           loans={maturingLoans}
           loading={loansLoading}
           investorId={investor.id}
+          onLoanClick={(loan) => {
+            setSelectedLoan(loan);
+            setShowLoanDetailModal(true);
+          }}
+          onTypeFilterClick={(type) =>
+            handleActivityTypeFilterClick(type, [
+              'Fully Funded',
+              'Partially Funded',
+            ])
+          }
+          onViewAllClick={() =>
+            handleActivityViewAllClick(['Fully Funded', 'Partially Funded'])
+          }
         />
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="loans" className="w-full">
+      <Tabs defaultValue="loans" className="w-full" ref={loansSectionRef}>
         <TabsList>
           <TabsTrigger value="loans">Loans ({uniqueLoanCount})</TabsTrigger>
           <TabsTrigger value="transactions">
@@ -689,7 +831,11 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                     size="sm"
                   />
 
-                  <Button size="sm" onClick={() => setShowLoanModal(true)} className="h-9 px-3">
+                  <Button
+                    size="sm"
+                    onClick={() => setShowLoanModal(true)}
+                    className="h-9 px-3"
+                  >
                     <Plus className="h-3 w-3 xl:mr-1" />
                     <span className="hidden xl:inline">Add Loan</span>
                   </Button>
@@ -727,7 +873,10 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                         <MultiSelectFilter
                           options={[
                             { value: 'Fully Funded', label: 'Fully Funded' },
-                            { value: 'Partially Funded', label: 'Partially Funded' },
+                            {
+                              value: 'Partially Funded',
+                              label: 'Partially Funded',
+                            },
                             { value: 'Completed', label: 'Completed' },
                             { value: 'Overdue', label: 'Overdue' },
                           ]}
@@ -863,17 +1012,22 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   renderItems={(paginatedLoans) => (
                     <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
                       {paginatedLoans.map((loan) => {
-                        const totalPrincipal = loan.loanInvestors.reduce(
+                        // Filter to only this investor's entries
+                        const investorLoanInvestors = loan.loanInvestors.filter(
+                          (li) => li.investor.id === investor.id,
+                        );
+                        const investorPrincipal = investorLoanInvestors.reduce(
                           (sum, li) => sum + parseFloat(li.amount),
-                          0
+                          0,
                         );
-                        const totalInterest = calculateTotalInterest(
-                          loan.loanInvestors
+                        const investorInterest = calculateTotalInterest(
+                          investorLoanInvestors,
                         );
-                        const avgRate = calculateAverageRate(
-                          loan.loanInvestors
+                        const investorRate = calculateAverageRate(
+                          investorLoanInvestors,
                         );
-                        const totalAmount = totalPrincipal + totalInterest;
+                        const investorTotal =
+                          investorPrincipal + investorInterest;
 
                         return (
                           <Card
@@ -917,34 +1071,38 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                               <div className="grid grid-cols-2 gap-2">
                                 <div className="p-2 bg-muted/50 rounded-lg">
                                   <p className="text-[10px] text-muted-foreground mb-1">
-                                    Total Principal
+                                    Inv. Principal
                                   </p>
                                   <p className="text-sm font-medium break-words">
-                                    {formatCurrency(totalPrincipal.toString())}
+                                    {formatCurrency(
+                                      investorPrincipal.toString(),
+                                    )}
                                   </p>
                                 </div>
                                 <div className="p-2 bg-muted/50 rounded-lg">
                                   <p className="text-[10px] text-muted-foreground mb-1">
-                                    Avg. Rate
+                                    Inv. Rate
                                   </p>
                                   <p className="text-sm font-medium">
-                                    {avgRate.toFixed(2)}%
+                                    {investorRate.toFixed(2)}%
                                   </p>
                                 </div>
                                 <div className="p-2 bg-muted/50 rounded-lg">
                                   <p className="text-[10px] text-muted-foreground mb-1">
-                                    Total Interest
+                                    Inv. Interest
                                   </p>
                                   <p className="text-sm font-medium break-words">
-                                    {formatCurrency(totalInterest.toString())}
+                                    {formatCurrency(
+                                      investorInterest.toString(),
+                                    )}
                                   </p>
                                 </div>
                                 <div className="p-2 bg-muted/50 rounded-lg">
                                   <p className="text-[10px] text-muted-foreground mb-1">
-                                    Total Amount
+                                    Inv. Total
                                   </p>
                                   <p className="text-sm font-medium break-words">
-                                    {formatCurrency(totalAmount.toString())}
+                                    {formatCurrency(investorTotal.toString())}
                                   </p>
                                 </div>
                               </div>
@@ -972,6 +1130,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   itemsPerPage={10}
                   expandedRows={expandedLoans}
                   hideFields={['sentDates', 'dueDate', 'freeLotSqm']}
+                  investorId={investor.id}
                   onToggleExpand={(loanId) => {
                     setExpandedLoans((prev) => {
                       const newSet = new Set(prev);
@@ -1077,7 +1236,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   <ExportButton
                     data={transactionsWithInvestor}
                     filteredData={filteredTransactions}
-                    columns={createTransactionsCSVColumnsWithOverallBalance(transactionsWithInvestor)}
+                    columns={transactionsCSVColumns}
                     filename={`transactions_${investor.name.replace(/\s+/g, '_')}`}
                     variant="outline"
                     size="sm"
