@@ -48,7 +48,7 @@ import {
 } from '@/lib/calculations';
 import { investorsCSVColumns } from '@/lib/csv-columns';
 import { addDays, isAfter, isBefore, isPast } from 'date-fns';
-import type { LoanWithInvestors } from '@/lib/types';
+import type { LoanWithInvestors, LoanType } from '@/lib/types';
 
 const getBalanceStatus = (balance: number) => {
   if (balance > 100000)
@@ -61,14 +61,14 @@ const getBalanceStatus = (balance: number) => {
 // Helper function to calculate activity card data for an investor
 const getInvestorActivityData = (
   investor: InvestorWithLoans,
-  allLoans: LoanWithInvestors[]
+  allLoans: LoanWithInvestors[],
 ) => {
   const now = new Date();
   const fourteenDaysFromNow = addDays(now, 14);
 
   // Get investor's loan IDs
   const investorLoanIds = new Set(
-    investor.loanInvestors.map((li) => li.loan.id)
+    investor.loanInvestors.map((li) => li.loan.id),
   );
 
   // Filter loans to only those this investor is part of
@@ -79,10 +79,10 @@ const getInvestorActivityData = (
     .filter(
       (loan) =>
         loan.status === 'Overdue' ||
-        (loan.status !== 'Completed' && isPast(new Date(loan.dueDate)))
+        (loan.status !== 'Completed' && isPast(new Date(loan.dueDate))),
     )
     .sort(
-      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
     );
 
   // Pending disbursements
@@ -90,6 +90,7 @@ const getInvestorActivityData = (
     id: number;
     loanId: number;
     loanName: string;
+    loanType: LoanType;
     investorName: string;
     amount: string;
     sentDate: Date;
@@ -103,6 +104,7 @@ const getInvestorActivityData = (
           id: li.id,
           loanId: loan.id,
           loanName: loan.loanName,
+          loanType: loan.type,
           investorName: li.investor.name,
           amount: li.amount,
           sentDate: li.sentDate,
@@ -111,7 +113,7 @@ const getInvestorActivityData = (
   });
 
   const pendingDisbursements = unpaidLoanTransactions.sort(
-    (a, b) => new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
+    (a, b) => new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime(),
   );
 
   // Maturing loans
@@ -126,7 +128,7 @@ const getInvestorActivityData = (
       );
     })
     .sort(
-      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
     );
 
   return {
@@ -142,18 +144,20 @@ export default function InvestorsPage() {
   const [investors, setInvestors] = useState<InvestorWithLoans[]>([]);
   const [allLoans, setAllLoans] = useState<LoanWithInvestors[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Use responsive view mode hook for SSR-safe view mode detection
-  const { viewMode, setViewMode, isReady: isViewModeReady } = useResponsiveViewMode<
-    'cards' | 'table'
-  >();
+  const {
+    viewMode,
+    setViewMode,
+    isReady: isViewModeReady,
+  } = useResponsiveViewMode<'cards' | 'table'>();
   const itemsPerPage = 10;
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedInvestors, setExpandedInvestors] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
   const [expandedTableRows, setExpandedTableRows] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
 
   // Automatically check for overdue loans and periods
@@ -533,7 +537,7 @@ export default function InvestorsPage() {
                   {paginatedInvestors.map((investor) => {
                     const stats = calculateInvestorStats(investor);
                     const avgRate = calculateAverageRate(
-                      investor.loanInvestors
+                      investor.loanInvestors,
                     );
 
                     // Get today's date at midnight for comparison
@@ -544,9 +548,9 @@ export default function InvestorsPage() {
                       new Set(
                         investor.loanInvestors.map(
                           (li) =>
-                            new Date(li.sentDate).toISOString().split('T')[0]
-                        )
-                      )
+                            new Date(li.sentDate).toISOString().split('T')[0],
+                        ),
+                      ),
                     )
                       .map((dateStr) => new Date(dateStr))
                       .filter((date) => {
@@ -559,12 +563,14 @@ export default function InvestorsPage() {
                     const dueDateSet = new Set<string>();
                     investor.loanInvestors.forEach((li) => {
                       dueDateSet.add(
-                        new Date(li.loan.dueDate).toISOString().split('T')[0]
+                        new Date(li.loan.dueDate).toISOString().split('T')[0],
                       );
                       if (li.hasMultipleInterest && li.interestPeriods) {
                         li.interestPeriods.forEach((period) => {
                           dueDateSet.add(
-                            new Date(period.dueDate).toISOString().split('T')[0]
+                            new Date(period.dueDate)
+                              .toISOString()
+                              .split('T')[0],
                           );
                         });
                       }
@@ -638,7 +644,7 @@ export default function InvestorsPage() {
                               </p>
                               <p className="text-sm font-medium break-words">
                                 {formatCurrency(
-                                  stats.totalCapital + stats.totalInterest
+                                  stats.totalCapital + stats.totalInterest,
                                 )}
                               </p>
                             </div>
@@ -669,7 +675,7 @@ export default function InvestorsPage() {
                                       }
                                     : getInvestorActivityData(
                                         investor,
-                                        allLoans
+                                        allLoans,
                                       );
 
                                 return (
