@@ -4,12 +4,10 @@ import { transactions } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { hasTransactionAccess } from '@/lib/access-control';
-import { requiresBalanceRecalculation } from '@/lib/loan-update-detector';
-import { recalculateInvestorBalances } from '@/lib/loan-transactions';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth();
@@ -25,7 +23,7 @@ export async function GET(
     if (!hasAccess) {
       return NextResponse.json(
         { error: 'Transaction not found' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -39,7 +37,7 @@ export async function GET(
     if (!transaction) {
       return NextResponse.json(
         { error: 'Transaction not found' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -48,14 +46,14 @@ export async function GET(
     console.error('Error fetching transaction:', error);
     return NextResponse.json(
       { error: 'Failed to fetch transaction' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth();
@@ -72,7 +70,7 @@ export async function PUT(
     if (!hasAccess) {
       return NextResponse.json(
         { error: 'Transaction not found' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -84,7 +82,7 @@ export async function PUT(
     if (!existingTransaction) {
       return NextResponse.json(
         { error: 'Transaction not found' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -95,7 +93,7 @@ export async function PUT(
           error:
             'Loan transactions cannot be edited directly. Please edit the loan instead.',
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -109,62 +107,18 @@ export async function PUT(
       updatedAt: new Date(),
     };
 
-    // Check if balance recalculation is needed
-    const needsBalanceRecalculation = requiresBalanceRecalculation(
-      {
-        date: existingTransaction.date,
-        amount: existingTransaction.amount,
-        direction: existingTransaction.direction,
-        investorId: existingTransaction.investorId,
-      },
-      {
-        date: transactionData.date,
-        amount: transactionData.amount,
-        direction: transactionData.direction,
-        investorId: transactionData.investorId,
-      }
-    );
-
-    console.log('Balance recalculation needed:', needsBalanceRecalculation);
-
     const updatedTransaction = await db
       .update(transactions)
       .set(transactionData)
       .where(
-        and(eq(transactions.id, id), eq(transactions.userId, session.user.id))
+        and(eq(transactions.id, id), eq(transactions.userId, session.user.id)),
       )
       .returning();
 
     if (updatedTransaction.length === 0) {
       return NextResponse.json(
         { error: 'Transaction not found' },
-        { status: 404 }
-      );
-    }
-
-    // Recalculate balances if needed
-    if (needsBalanceRecalculation) {
-      try {
-        // Get all affected investor IDs (both old and new if investor changed)
-        const affectedInvestorIds = [existingTransaction.investorId];
-        if (transactionData.investorId !== existingTransaction.investorId) {
-          affectedInvestorIds.push(transactionData.investorId);
-        }
-
-        // Use the earliest date between old and new
-        const earliestDate =
-          existingTransaction.date < transactionData.date
-            ? existingTransaction.date
-            : transactionData.date;
-
-        await recalculateInvestorBalances(affectedInvestorIds, earliestDate);
-        console.log('Recalculated balances for affected investors');
-      } catch (error) {
-        console.error('Error recalculating balances:', error);
-      }
-    } else {
-      console.log(
-        'Skipped balance recalculation - only non-computational fields changed'
+        { status: 404 },
       );
     }
 
@@ -173,14 +127,14 @@ export async function PUT(
     console.error('Error updating transaction:', error);
     return NextResponse.json(
       { error: 'Failed to update transaction' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth();
@@ -196,11 +150,11 @@ export async function DELETE(
     if (!hasAccess) {
       return NextResponse.json(
         { error: 'Transaction not found' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    // Get transaction details before deletion for balance recalculation
+    // Get transaction details before deletion
     const transactionToDelete = await db.query.transactions.findFirst({
       where: eq(transactions.id, id),
     });
@@ -208,7 +162,7 @@ export async function DELETE(
     if (!transactionToDelete) {
       return NextResponse.json(
         { error: 'Transaction not found' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -220,19 +174,8 @@ export async function DELETE(
     if (deletedTransaction.length === 0) {
       return NextResponse.json(
         { error: 'Transaction not found' },
-        { status: 404 }
+        { status: 404 },
       );
-    }
-
-    // Recalculate balances after deletion
-    try {
-      await recalculateInvestorBalances(
-        [transactionToDelete.investorId],
-        transactionToDelete.date
-      );
-      console.log('Recalculated balances after transaction deletion');
-    } catch (error) {
-      console.error('Error recalculating balances after deletion:', error);
     }
 
     return NextResponse.json({ success: true });
@@ -240,7 +183,7 @@ export async function DELETE(
     console.error('Error deleting transaction:', error);
     return NextResponse.json(
       { error: 'Failed to delete transaction' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
