@@ -1,15 +1,5 @@
 import { db } from '@/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  FileText,
-  Users,
-  ArrowUpRight,
-  ArrowDownRight,
-  Wallet,
-  HandCoins,
-  TriangleAlert,
-  PiggyBank,
-} from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import {
   calculateTotalPrincipal,
@@ -17,19 +7,18 @@ import {
   calculateInvestorStats,
 } from '@/lib/calculations';
 import {
-  StatCard,
-  CompletedLoansCard,
-  PastDueLoansCard,
-  PendingDisbursementsCard,
-  MaturingLoansCard,
+  SummaryCard,
+  DashboardActivityCards,
   PageHeader,
   OverdueChecker,
+  DownloadBackupButton,
 } from '@/components/common';
 import {
   CurrencyBarChart,
   LoanTypePieChart,
   CashflowTrendChart,
 } from '@/components/common/charts';
+import type { LoanType } from '@/lib/types';
 import {
   format,
   subWeeks,
@@ -104,7 +93,7 @@ async function getDashboardData(userId: string) {
     });
     const allLoans = Array.from(loansMap.values()).sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     // Get investors created by this user
@@ -180,7 +169,7 @@ async function getDashboardData(userId: string) {
         where: (transactions, { eq, or }) =>
           or(
             eq(transactions.userId, userId),
-            eq(transactions.investorId, investorRecord.id)
+            eq(transactions.investorId, investorRecord.id),
           ),
         with: {
           investor: true,
@@ -202,25 +191,39 @@ async function getDashboardData(userId: string) {
     // Calculate loan statistics
     const totalPrincipal = allLoans.reduce(
       (sum, loan) => sum + calculateTotalPrincipal(loan.loanInvestors),
-      0
+      0,
     );
 
-    const totalInterestEarned = allLoans.reduce(
+    // Calculate completed principal (only from completed loans)
+    const completedLoansData = allLoans.filter(
+      (loan) => loan.status === 'Completed',
+    );
+    const completedPrincipal = completedLoansData.reduce(
+      (sum, loan) => sum + calculateTotalPrincipal(loan.loanInvestors),
+      0,
+    );
+
+    // Calculate interest earned from completed loans only
+    const completedInterestEarned = completedLoansData.reduce(
       (sum, loan) => sum + calculateTotalInterest(loan.loanInvestors),
-      0
+      0,
     );
 
-    const activeLoans = allLoans.filter(
+    // Calculate total interest (expected from all loans)
+    const totalInterestExpected = allLoans.reduce(
+      (sum, loan) => sum + calculateTotalInterest(loan.loanInvestors),
+      0,
+    );
+
+    const activeLoansCount = allLoans.filter(
       (loan) =>
-        loan.status === 'Fully Funded' || loan.status === 'Partially Funded'
+        loan.status === 'Fully Funded' || loan.status === 'Partially Funded',
     ).length;
 
-    const completedLoans = allLoans.filter(
-      (loan) => loan.status === 'Completed'
-    ).length;
+    const completedLoansCount = completedLoansData.length;
 
-    const overdueLoans = allLoans.filter(
-      (loan) => loan.status === 'Overdue'
+    const overdueLoansCount = allLoans.filter(
+      (loan) => loan.status === 'Overdue',
     ).length;
 
     // Calculate investor statistics
@@ -229,8 +232,8 @@ async function getDashboardData(userId: string) {
       inv.loanInvestors.some(
         (li: any) =>
           li.loan.status === 'Fully Funded' ||
-          li.loan.status === 'Partially Funded'
-      )
+          li.loan.status === 'Partially Funded',
+      ),
     ).length;
 
     // Calculate transaction statistics
@@ -244,7 +247,7 @@ async function getDashboardData(userId: string) {
 
     const loanTransactions = allTransactions.filter((t) => t.type === 'Loan');
     const investmentTransactions = allTransactions.filter(
-      (t) => t.type === 'Investment'
+      (t) => t.type === 'Investment',
     );
 
     // Helper function to check if a transaction qualifies as valid inflow
@@ -364,11 +367,11 @@ async function getDashboardData(userId: string) {
 
     // Loan status distribution
     const fullyFundedLoans = allLoans.filter(
-      (loan) => loan.status === 'Fully Funded'
+      (loan) => loan.status === 'Fully Funded',
     ).length;
 
     const partiallyFundedLoans = allLoans.filter(
-      (loan) => loan.status === 'Partially Funded'
+      (loan) => loan.status === 'Partially Funded',
     ).length;
 
     const loanStatusData = [
@@ -384,12 +387,12 @@ async function getDashboardData(userId: string) {
       },
       {
         name: 'Completed',
-        value: completedLoans,
+        value: completedLoansCount,
         color: '#38bdf8', // Sky-400
       },
       {
         name: 'Overdue',
-        value: overdueLoans,
+        value: overdueLoansCount,
         color: '#fb7185', // Rose-400
       },
     ].filter((item) => item.value > 0);
@@ -413,6 +416,7 @@ async function getDashboardData(userId: string) {
       id: number;
       loanId: number;
       loanName: string;
+      loanType: LoanType;
       investorName: string;
       amount: string;
       sentDate: Date;
@@ -426,6 +430,7 @@ async function getDashboardData(userId: string) {
             id: li.id,
             loanId: loan.id,
             loanName: loan.loanName,
+            loanType: loan.type,
             investorName: li.investor.name,
             amount: li.amount,
             sentDate: li.sentDate,
@@ -434,7 +439,7 @@ async function getDashboardData(userId: string) {
     });
 
     const upcomingPaymentsToSend = unpaidLoanTransactions.sort(
-      (a, b) => new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime()
+      (a, b) => new Date(a.sentDate).getTime() - new Date(b.sentDate).getTime(),
     );
 
     // Upcoming payments due (loans due within next 14 days, excluding completed/overdue)
@@ -450,14 +455,7 @@ async function getDashboardData(userId: string) {
         );
       })
       .sort(
-        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-      );
-
-    // Completed loans (recently completed)
-    const completedLoansData = allLoans
-      .filter((loan) => loan.status === 'Completed')
-      .sort(
-        (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
       );
 
     // Overdue loans (status overdue or past due date)
@@ -465,20 +463,22 @@ async function getDashboardData(userId: string) {
       .filter(
         (loan) =>
           loan.status === 'Overdue' ||
-          (loan.status !== 'Completed' && isPast(new Date(loan.dueDate)))
+          (loan.status !== 'Completed' && isPast(new Date(loan.dueDate))),
       )
       .sort(
-        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
       );
 
     return {
       // Overview stats
       totalPrincipal,
-      activeLoans,
-      overdueLoans,
-      totalInterestEarned,
+      completedPrincipal,
+      completedInterestEarned,
+      totalInterestExpected,
+      activeLoansCount,
+      overdueLoansCount,
       totalLoans: allLoans.length,
-      completedLoans,
+      completedLoansCount,
       totalInvestors,
       activeInvestors,
       totalInflow,
@@ -495,18 +495,22 @@ async function getDashboardData(userId: string) {
       // Upcoming data
       upcomingPaymentsToSend,
       upcomingPaymentsDue,
-      completedLoansData,
+      completedLoansData: [...completedLoansData].sort(
+        (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime(),
+      ),
       overdueLoansData,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     return {
       totalPrincipal: 0,
-      activeLoans: 0,
-      overdueLoans: 0,
-      totalInterestEarned: 0,
+      completedPrincipal: 0,
+      completedInterestEarned: 0,
+      totalInterestExpected: 0,
+      activeLoansCount: 0,
+      overdueLoansCount: 0,
       totalLoans: 0,
-      completedLoans: 0,
+      completedLoansCount: 0,
       totalInvestors: 0,
       activeInvestors: 0,
       totalInflow: 0,
@@ -534,7 +538,8 @@ export default async function DashboardPage() {
   }
 
   const data = await getDashboardData(session.user.id);
-  const netCashflow = data.totalInflow - data.totalOutflow;
+  const totalEarnings = data.completedPrincipal + data.completedInterestEarned;
+  const activePrincipal = data.totalPrincipal - data.completedPrincipal;
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -544,97 +549,48 @@ export default async function DashboardPage() {
       <PageHeader
         title="Dashboard"
         description="Overview of your pawn business"
+        actions={<DownloadBackupButton />}
       />
 
-      <Card>
-        <CardContent className="pt-6 space-y-6">
-          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total Principal"
-              value={formatCurrency(data.totalPrincipal)}
-              icon={PiggyBank}
-              subtitle={`${data.totalLoans} total loans`}
-              variant="primary"
-            />
-
-            <StatCard
-              title="Interest Earned"
-              value={formatCurrency(data.totalInterestEarned)}
-              icon={HandCoins}
-              subtitle={`${data.completedLoans} completed loans`}
-              variant="primary"
-            />
-
-            <StatCard
-              title="Active Loans"
-              value={data.activeLoans}
-              icon={FileText}
-              subtitle="Currently in progress"
-              variant="primary"
-            />
-
-            <StatCard
-              title="Overdue Loans"
-              value={data.overdueLoans}
-              icon={TriangleAlert}
-              subtitle="Needs attention"
-              variant="primary"
-            />
-          </div>
-
-          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total Inflow"
-              value={formatCurrency(data.totalInflow)}
-              icon={ArrowDownRight}
-              subtitle={`${data.investmentTransactions} transactions`}
-              variant="primary"
-            />
-
-            <StatCard
-              title="Total Outflow"
-              value={formatCurrency(data.totalOutflow)}
-              icon={ArrowUpRight}
-              subtitle={`${data.loanTransactions} transactions`}
-              variant="primary"
-            />
-
-            <StatCard
-              title="Net Cashflow"
-              value={
-                <span
-                  className={
-                    netCashflow >= 0
-                      ? 'text-emerald-600 dark:text-emerald-500'
-                      : 'text-rose-600 dark:text-rose-500'
-                  }
-                >
-                  {formatCurrency(netCashflow)}
-                </span>
-              }
-              icon={Wallet}
-              subtitle="Total balance"
-              variant="primary"
-            />
-
-            <StatCard
-              title="Active Investors"
-              value={`${data.activeInvestors} / ${data.totalInvestors}`}
-              icon={Users}
-              subtitle="Currently investing"
-              variant="primary"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Summary Card - Compact horizontal layout */}
+      <SummaryCard
+        metrics={[
+          {
+            label: 'Total Principal',
+            value: formatCurrency(data.totalPrincipal),
+            subValue: `${data.totalLoans} loans`,
+          },
+          {
+            label: 'Active',
+            value: formatCurrency(activePrincipal),
+            subValue: `${data.activeLoansCount} loans`,
+          },
+          {
+            label: 'Completed',
+            value: formatCurrency(data.completedPrincipal),
+            subValue: `${data.completedLoansCount} loans`,
+          },
+          {
+            label: 'Interest Earned',
+            value: formatCurrency(data.completedInterestEarned),
+            subValue: `of ${formatCurrency(data.totalInterestExpected)}`,
+          },
+          {
+            label: 'Total Earnings',
+            value: formatCurrency(totalEarnings),
+            subValue: 'Capital + Interest Earned',
+            valueClassName: 'text-emerald-600 dark:text-emerald-500',
+          },
+        ]}
+      />
 
       {/* Upcoming Activity */}
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-        <CompletedLoansCard loans={data.completedLoansData} />
-        <PastDueLoansCard loans={data.overdueLoansData} />
-        <PendingDisbursementsCard disbursements={data.upcomingPaymentsToSend} />
-        <MaturingLoansCard loans={data.upcomingPaymentsDue} />
-      </div>
+      <DashboardActivityCards
+        completedLoans={data.completedLoansData}
+        overdueLoans={data.overdueLoansData}
+        pendingDisbursements={data.upcomingPaymentsToSend}
+        upcomingPaymentsDue={data.upcomingPaymentsDue}
+      />
 
       {/* Charts Section */}
       <div className="grid gap-4 lg:grid-cols-2">
