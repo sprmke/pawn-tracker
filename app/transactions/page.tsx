@@ -39,23 +39,29 @@ import {
   PageHeader,
   ExportButton,
 } from '@/components/common';
-import { DollarSign, TrendingUp, Users } from 'lucide-react';
-import { createTransactionsCSVColumnsWithOverallBalance } from '@/lib/csv-columns';
+import { DollarSign, Users } from 'lucide-react';
+import { transactionsCSVColumns } from '@/lib/csv-columns';
 
 export default function TransactionsPage() {
   const router = useRouter();
   const [transactions, setTransactions] = useState<TransactionWithInvestor[]>(
-    []
+    [],
   );
   const [investors, setInvestors] = useState<{ id: number; name: string }[]>(
-    []
+    [],
   );
   const [loading, setLoading] = useState(true);
-  
+
   // Use responsive view mode hook for SSR-safe view mode detection
-  const { viewMode, setViewMode, isReady: isViewModeReady } = useResponsiveViewMode<
-    'cards' | 'table' | 'calendar'
-  >({ includeCalendar: true, defaultDesktopMode: 'calendar', defaultMobileMode: 'calendar' });
+  const {
+    viewMode,
+    setViewMode,
+    isReady: isViewModeReady,
+  } = useResponsiveViewMode<'cards' | 'table' | 'calendar'>({
+    includeCalendar: true,
+    defaultDesktopMode: 'calendar',
+    defaultMobileMode: 'calendar',
+  });
   const itemsPerPage = 10;
 
   // Store the previous showPastTransactions state when switching to calendar view
@@ -74,8 +80,6 @@ export default function TransactionsPage() {
   // Amount range filters
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
-  const [minBalance, setMinBalance] = useState<string>('');
-  const [maxBalance, setMaxBalance] = useState<string>('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
 
   useEffect(() => {
@@ -150,17 +154,11 @@ export default function TransactionsPage() {
     setSelectedInvestors([]);
     setMinAmount('');
     setMaxAmount('');
-    setMinBalance('');
-    setMaxBalance('');
     setCurrentPage(1);
   };
 
   const hasActiveAmountFilters =
-    minAmount !== '' ||
-    maxAmount !== '' ||
-    minBalance !== '' ||
-    maxBalance !== '' ||
-    selectedInvestors.length > 0;
+    minAmount !== '' || maxAmount !== '' || selectedInvestors.length > 0;
 
   const hasActiveFilters =
     searchQuery !== '' ||
@@ -223,15 +221,6 @@ export default function TransactionsPage() {
       return false;
     }
 
-    // Balance range filter
-    const balance = parseFloat(transaction.balance);
-    if (minBalance !== '' && balance < parseFloat(minBalance)) {
-      return false;
-    }
-    if (maxBalance !== '' && balance > parseFloat(maxBalance)) {
-      return false;
-    }
-
     return true;
   });
 
@@ -280,7 +269,7 @@ export default function TransactionsPage() {
             <ExportButton
               data={transactions}
               filteredData={sortedTransactions}
-              columns={createTransactionsCSVColumnsWithOverallBalance(transactions)}
+              columns={transactionsCSVColumns}
               filename="transactions"
               variant="outline"
               size="default"
@@ -385,7 +374,9 @@ export default function TransactionsPage() {
               className="whitespace-nowrap relative h-9 px-3"
             >
               <Filter className="h-4 w-4 xl:mr-2" />
-              <span className="hidden xl:inline">{showMoreFilters ? 'Less' : 'More'} Filters</span>
+              <span className="hidden xl:inline">
+                {showMoreFilters ? 'Less' : 'More'} Filters
+              </span>
               {hasActiveAmountFilters && (
                 <span className="ml-1 xl:ml-2 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
@@ -498,24 +489,6 @@ export default function TransactionsPage() {
                   minPlaceholder="Min (₱)"
                   maxPlaceholder="Max (₱)"
                 />
-
-                {/* Balance Range */}
-                <RangeFilter
-                  label="Balance"
-                  icon={TrendingUp}
-                  minValue={minBalance}
-                  maxValue={maxBalance}
-                  onMinChange={(value) => {
-                    setMinBalance(value);
-                    setCurrentPage(1);
-                  }}
-                  onMaxChange={(value) => {
-                    setMaxBalance(value);
-                    setCurrentPage(1);
-                  }}
-                  minPlaceholder="Min (₱)"
-                  maxPlaceholder="Max (₱)"
-                />
               </div>
 
               {/* Investor Filter */}
@@ -533,9 +506,10 @@ export default function TransactionsPage() {
                         {selectedInvestors.length === 0
                           ? 'All Investors'
                           : selectedInvestors.length === 1
-                          ? investors.find((i) => i.id === selectedInvestors[0])
-                              ?.name
-                          : `${selectedInvestors.length} investors selected`}
+                            ? investors.find(
+                                (i) => i.id === selectedInvestors[0],
+                              )?.name
+                            : `${selectedInvestors.length} investors selected`}
                       </span>
                     </SelectTrigger>
                     <SelectContent>
@@ -567,7 +541,7 @@ export default function TransactionsPage() {
                                 setSelectedInvestors((prev) => {
                                   if (prev.includes(investor.id)) {
                                     return prev.filter(
-                                      (id) => id !== investor.id
+                                      (id) => id !== investor.id,
                                     );
                                   } else {
                                     return [...prev, investor.id];
