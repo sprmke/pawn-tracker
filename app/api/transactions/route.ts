@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { transactions } from '@/db/schema';
 import { auth } from '@/auth';
-import { eq, and } from 'drizzle-orm';
-import { recalculateInvestorBalances } from '@/lib/loan-transactions';
 
 export async function GET(request: Request) {
   try {
@@ -28,7 +26,7 @@ export async function GET(request: Request) {
         where: (transactions, { eq, and }) =>
           and(
             eq(transactions.userId, userId),
-            eq(transactions.investorId, parseInt(investorIdParam))
+            eq(transactions.investorId, parseInt(investorIdParam)),
           ),
         orderBy: (transactions, { desc }) => [desc(transactions.date)],
         with: {
@@ -43,7 +41,7 @@ export async function GET(request: Request) {
           where: (transactions, { eq, or }) =>
             or(
               eq(transactions.userId, userId),
-              eq(transactions.investorId, investorRecord.id)
+              eq(transactions.investorId, investorRecord.id),
             ),
           orderBy: (transactions, { desc }) => [desc(transactions.date)],
           with: {
@@ -67,7 +65,7 @@ export async function GET(request: Request) {
     console.error('Error fetching transactions:', error);
     return NextResponse.json(
       { error: 'Failed to fetch transactions' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -94,23 +92,12 @@ export async function POST(request: Request) {
       .values(transactionData)
       .returning();
 
-    // Recalculate balances after creating new transaction
-    try {
-      await recalculateInvestorBalances(
-        [newTransaction[0].investorId],
-        newTransaction[0].date
-      );
-      console.log('Recalculated balances after transaction creation');
-    } catch (error) {
-      console.error('Error recalculating balances after creation:', error);
-    }
-
     return NextResponse.json(newTransaction[0], { status: 201 });
   } catch (error) {
     console.error('Error creating transaction:', error);
     return NextResponse.json(
       { error: 'Failed to create transaction' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
