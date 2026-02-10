@@ -1,12 +1,16 @@
 // Common reusable components
 export { StatCard } from './stat-card';
+export { SummaryCard, MetricDisplay } from './summary-card';
 export { EmptyState } from './empty-state';
 export { PageHeader } from './page-header';
 export { ViewModeToggle } from './view-mode-toggle';
 export { LoadingState, InlineLoader } from './loading-state';
 export { SearchFilter } from './search-filter';
 export { RangeFilter } from './range-filter';
-export { MultiSelectFilter, type MultiSelectOption } from './multi-select-filter';
+export {
+  MultiSelectFilter,
+  type MultiSelectOption,
+} from './multi-select-filter';
 export { FilterSection } from './filter-section';
 export { CollapsibleSection, CollapsibleContent } from './collapsible-section';
 export { Pagination } from './pagination';
@@ -23,6 +27,7 @@ export { CompletedLoansCard } from './completed-loans-card';
 export { PastDueLoansCard } from './past-due-loans-card';
 export { PendingDisbursementsCard } from './pending-disbursements-card';
 export { MaturingLoansCard } from './maturing-loans-card';
+export { DashboardActivityCards } from './dashboard-activity-cards';
 export { OverdueChecker } from './overdue-checker';
 export { DateListWithViewMore } from './date-list-with-view-more';
 export {
@@ -35,7 +40,11 @@ export { Logo } from './logo';
 export { ExportButton } from './export-button';
 export { ExportColumnsModal } from './export-columns-modal';
 export { SyncCalendarButton } from './sync-calendar-button';
-export { NavigationProgressProvider, useNavigationProgress } from './navigation-progress';
+export { DownloadBackupButton } from './download-backup-button';
+export {
+  NavigationProgressProvider,
+  useNavigationProgress,
+} from './navigation-progress';
 
 // Calendar components
 export * from './calendar';
