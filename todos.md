@@ -62,3 +62,9 @@ Todos & Improvements:
 - ✅ Let's remove saving/updating of each transaction whenever we add/update a loan/transaction. we don't need to do that anymore. Remove the balance computation, investor balance and overall balance on transactions page/module as well.
 - ✅ Improve table pagination
 - It looks like when we create a new loan on dev env, we are not creating any google event calendar
+- Display the loan detail modal when we click a loan from the dashboard page instead of loan page redirection
+- When we are on Investor detail page, what we should see from the table is the investor information. Instead of displaying the loan total principal, display the investor principal. Same for avg rate, interest and amount. We can update the table header to prevent confusion
+- Correct badges for the 4 cards to display the loan type with their respective correct color. Use the same loan type colors from loans table type column
+- Can we improve the dashboard cards summary
+- Rearrange complete and incoming loans
+- Implement backup data system
