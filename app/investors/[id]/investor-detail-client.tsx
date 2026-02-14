@@ -676,8 +676,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
       {/* Activity Cards */}
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-        <CompletedLoansCard
-          loans={completedLoans}
+        <MaturingLoansCard
+          loans={maturingLoans}
           loading={loansLoading}
           investorId={investor.id}
           onLoanClick={(loan) => {
@@ -685,9 +685,14 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
             setShowLoanDetailModal(true);
           }}
           onTypeFilterClick={(type) =>
-            handleActivityTypeFilterClick(type, 'Completed')
+            handleActivityTypeFilterClick(type, [
+              'Fully Funded',
+              'Partially Funded',
+            ])
           }
-          onViewAllClick={() => handleActivityViewAllClick('Completed')}
+          onViewAllClick={() =>
+            handleActivityViewAllClick(['Fully Funded', 'Partially Funded'])
+          }
         />
         <PastDueLoansCard
           loans={overdueLoans}
@@ -723,8 +728,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
             handleActivityViewAllClick(['Fully Funded', 'Partially Funded'])
           }
         />
-        <MaturingLoansCard
-          loans={maturingLoans}
+        <CompletedLoansCard
+          loans={completedLoans}
           loading={loansLoading}
           investorId={investor.id}
           onLoanClick={(loan) => {
@@ -732,14 +737,9 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
             setShowLoanDetailModal(true);
           }}
           onTypeFilterClick={(type) =>
-            handleActivityTypeFilterClick(type, [
-              'Fully Funded',
-              'Partially Funded',
-            ])
+            handleActivityTypeFilterClick(type, 'Completed')
           }
-          onViewAllClick={() =>
-            handleActivityViewAllClick(['Fully Funded', 'Partially Funded'])
-          }
+          onViewAllClick={() => handleActivityViewAllClick('Completed')}
         />
       </div>
 
