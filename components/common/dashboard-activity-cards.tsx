@@ -100,11 +100,15 @@ export function DashboardActivityCards({
   return (
     <>
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-        <CompletedLoansCard
-          loans={completedLoans}
+        <MaturingLoansCard
+          loans={upcomingPaymentsDue}
           onLoanClick={handleLoanClick}
-          onTypeFilterClick={(type) => handleTypeFilterClick(type, 'Completed')}
-          onViewAllClick={() => handleViewAllClick('Completed')}
+          onTypeFilterClick={(type) =>
+            handleTypeFilterClick(type, ['Fully Funded', 'Partially Funded'])
+          }
+          onViewAllClick={() =>
+            handleViewAllClick(['Fully Funded', 'Partially Funded'])
+          }
         />
         <PastDueLoansCard
           loans={overdueLoans}
@@ -122,15 +126,11 @@ export function DashboardActivityCards({
             handleViewAllClick(['Fully Funded', 'Partially Funded'])
           }
         />
-        <MaturingLoansCard
-          loans={upcomingPaymentsDue}
+        <CompletedLoansCard
+          loans={completedLoans}
           onLoanClick={handleLoanClick}
-          onTypeFilterClick={(type) =>
-            handleTypeFilterClick(type, ['Fully Funded', 'Partially Funded'])
-          }
-          onViewAllClick={() =>
-            handleViewAllClick(['Fully Funded', 'Partially Funded'])
-          }
+          onTypeFilterClick={(type) => handleTypeFilterClick(type, 'Completed')}
+          onViewAllClick={() => handleViewAllClick('Completed')}
         />
       </div>
 
