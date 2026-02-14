@@ -233,8 +233,8 @@ export function InvestorsTable({
 
     return (
       <div className="grid gap-2 grid-cols-1 lg:grid-cols-2 xl:grid-cols-4">
-        <CompletedLoansCard
-          loans={activityData.completedLoans}
+        <MaturingLoansCard
+          loans={activityData.maturingLoans}
           investorId={investor.id}
         />
         <PastDueLoansCard
@@ -244,8 +244,8 @@ export function InvestorsTable({
         <PendingDisbursementsCard
           disbursements={activityData.pendingDisbursements}
         />
-        <MaturingLoansCard
-          loans={activityData.maturingLoans}
+        <CompletedLoansCard
+          loans={activityData.completedLoans}
           investorId={investor.id}
         />
       </div>
