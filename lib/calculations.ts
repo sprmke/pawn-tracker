@@ -10,13 +10,20 @@ import {
   Loan,
 } from './types';
 
+function safeParseFloat(value: string | number | null | undefined): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return Number.isNaN(value) ? 0 : value;
+  const n = parseFloat(value);
+  return Number.isNaN(n) ? 0 : n;
+}
+
 /**
  * Calculate total principal amount for a loan
  */
 export function calculateTotalPrincipal(
   loanInvestors: Array<{ amount: string }>,
 ): number {
-  return loanInvestors.reduce((sum, li) => sum + parseFloat(li.amount), 0);
+  return loanInvestors.reduce((sum, li) => sum + safeParseFloat(li.amount), 0);
 }
 
 /**
@@ -36,6 +43,8 @@ export function calculateTotalInterest(
     investorId?: number;
   }>,
 ): number {
+  const loanTotalPrincipal = calculateTotalPrincipal(loanInvestors);
+
   // Group by investor to handle multiple interest correctly
   const investorGroups = new Map<number, typeof loanInvestors>();
 
@@ -51,7 +60,6 @@ export function calculateTotalInterest(
   let totalInterest = 0;
 
   investorGroups.forEach((transactions) => {
-    // Find if any transaction has multiple interest periods
     const transactionWithPeriods = transactions.find(
       (t) =>
         t.hasMultipleInterest &&
@@ -59,35 +67,35 @@ export function calculateTotalInterest(
         t.interestPeriods.length > 0,
     );
 
-    if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
-      // Calculate total capital for this investor
-      const investorTotalCapital = transactions.reduce(
-        (sum, t) => sum + parseFloat(t.amount),
-        0,
-      );
+    const investorTotalCapital = transactions.reduce(
+      (sum, t) => sum + safeParseFloat(t.amount),
+      0,
+    );
 
-      // Apply interest periods to total investor capital
+    if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
       const investorInterest = transactionWithPeriods.interestPeriods.reduce(
         (periodSum, period) => {
-          const rateValue = parseFloat(period.interestRate);
-          const interest =
-            period.interestType === 'fixed'
-              ? rateValue
-              : investorTotalCapital * (rateValue / 100);
-          return periodSum + interest;
+          const rateValue = safeParseFloat(period.interestRate);
+          if (period.interestType === 'fixed') return periodSum + rateValue;
+          const baseAmount =
+            investorTotalCapital === 0 ? loanTotalPrincipal : investorTotalCapital;
+          return periodSum + baseAmount * (rateValue / 100);
         },
         0,
       );
 
       totalInterest += investorInterest;
     } else {
-      // No multiple interest - sum up individual transaction interests
       transactions.forEach((li) => {
-        const capital = parseFloat(li.amount);
-        const rateValue = parseFloat(li.interestRate);
-        const interest =
-          li.interestType === 'fixed' ? rateValue : capital * (rateValue / 100);
-        totalInterest += interest;
+        const capital = safeParseFloat(li.amount);
+        const rateValue = safeParseFloat(li.interestRate);
+        if (li.interestType === 'fixed') {
+          totalInterest += rateValue;
+        } else {
+          const baseAmount =
+            capital === 0 ? loanTotalPrincipal : capital;
+          totalInterest += baseAmount * (rateValue / 100);
+        }
       });
     }
   });
@@ -116,7 +124,9 @@ export function calculateTotalAmount(
 }
 
 /**
- * Calculate weighted average interest rate for a loan
+ * Calculate weighted average interest rate for a loan.
+ * Only rate-based interest is used for the average; fixed-amount interest
+ * from 0-capital investors is excluded to avoid misleading percentages.
  */
 export function calculateAverageRate(
   loanInvestors: Array<{
@@ -147,9 +157,8 @@ export function calculateInterest(
   interestRate: string | number,
   interestType?: string,
 ): number {
-  const capital = typeof amount === 'string' ? parseFloat(amount) : amount;
-  const rateValue =
-    typeof interestRate === 'string' ? parseFloat(interestRate) : interestRate;
+  const capital = safeParseFloat(amount);
+  const rateValue = safeParseFloat(interestRate);
 
   // If interestType is 'fixed', interestRate contains the fixed amount
   // If interestType is 'rate' or undefined (backward compatibility), it's a percentage
@@ -176,7 +185,7 @@ export function calculateAmountDueOnDate(
     investorId?: number;
   }>,
 ): number {
-  // Group by investor to handle multiple interest correctly
+  const loanTotalPrincipal = calculateTotalPrincipal(loanInvestors);
   const investorGroups = new Map<number, typeof loanInvestors>();
 
   loanInvestors.forEach((li) => {
@@ -191,13 +200,11 @@ export function calculateAmountDueOnDate(
   let totalAmount = 0;
 
   investorGroups.forEach((transactions) => {
-    // Calculate total capital for this investor
     const investorTotalCapital = transactions.reduce(
-      (sum, t) => sum + parseFloat(t.amount),
+      (sum, t) => sum + safeParseFloat(t.amount),
       0,
     );
 
-    // Find if any transaction has multiple interest periods
     const transactionWithPeriods = transactions.find(
       (t) =>
         t.hasMultipleInterest &&
@@ -206,24 +213,24 @@ export function calculateAmountDueOnDate(
     );
 
     if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
-      // Multiple interest periods - only calculate final period interest
       const periods = transactionWithPeriods.interestPeriods;
       const finalPeriod = periods[periods.length - 1];
+      const base =
+        investorTotalCapital === 0 ? loanTotalPrincipal : investorTotalCapital;
 
       const finalPeriodInterest = calculateInterest(
-        investorTotalCapital,
-        parseFloat(finalPeriod.interestRate),
+        base,
+        finalPeriod.interestRate,
         finalPeriod.interestType,
       );
 
-      // Capital + final period interest only
       totalAmount += investorTotalCapital + finalPeriodInterest;
     } else {
-      // No multiple interest - calculate capital + total interest
       const interest = transactions.reduce((sum, li) => {
-        const capital = parseFloat(li.amount);
+        const capital = safeParseFloat(li.amount);
+        const base = capital === 0 ? loanTotalPrincipal : capital;
         return (
-          sum + calculateInterest(capital, li.interestRate, li.interestType)
+          sum + calculateInterest(base, li.interestRate, li.interestType)
         );
       }, 0);
 
@@ -256,7 +263,7 @@ export function calculateOverdueAmount(
     investorId?: number;
   }>,
 ): number {
-  // Group by investor to handle multiple interest correctly
+  const loanTotalPrincipal = calculateTotalPrincipal(loanInvestors);
   const investorGroups = new Map<number, typeof loanInvestors>();
 
   loanInvestors.forEach((li) => {
@@ -271,13 +278,11 @@ export function calculateOverdueAmount(
   let totalAmount = 0;
 
   investorGroups.forEach((transactions) => {
-    // Calculate total capital for this investor
     const investorTotalCapital = transactions.reduce(
-      (sum, t) => sum + parseFloat(t.amount),
+      (sum, t) => sum + safeParseFloat(t.amount),
       0,
     );
 
-    // Find if any transaction has multiple interest periods
     const transactionWithPeriods = transactions.find(
       (t) =>
         t.hasMultipleInterest &&
@@ -286,7 +291,6 @@ export function calculateOverdueAmount(
     );
 
     if (transactionWithPeriods && transactionWithPeriods.interestPeriods) {
-      // Multiple interest periods - calculate based on overdue periods
       const periods = [...transactionWithPeriods.interestPeriods].sort(
         (a, b) =>
           new Date(a.dueDate || 0).getTime() -
@@ -295,36 +299,30 @@ export function calculateOverdueAmount(
       const overduePeriods = periods.filter((p) => p.status === 'Overdue');
 
       if (overduePeriods.length > 0) {
-        // Check if the final period (by due date) is overdue
         const finalPeriod = periods[periods.length - 1];
         const isFinalPeriodOverdue = finalPeriod.status === 'Overdue';
+        const base =
+          investorTotalCapital === 0
+            ? loanTotalPrincipal
+            : investorTotalCapital;
 
-        // Sum up interest for all overdue periods
         const overdueInterest = overduePeriods.reduce((sum, period) => {
           return (
             sum +
-            calculateInterest(
-              investorTotalCapital,
-              parseFloat(period.interestRate),
-              period.interestType,
-            )
+            calculateInterest(base, period.interestRate, period.interestType)
           );
         }, 0);
 
-        // If final period is overdue, add capital; otherwise just the interest
         totalAmount += isFinalPeriodOverdue
           ? investorTotalCapital + overdueInterest
           : overdueInterest;
-      } else {
-        // No overdue periods: only include amounts for periods with status 'Overdue'.
-        // Do not include future pending balances or full principal + interest.
       }
     } else {
-      // No multiple interest - calculate capital + total interest
       const interest = transactions.reduce((sum, li) => {
-        const capital = parseFloat(li.amount);
+        const capital = safeParseFloat(li.amount);
+        const base = capital === 0 ? loanTotalPrincipal : capital;
         return (
-          sum + calculateInterest(capital, li.interestRate, li.interestType)
+          sum + calculateInterest(base, li.interestRate, li.interestType)
         );
       }, 0);
 
@@ -343,7 +341,7 @@ export function calculateInvestmentTotal(
   interestRate: string | number,
   interestType?: string,
 ): number {
-  const capital = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const capital = safeParseFloat(amount);
   const interest = calculateInterest(amount, interestRate, interestType);
   return capital + interest;
 }
@@ -514,7 +512,7 @@ export function calculateLoanBalance(
   const totalPrincipal = calculateTotalPrincipal(loanInvestors);
 
   const fundedCapital = loanInvestors.reduce((sum, li) => {
-    return li.isPaid ? sum + parseFloat(li.amount) : sum;
+    return li.isPaid ? sum + safeParseFloat(li.amount) : sum;
   }, 0);
 
   return totalPrincipal - fundedCapital;
@@ -600,7 +598,7 @@ export function calculateMultipleInterestPaymentStatus(
     };
   }
 
-  // Group by investor to handle multiple interest correctly
+  const loanTotalPrincipal = calculateTotalPrincipal(loanInvestors);
   const investorGroups = new Map<number, typeof loanInvestors>();
 
   loanInvestors.forEach((li) => {
@@ -619,13 +617,11 @@ export function calculateMultipleInterestPaymentStatus(
   let pendingPeriods = 0;
 
   investorGroups.forEach((transactions) => {
-    // Calculate total capital for this investor
     const investorTotalCapital = transactions.reduce(
-      (sum, t) => sum + parseFloat(t.amount),
+      (sum, t) => sum + safeParseFloat(t.amount),
       0,
     );
 
-    // Find the transaction with multiple interest periods
     const transactionWithPeriods = transactions.find(
       (t) =>
         t.hasMultipleInterest &&
@@ -641,11 +637,15 @@ export function calculateMultipleInterestPaymentStatus(
       );
 
       totalPeriods += periods.length;
+      const base =
+        investorTotalCapital === 0
+          ? loanTotalPrincipal
+          : investorTotalCapital;
 
       periods.forEach((period, index) => {
         const periodInterest = calculateInterest(
-          investorTotalCapital,
-          parseFloat(period.interestRate),
+          base,
+          period.interestRate,
           period.interestType,
         );
 
@@ -722,7 +722,7 @@ export function calculateInvestorStats(investor: InvestorWithLoans): {
       : null;
 
   const currentBalance = latestTransaction
-    ? parseFloat(latestTransaction.balance)
+    ? safeParseFloat(latestTransaction.balance)
     : 0;
 
   const totalGain = totalCapital + totalInterest;
