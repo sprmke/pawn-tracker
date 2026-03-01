@@ -109,6 +109,18 @@ export const interestPeriods = pgTable('interest_periods', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Received Payments (payments received back from borrower, per loan investor)
+export const receivedPayments = pgTable('received_payments', {
+  id: serial('id').primaryKey(),
+  loanInvestorId: integer('loan_investor_id')
+    .references(() => loanInvestors.id, { onDelete: 'cascade' })
+    .notNull(),
+  amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+  receivedDate: timestamp('received_date').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Transactions Table
 export const transactions = pgTable('transactions', {
   id: serial('id').primaryKey(),
@@ -225,6 +237,17 @@ export const loanInvestorsRelations = relations(
       references: [investors.id],
     }),
     interestPeriods: many(interestPeriods),
+    receivedPayments: many(receivedPayments),
+  })
+);
+
+export const receivedPaymentsRelations = relations(
+  receivedPayments,
+  ({ one }) => ({
+    loanInvestor: one(loanInvestors, {
+      fields: [receivedPayments.loanInvestorId],
+      references: [loanInvestors.id],
+    }),
   })
 );
 
