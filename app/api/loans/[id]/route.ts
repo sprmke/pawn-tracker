@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { loans, loanInvestors, interestPeriods } from '@/db/schema';
+import {
+  loans,
+  loanInvestors,
+  interestPeriods,
+  receivedPayments,
+} from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 import {
@@ -37,6 +42,7 @@ export async function GET(
           with: {
             investor: true,
             interestPeriods: true,
+            receivedPayments: true,
           },
         },
         transactions: {
@@ -72,7 +78,11 @@ export async function PUT(
     const { id } = await params;
     const loanId = parseInt(id);
     const body = await request.json();
-    const { loanData, investorData } = body;
+    const {
+      loanData,
+      investorData,
+      receivedPaymentsByInvestor = [],
+    } = body;
 
     console.log('Updating loan:', loanId);
     console.log('Received loan data:', loanData);
@@ -243,6 +253,37 @@ export async function PUT(
           processedInvestors.add(investorId);
         }
       }
+
+      // Map each investor to their first loan_investor id (for received payments)
+      const investorToLoanInvestorId = new Map<number, number>();
+      for (let i = 0; i < investorData.length; i++) {
+        const investorId = Number(investorData[i].investorId);
+        if (!investorToLoanInvestorId.has(investorId)) {
+          investorToLoanInvestorId.set(investorId, insertedLoanInvestors[i].id);
+        }
+      }
+
+      // Insert received payments per investor
+      for (const entry of receivedPaymentsByInvestor) {
+        const loanInvestorId = investorToLoanInvestorId.get(
+          Number(entry.investorId),
+        );
+        if (
+          !loanInvestorId ||
+          !entry.receivedPayments ||
+          !Array.isArray(entry.receivedPayments)
+        ) {
+          continue;
+        }
+        const receivedPayload = entry.receivedPayments.map((rp: any) => ({
+          loanInvestorId,
+          amount: String(rp.amount),
+          receivedDate: new Date(rp.receivedDate),
+        }));
+        if (receivedPayload.length > 0) {
+          await db.insert(receivedPayments).values(receivedPayload);
+        }
+      }
     }
 
     // Fetch the updated loan with investors
@@ -253,6 +294,7 @@ export async function PUT(
           with: {
             investor: true,
             interestPeriods: true,
+            receivedPayments: true,
           },
         },
       },
