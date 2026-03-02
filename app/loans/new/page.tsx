@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import { investors } from '@/db/schema';
 import { LoanForm } from '@/components/loans/loan-form';
-import { auth } from '@/auth';
+import { getCachedAuth } from '@/auth';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 
@@ -22,7 +22,7 @@ interface NewLoanPageProps {
 }
 
 export default async function NewLoanPage({ searchParams }: NewLoanPageProps) {
-  const session = await auth();
+  const session = await getCachedAuth();
   if (!session?.user?.id) {
     notFound();
   }
