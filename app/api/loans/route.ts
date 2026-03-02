@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { loans, loanInvestors, investors, interestPeriods } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import {
-  generateLoanCalendarEvents,
-  updateDailySummaryEvents,
-  getAffectedDatesFromLoan,
-} from '@/lib/google-calendar';
+  loans,
+  loanInvestors,
+  investors,
+  interestPeriods,
+  receivedPayments,
+} from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
 
 export async function GET() {
@@ -24,6 +25,7 @@ export async function GET() {
           with: {
             investor: true,
             interestPeriods: true,
+            receivedPayments: true,
           },
         },
         transactions: {
@@ -48,6 +50,7 @@ export async function GET() {
                 with: {
                   investor: true,
                   interestPeriods: true,
+                  receivedPayments: true,
                 },
               },
               transactions: {
@@ -89,7 +92,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { loanData, investorData } = body;
+    const {
+      loanData,
+      investorData,
+      receivedPaymentsByInvestor = [],
+    } = body;
 
     console.log('Received loan data:', loanData);
     console.log('Received investor data:', investorData);
@@ -170,6 +177,35 @@ export async function POST(request: Request) {
       }
     }
 
+    // Map each investor to their first loan_investor id and insert received payments
+    const investorToLoanInvestorId = new Map<number, number>();
+    for (let i = 0; i < investorData.length; i++) {
+      const investorId = Number(investorData[i].investorId);
+      if (!investorToLoanInvestorId.has(investorId)) {
+        investorToLoanInvestorId.set(investorId, insertedLoanInvestors[i].id);
+      }
+    }
+    for (const entry of receivedPaymentsByInvestor) {
+      const loanInvestorId = investorToLoanInvestorId.get(
+        Number(entry.investorId),
+      );
+      if (
+        !loanInvestorId ||
+        !entry.receivedPayments ||
+        !Array.isArray(entry.receivedPayments)
+      ) {
+        continue;
+      }
+      const receivedPayload = entry.receivedPayments.map((rp: any) => ({
+        loanInvestorId,
+        amount: String(rp.amount),
+        receivedDate: new Date(rp.receivedDate),
+      }));
+      if (receivedPayload.length > 0) {
+        await db.insert(receivedPayments).values(receivedPayload);
+      }
+    }
+
     // Fetch the complete loan with investors
     const completeLoan = await db.query.loans.findFirst({
       where: eq(loans.id, loanId),
@@ -178,46 +214,13 @@ export async function POST(request: Request) {
           with: {
             investor: true,
             interestPeriods: true,
+            receivedPayments: true,
           },
         },
       },
     });
 
     console.log('Complete loan fetched:', completeLoan);
-
-    // Generate Google Calendar events for this loan only
-    try {
-      if (completeLoan) {
-        const calendarEventIds = await generateLoanCalendarEvents(completeLoan);
-        if (calendarEventIds.length > 0) {
-          await db
-            .update(loans)
-            .set({ googleCalendarEventIds: calendarEventIds })
-            .where(eq(loans.id, loanId));
-          console.log('Calendar events created for loan:', calendarEventIds);
-        }
-
-        // Update daily summary events for affected dates
-        const affectedDates = getAffectedDatesFromLoan(completeLoan);
-        // Fetch all loans to calculate correct daily totals
-        const allLoans = await db.query.loans.findMany({
-          where: eq(loans.userId, session.user.id),
-          with: {
-            loanInvestors: {
-              with: {
-                investor: true,
-                interestPeriods: true,
-              },
-            },
-          },
-        });
-        await updateDailySummaryEvents(affectedDates, allLoans);
-        console.log('Daily summary events updated for affected dates');
-      }
-    } catch (error) {
-      console.error('Error creating calendar events for loan:', error);
-      // Don't fail the loan creation if calendar event creation fails
-    }
 
     return NextResponse.json(completeLoan, { status: 201 });
   } catch (error) {
