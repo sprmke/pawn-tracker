@@ -3,7 +3,7 @@ import { investors, loans, loanInvestors } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { LoanDetailClient } from './loan-detail-client';
-import { auth } from '@/auth';
+import { getCachedAuth } from '@/auth';
 
 async function getInvestors(userId: string, loanId?: number) {
   try {
@@ -47,19 +47,24 @@ async function getInvestors(userId: string, loanId?: number) {
 async function getLoan(id: number, userId: string) {
   try {
     // First try to get loan if user owns it
-    let loan = await db.query.loans.findFirst({
-      where: and(eq(loans.id, id), eq(loans.userId, userId)),
+    const loanQuery = {
       with: {
         loanInvestors: {
           with: {
             investor: true,
             interestPeriods: true,
+            receivedPayments: true,
           },
         },
         transactions: {
-          orderBy: (transactions, { asc }) => [asc(transactions.date)],
+          orderBy: (transactions: any, { asc }: any) => [asc(transactions.date)],
         },
       },
+    } as const;
+
+    let loan = await db.query.loans.findFirst({
+      where: and(eq(loans.id, id), eq(loans.userId, userId)),
+      ...loanQuery,
     });
 
     // If not found, check if user is an investor in this loan
@@ -81,17 +86,7 @@ async function getLoan(id: number, userId: string) {
           // User is an investor in this loan, fetch the full loan
           loan = await db.query.loans.findFirst({
             where: eq(loans.id, id),
-            with: {
-              loanInvestors: {
-                with: {
-                  investor: true,
-                  interestPeriods: true,
-                },
-              },
-              transactions: {
-                orderBy: (transactions, { asc }) => [asc(transactions.date)],
-              },
-            },
+            ...loanQuery,
           });
         }
       }
@@ -109,7 +104,7 @@ export default async function LoanDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await auth();
+  const session = await getCachedAuth();
   if (!session?.user?.id) {
     notFound();
   }
@@ -121,13 +116,14 @@ export default async function LoanDetailPage({
     notFound();
   }
 
-  const loan = await getLoan(loanId, session.user.id);
+  const [loan, allInvestors] = await Promise.all([
+    getLoan(loanId, session.user.id),
+    getInvestors(session.user.id, loanId),
+  ]);
 
   if (!loan) {
     notFound();
   }
-
-  const allInvestors = await getInvestors(session.user.id, loanId);
 
   return <LoanDetailClient loan={loan} investors={allInvestors} />;
 }
