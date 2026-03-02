@@ -13,11 +13,17 @@ import {
   OverdueChecker,
   DownloadBackupButton,
 } from '@/components/common';
-import {
-  CurrencyBarChart,
-  LoanTypePieChart,
-  CashflowTrendChart,
-} from '@/components/common/charts';
+import dynamic from 'next/dynamic';
+
+const CurrencyBarChart = dynamic(
+  () => import('@/components/common/charts/currency-bar-chart').then((m) => m.CurrencyBarChart),
+);
+const LoanTypePieChart = dynamic(
+  () => import('@/components/common/charts/loan-type-pie-chart').then((m) => m.LoanTypePieChart),
+);
+const CashflowTrendChart = dynamic(
+  () => import('@/components/common/charts/cashflow-trend-chart').then((m) => m.CashflowTrendChart),
+);
 import type { LoanType } from '@/lib/types';
 import {
   format,
@@ -36,54 +42,137 @@ import {
   isFuture,
   isPast,
 } from 'date-fns';
-import { auth } from '@/auth';
+import { getCachedAuth } from '@/auth';
 import { eq } from 'drizzle-orm';
 import { loans, investors, transactions, loanInvestors } from '@/db/schema';
 
 async function getDashboardData(userId: string) {
   try {
-    // Get loans created by this user
-    const ownedLoans = await db.query.loans.findMany({
-      where: eq(loans.userId, userId),
-      with: {
-        loanInvestors: {
-          with: {
-            investor: true,
-            interestPeriods: true,
+    // Fire independent queries in parallel
+    const [ownedLoans, investorRecord, ownedInvestors] = await Promise.all([
+      db.query.loans.findMany({
+        where: eq(loans.userId, userId),
+        with: {
+          loanInvestors: {
+            with: {
+              investor: true,
+              interestPeriods: true,
+              receivedPayments: true,
+            },
+          },
+          transactions: {
+            orderBy: (transactions, { desc }) => [desc(transactions.date)],
           },
         },
-        transactions: {
-          orderBy: (transactions, { desc }) => [desc(transactions.date)],
-        },
-      },
-    });
-
-    // Get loans where this user is an investor
-    const investorRecord = await db.query.investors.findFirst({
-      where: eq(investors.investorUserId, userId),
-    });
-
-    let sharedLoans: any[] = [];
-    if (investorRecord) {
-      const loanInvestments = await db.query.loanInvestors.findMany({
-        where: eq(loanInvestors.investorId, investorRecord.id),
+      }),
+      db.query.investors.findFirst({
+        where: eq(investors.investorUserId, userId),
+      }),
+      db.query.investors.findMany({
+        where: eq(investors.userId, userId),
         with: {
-          loan: {
+          loanInvestors: {
             with: {
-              loanInvestors: {
-                with: {
-                  investor: true,
-                  interestPeriods: true,
+              loan: true,
+              interestPeriods: true,
+            },
+          },
+          transactions: {
+            orderBy: (transactions, { desc }) => [desc(transactions.date)],
+          },
+        },
+      }),
+    ]);
+
+    // Shared data queries (depend on investorRecord)
+    let sharedLoans: any[] = [];
+    let sharedInvestors: any[] = [];
+    let allTransactions;
+
+    if (investorRecord) {
+      const [sharedLoanInvestments, sharedInvestorLoanInvestments, txns] = await Promise.all([
+        db.query.loanInvestors.findMany({
+          where: eq(loanInvestors.investorId, investorRecord.id),
+          with: {
+            loan: {
+              with: {
+                loanInvestors: {
+                  with: {
+                    investor: true,
+                    interestPeriods: true,
+                    receivedPayments: true,
+                  },
                 },
-              },
-              transactions: {
-                orderBy: (transactions, { desc }) => [desc(transactions.date)],
+                transactions: {
+                  orderBy: (transactions, { desc }) => [desc(transactions.date)],
+                },
               },
             },
           },
-        },
+        }),
+        db.query.loanInvestors.findMany({
+          where: eq(loanInvestors.investorId, investorRecord.id),
+          with: {
+            loan: {
+              with: {
+                loanInvestors: {
+                  with: {
+                    investor: {
+                      with: {
+                        loanInvestors: {
+                          with: {
+                            loan: true,
+                            interestPeriods: true,
+                          },
+                        },
+                        transactions: {
+                          orderBy: (transactions, { desc }) => [
+                            desc(transactions.date),
+                          ],
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        }),
+        db.query.transactions.findMany({
+          where: (transactions, { eq, or }) =>
+            or(
+              eq(transactions.userId, userId),
+              eq(transactions.investorId, investorRecord.id),
+            ),
+          with: {
+            investor: true,
+            loan: true,
+          },
+          orderBy: (transactions, { desc }) => [desc(transactions.date)],
+        }),
+      ]);
+
+      sharedLoans = sharedLoanInvestments.map((li) => li.loan);
+      allTransactions = txns;
+
+      const investorSet = new Set();
+      sharedInvestorLoanInvestments.forEach((li) => {
+        li.loan.loanInvestors.forEach((loanInv) => {
+          if (!investorSet.has(loanInv.investor.id)) {
+            investorSet.add(loanInv.investor.id);
+            sharedInvestors.push(loanInv.investor);
+          }
+        });
       });
-      sharedLoans = loanInvestments.map((li) => li.loan);
+    } else {
+      allTransactions = await db.query.transactions.findMany({
+        where: eq(transactions.userId, userId),
+        with: {
+          investor: true,
+          loan: true,
+        },
+        orderBy: (transactions, { desc }) => [desc(transactions.date)],
+      });
     }
 
     // Combine and deduplicate loans
@@ -96,97 +185,12 @@ async function getDashboardData(userId: string) {
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
-    // Get investors created by this user
-    const ownedInvestors = await db.query.investors.findMany({
-      where: eq(investors.userId, userId),
-      with: {
-        loanInvestors: {
-          with: {
-            loan: true,
-            interestPeriods: true,
-          },
-        },
-        transactions: {
-          orderBy: (transactions, { desc }) => [desc(transactions.date)],
-        },
-      },
-    });
-
-    // Get investors from shared loans
-    let sharedInvestors: any[] = [];
-    if (investorRecord) {
-      const loanInvestments = await db.query.loanInvestors.findMany({
-        where: eq(loanInvestors.investorId, investorRecord.id),
-        with: {
-          loan: {
-            with: {
-              loanInvestors: {
-                with: {
-                  investor: {
-                    with: {
-                      loanInvestors: {
-                        with: {
-                          loan: true,
-                          interestPeriods: true,
-                        },
-                      },
-                      transactions: {
-                        orderBy: (transactions, { desc }) => [
-                          desc(transactions.date),
-                        ],
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-
-      const investorSet = new Set();
-      loanInvestments.forEach((li) => {
-        li.loan.loanInvestors.forEach((loanInv) => {
-          if (!investorSet.has(loanInv.investor.id)) {
-            investorSet.add(loanInv.investor.id);
-            sharedInvestors.push(loanInv.investor);
-          }
-        });
-      });
-    }
-
     // Combine and deduplicate investors
     const investorsMap = new Map();
     [...ownedInvestors, ...sharedInvestors].forEach((investor) => {
       investorsMap.set(investor.id, investor);
     });
     const allInvestors = Array.from(investorsMap.values());
-
-    // Get transactions (owned + shared)
-    let allTransactions;
-    if (investorRecord) {
-      allTransactions = await db.query.transactions.findMany({
-        where: (transactions, { eq, or }) =>
-          or(
-            eq(transactions.userId, userId),
-            eq(transactions.investorId, investorRecord.id),
-          ),
-        with: {
-          investor: true,
-          loan: true,
-        },
-        orderBy: (transactions, { desc }) => [desc(transactions.date)],
-      });
-    } else {
-      allTransactions = await db.query.transactions.findMany({
-        where: eq(transactions.userId, userId),
-        with: {
-          investor: true,
-          loan: true,
-        },
-        orderBy: (transactions, { desc }) => [desc(transactions.date)],
-      });
-    }
 
     // Calculate loan statistics
     const totalPrincipal = allLoans.reduce(
@@ -532,7 +536,7 @@ async function getDashboardData(userId: string) {
 }
 
 export default async function DashboardPage() {
-  const session = await auth();
+  const session = await getCachedAuth();
   if (!session?.user?.id) {
     return null; // This should never happen due to middleware protection
   }
@@ -574,12 +578,12 @@ export default async function DashboardPage() {
             label: 'Interest Earned',
             value: formatCurrency(data.completedInterestEarned),
             subValue: `of ${formatCurrency(data.totalInterestExpected)}`,
+            valueClassName: 'text-emerald-600 dark:text-emerald-500',
           },
           {
             label: 'Total Earnings',
             value: formatCurrency(totalEarnings),
-            subValue: 'Capital + Interest Earned',
-            valueClassName: 'text-emerald-600 dark:text-emerald-500',
+            subValue: 'Completed + Interest Earned',
           },
         ]}
       />
