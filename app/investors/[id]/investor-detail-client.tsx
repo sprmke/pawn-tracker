@@ -649,12 +649,12 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
             label: 'Interest Earned',
             value: formatCurrency(completedInterest),
             subValue: `of ${formatCurrency(totalInterest)}`,
+            valueClassName: 'text-emerald-600 dark:text-emerald-500',
           },
           {
             label: 'Total Earnings',
             value: formatCurrency(totalEarnings),
-            subValue: 'Capital + Interest Earned',
-            valueClassName: 'text-emerald-600 dark:text-emerald-500',
+            subValue: 'Completed + Interest Earned',
           },
           ...(totalLot > 0 || totalLotWithDepacto > 0
             ? [
