@@ -3,7 +3,7 @@ import { investors } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { InvestorDetailClient } from './investor-detail-client';
-import { auth } from '@/auth';
+import { getCachedAuth } from '@/auth';
 
 async function getInvestor(id: number, userId: string) {
   try {
@@ -32,7 +32,7 @@ export default async function InvestorDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await auth();
+  const session = await getCachedAuth();
   if (!session?.user?.id) {
     notFound();
   }

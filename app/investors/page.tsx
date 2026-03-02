@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { InvestorWithLoans } from '@/lib/types';
 import {
   CollapsibleSection,
@@ -319,15 +320,38 @@ export default function InvestorsPage() {
   if (loading || !isViewModeReady) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Investors</h1>
-          <p className="text-muted-foreground">
-            Track investor portfolios and balances
-          </p>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4 mb-6">
+          <div className="space-y-1">
+            <h1 className="text-xl md:text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              Investors
+            </h1>
+            <p className="text-sm text-muted-foreground">Track investor portfolios and balances</p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-32" />
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-9 w-32" />
         </div>
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
-            <InlineLoader size="md" />
+          <CardContent className="p-0">
+            <div className="space-y-0">
+              <div className="flex items-center gap-4 p-4 border-b">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-4 flex-1" />
+                ))}
+              </div>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 border-b last:border-0">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Skeleton key={j} className="h-4 flex-1" />
+                  ))}
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -680,6 +704,11 @@ export default function InvestorsPage() {
 
                                 return (
                                   <div className="grid gap-2 grid-cols-1">
+                                    <MaturingLoansCard
+                                      loans={activityData.maturingLoans}
+                                      loading={loading}
+                                      investorId={investor.id}
+                                    />
                                     <PastDueLoansCard
                                       loans={activityData.overdueLoans}
                                       loading={loading}
@@ -690,11 +719,6 @@ export default function InvestorsPage() {
                                         activityData.pendingDisbursements
                                       }
                                       loading={loading}
-                                    />
-                                    <MaturingLoansCard
-                                      loans={activityData.maturingLoans}
-                                      loading={loading}
-                                      investorId={investor.id}
                                     />
                                   </div>
                                 );
