@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { interestPeriods, loanInvestors, loans } from '@/db/schema';
+import { interestPeriods, loanInvestors, loans, receivedPayments } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 
@@ -16,7 +16,7 @@ export async function PATCH(
 
     const { id } = await params;
     const periodId = parseInt(id);
-    const { status } = await request.json();
+    const { status, receivedAmount, receivedDate } = await request.json();
 
     if (!status || !['Pending', 'Completed', 'Overdue'].includes(status)) {
       return NextResponse.json(
@@ -54,6 +54,15 @@ export async function PATCH(
       .update(interestPeriods)
       .set({ status, updatedAt: new Date() })
       .where(eq(interestPeriods.id, periodId));
+
+    // Create a received payment record if amount and date are provided
+    if (receivedAmount && receivedDate) {
+      await db.insert(receivedPayments).values({
+        loanInvestorId: period.loanInvestor.id,
+        amount: String(receivedAmount),
+        receivedDate: new Date(receivedDate),
+      });
+    }
 
     // After updating period, check if we need to update loan status
     // Get all periods for this loan
