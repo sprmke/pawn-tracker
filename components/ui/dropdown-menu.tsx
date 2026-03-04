@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface DropdownMenuProps {
@@ -10,6 +9,7 @@ export interface DropdownMenuProps {
     label: string;
     onClick: () => void;
     icon?: React.ReactNode;
+    destructive?: boolean;
   }>;
   align?: 'start' | 'end';
   className?: string;
@@ -40,9 +40,9 @@ export function DropdownMenu({
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      // Set dropdown width to match trigger button width
+      // Use min width for menu so items aren't cramped when trigger is icon-only
       if (triggerRef.current) {
-        setDropdownWidth(triggerRef.current.offsetWidth);
+        setDropdownWidth(Math.max(triggerRef.current.offsetWidth, 160));
       }
     }
 
@@ -71,7 +71,12 @@ export function DropdownMenu({
                 item.onClick();
                 setIsOpen(false);
               }}
-              className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              className={cn(
+                'relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors',
+                item.destructive
+                  ? 'text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive'
+                  : 'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground'
+              )}
             >
               {item.icon && <span className="mr-2">{item.icon}</span>}
               {item.label}

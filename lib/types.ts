@@ -43,6 +43,15 @@ export interface InterestPeriod {
   updatedAt: Date;
 }
 
+export interface ReceivedPayment {
+  id: number;
+  loanInvestorId: number;
+  amount: string;
+  receivedDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface LoanInvestor {
   id: number;
   loanId: number;
@@ -56,6 +65,7 @@ export interface LoanInvestor {
   createdAt: Date;
   updatedAt: Date;
   interestPeriods?: InterestPeriod[];
+  receivedPayments?: ReceivedPayment[];
 }
 
 export interface Transaction {

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Nav } from '@/components/layout/nav';
-import { auth } from '@/auth';
+import { getCachedAuth } from '@/auth';
 import { Toaster } from '@/components/ui/sonner';
 import { Suspense } from 'react';
 import { NavigationProgressProvider } from '@/components/common';
@@ -27,7 +27,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
+  const session = await getCachedAuth();
 
   return (
     <html lang="en">
