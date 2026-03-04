@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { auth } from '@/auth';
+import { getCachedAuth } from '@/auth';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/common';
@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 export default async function HomePage() {
-  const session = await auth();
+  const session = await getCachedAuth();
 
   // If user is authenticated, redirect to dashboard
   if (session) {
