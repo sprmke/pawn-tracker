@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,7 @@ import {
   Wallet,
   ExternalLink,
   Copy,
+  MoreVertical,
 } from 'lucide-react';
 
 // Common styles for responsive icon buttons
@@ -105,6 +106,60 @@ export function DetailHeader({
     }
   };
 
+  const actionItems = [
+    ...(onEdit && canEdit
+      ? [
+          { label: 'Edit', onClick: onEdit, icon: <Edit className="h-4 w-4" /> },
+        ]
+      : []),
+    ...(showDuplicate && onDuplicate
+      ? [
+          {
+            label: 'Duplicate',
+            onClick: onDuplicate,
+            icon: <Copy className="h-4 w-4" />,
+          },
+        ]
+      : []),
+    ...(showPayBalance && onPayBalance
+      ? [
+          {
+            label: 'Pay',
+            onClick: onPayBalance,
+            icon: <Wallet className="h-4 w-4" />,
+          },
+        ]
+      : []),
+    ...(showComplete && onComplete
+      ? [
+          {
+            label: 'Complete',
+            onClick: () => setShowCompleteConfirm(true),
+            icon: <CheckCircle className="h-4 w-4" />,
+          },
+        ]
+      : []),
+    ...(showViewLoan && onViewLoan
+      ? [
+          {
+            label: 'View Loan',
+            onClick: onViewLoan,
+            icon: <ExternalLink className="h-4 w-4" />,
+          },
+        ]
+      : []),
+    ...(canDelete
+      ? [
+          {
+            label: 'Delete',
+            onClick: () => setShowDeleteConfirm(true),
+            icon: <Trash2 className="h-4 w-4" />,
+            destructive: true,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -128,56 +183,18 @@ export function DetailHeader({
               </p>
             )}
           </div>
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            {onEdit && canEdit && (
-              <Button variant="outline" size="sm" onClick={onEdit} className={btnClass}>
-                <Edit className={iconClass} />
-                <span className="hidden md:inline text-xs">Edit</span>
-              </Button>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            {actionItems.length > 0 && (
+              <DropdownMenu
+                align="end"
+                trigger={
+                  <Button variant="outline" size="sm" className={btnClass} title="Actions">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                }
+                items={actionItems}
+              />
             )}
-            {showDuplicate && onDuplicate && (
-              <Button variant="outline" size="sm" onClick={onDuplicate} className={btnClass}>
-                <Copy className={iconClass} />
-                <span className="hidden md:inline text-xs">Duplicate</span>
-              </Button>
-            )}
-            {showPayBalance && onPayBalance && (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={onPayBalance}
-                className={`bg-yellow-500 hover:bg-yellow-600 ${btnClass}`}
-              >
-                <Wallet className={iconClass} />
-                <span className="hidden md:inline text-xs">Pay</span>
-              </Button>
-            )}
-            {showComplete && onComplete && (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => setShowCompleteConfirm(true)}
-                className={`bg-blue-600 hover:bg-blue-700 ${btnClass}`}
-              >
-                <CheckCircle className={iconClass} />
-                <span className="hidden md:inline text-xs">Complete</span>
-              </Button>
-            )}
-            {showViewLoan && onViewLoan && (
-              <Button variant="outline" size="sm" onClick={onViewLoan} className={btnClass}>
-                <ExternalLink className={iconClass} />
-                <span className="hidden md:inline text-xs">Loan</span>
-              </Button>
-            )}
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowDeleteConfirm(true)}
-              className={btnClass}
-            >
-              <Trash2 className={iconClass} />
-              <span className="hidden md:inline text-xs">Delete</span>
-            </Button>
           </div>
         </div>
       </div>
