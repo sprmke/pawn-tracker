@@ -3,7 +3,7 @@ import { db } from '@/db';
 import { transactions, investors } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { TransactionDetailClient } from './transaction-detail-client';
-import { auth } from '@/auth';
+import { getCachedAuth } from '@/auth';
 
 interface TransactionPageProps {
   params: Promise<{
@@ -50,7 +50,7 @@ async function getTransaction(id: number, userId: string) {
 export default async function TransactionPage({
   params,
 }: TransactionPageProps) {
-  const session = await auth();
+  const session = await getCachedAuth();
   if (!session?.user?.id) {
     notFound();
   }
@@ -62,17 +62,17 @@ export default async function TransactionPage({
     notFound();
   }
 
-  const transaction = await getTransaction(id, session.user.id);
+  const [transaction, allInvestors] = await Promise.all([
+    getTransaction(id, session.user.id),
+    db.query.investors.findMany({
+      where: eq(investors.userId, session.user.id),
+      orderBy: (investors, { asc }) => [asc(investors.name)],
+    }),
+  ]);
 
   if (!transaction) {
     notFound();
   }
-
-  // Fetch all investors for the edit form (filtered by userId)
-  const allInvestors = await db.query.investors.findMany({
-    where: eq(investors.userId, session.user.id),
-    orderBy: (investors, { asc }) => [asc(investors.name)],
-  });
 
   return (
     <TransactionDetailClient
