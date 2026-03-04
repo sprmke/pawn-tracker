@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import { investors } from '@/db/schema';
 import { TransactionForm } from '@/components/transactions/transaction-form';
-import { auth } from '@/auth';
+import { getCachedAuth } from '@/auth';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 
@@ -24,7 +24,7 @@ interface NewTransactionPageProps {
 export default async function NewTransactionPage({
   searchParams,
 }: NewTransactionPageProps) {
-  const session = await auth();
+  const session = await getCachedAuth();
   if (!session?.user?.id) {
     notFound();
   }
