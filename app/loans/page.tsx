@@ -191,7 +191,7 @@ export default function LoansPage() {
 
   const fetchInvestors = async () => {
     try {
-      const response = await fetch('/api/investors');
+      const response = await fetch('/api/investors?simple=true');
       const data = await response.json();
 
       // Check if response is an error
