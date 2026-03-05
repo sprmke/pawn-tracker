@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/lib/toast';
 import {
   Dialog,
@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
-import { LoanWithInvestors, Investor } from '@/lib/types';
+import { LoanWithInvestors } from '@/lib/types';
 import { LoanDetailContent } from './loan-detail-content';
 import { LoanForm } from './loan-form';
 import { DetailModalHeader } from '@/components/common';
@@ -23,7 +23,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useLoanDuplicateStore, createDuplicateDataFromLoan } from '@/stores/loan-duplicate-store';
+import {
+  useLoanDuplicateStore,
+  createDuplicateDataFromLoan,
+} from '@/stores/loan-duplicate-store';
 
 interface LoanDetailModalProps {
   loan: LoanWithInvestors | null;
@@ -43,58 +46,46 @@ export function LoanDetailModal({
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
-  const [investors, setInvestors] = useState<Investor[]>([]);
-  const [isLoadingInvestors, setIsLoadingInvestors] = useState(false);
   const [loan, setLoan] = useState<LoanWithInvestors | null>(initialLoan);
+  const [loanFetchKey, setLoanFetchKey] = useState(0);
 
   // Store for duplicate functionality
-  const openCreateModal = useLoanDuplicateStore((state) => state.openCreateModal);
+  const openCreateModal = useLoanDuplicateStore(
+    (state) => state.openCreateModal,
+  );
 
   // Update local loan state when prop changes
   useEffect(() => {
     setLoan(initialLoan);
   }, [initialLoan]);
 
-  // Fetch fresh loan data
-  const fetchLoan = async () => {
-    if (!loan?.id) return;
+  // Fetch fresh loan data without notifying parent (for edit mode entry)
+  const fetchLoanData = useCallback(async () => {
+    const currentLoanId = loan?.id;
+    if (!currentLoanId) return;
 
     try {
-      const response = await fetch(`/api/loans/${loan.id}`);
+      const response = await fetch(`/api/loans/${currentLoanId}`);
       if (!response.ok) throw new Error('Failed to fetch loan');
       const data = await response.json();
       setLoan(data);
-      onUpdate?.(); // Notify parent to refresh as well
+      setLoanFetchKey((k) => k + 1);
     } catch (error) {
       console.error('Error fetching loan:', error);
     }
-  };
+  }, [loan?.id]);
+
+  // Fetch fresh loan data AND notify parent to refresh the list
+  const fetchLoan = useCallback(async () => {
+    await fetchLoanData();
+    onUpdate?.();
+  }, [fetchLoanData, onUpdate]);
 
   useEffect(() => {
-    // Only fetch when entering edit mode AND modal is open
-    if (open && isEditing) {
-      fetchInvestors();
-    }
-  }, [isEditing]);
-
-  useEffect(() => {
-    // Reset editing state when modal closes
     if (!open) {
       setIsEditing(false);
     }
   }, [open]);
-
-  const fetchInvestors = async () => {
-    try {
-      const response = await fetch('/api/investors');
-      const data = await response.json();
-      setInvestors(data);
-    } catch (error) {
-      console.error('Error fetching investors:', error);
-    } finally {
-      setIsLoadingInvestors(false);
-    }
-  };
 
   if (!loan) return null;
 
@@ -121,33 +112,16 @@ export function LoanDetailModal({
   const handleComplete = async () => {
     setIsCompleting(true);
     try {
-      const response = await fetch(`/api/loans/${loan.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          loanData: {
-            loanName: loan.loanName,
-            type: loan.type,
-            status: 'Completed',
-            dueDate: loan.dueDate,
-            freeLotSqm: loan.freeLotSqm,
-            notes: loan.notes,
-          },
-          investorData: loan.loanInvestors.map((li) => ({
-            investorId: li.investorId,
-            amount: li.amount,
-            interestRate: li.interestRate,
-            sentDate: li.sentDate,
-          })),
-        }),
+      const response = await fetch(`/api/loans/${loan.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Completed' }),
       });
 
       if (!response.ok) throw new Error('Failed to complete loan');
 
       setShowCompleteDialog(false);
-      await fetchLoan(); // Refetch loan data
+      await fetchLoan();
     } catch (error) {
       console.error('Error completing loan:', error);
       toast.error('Failed to complete loan');
@@ -171,10 +145,10 @@ export function LoanDetailModal({
   const handleDuplicate = () => {
     // Create duplicate data and store it
     const duplicateData = createDuplicateDataFromLoan(loan);
-    
+
     // Close this modal first
     onOpenChange(false);
-    
+
     // Then open the create modal via store (with a small delay for smoother transition)
     setTimeout(() => {
       openCreateModal(duplicateData);
@@ -203,7 +177,6 @@ export function LoanDetailModal({
                 </DialogTitle>
                 <DetailModalHeader
                   onEdit={() => {
-                    setIsLoadingInvestors(true);
                     setIsEditing(true);
                   }}
                   onDelete={() => setShowDeleteDialog(true)}
@@ -222,12 +195,10 @@ export function LoanDetailModal({
           <div className={isEditing ? '' : 'mt-4'}>
             {isEditing ? (
               <LoanForm
-                key={`loan-form-edit-${investors.length}`}
-                investors={investors}
+                key={`loan-form-edit-${loan.id}-${loanFetchKey}`}
                 existingLoan={loan}
                 onSuccess={handleSuccess}
                 onCancel={() => setIsEditing(false)}
-                isLoadingInvestors={isLoadingInvestors}
               />
             ) : (
               <LoanDetailContent

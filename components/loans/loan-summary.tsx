@@ -31,7 +31,7 @@ export function LoanSummary({
         <CardTitle className="text-lg sm:text-xl">Summary</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               Total Principal

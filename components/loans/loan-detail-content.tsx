@@ -13,10 +13,10 @@ import {
   calculateLoanDuration,
   countUniqueInvestors,
   groupByInvestor,
-  calculateMultipleInterestPaymentStatus,
 } from '@/lib/calculations';
 import { LoanSummarySection } from './loan-summary-section';
 import { LoanInvestorsSection } from './loan-investors-section';
+import { OverdueInterestCard } from './overdue-interest-card';
 
 interface LoanDetailContentProps {
   loan: LoanWithInvestors;
@@ -34,26 +34,38 @@ export function LoanDetailContent({
   const totalAmount = calculateTotalAmount(loan.loanInvestors);
   const averageRate = calculateAverageRate(loan.loanInvestors);
   const uniqueInvestors = countUniqueInvestors(loan.loanInvestors);
-  
+
+  const totalReceived = loan.loanInvestors.reduce(
+    (sum, li) =>
+      sum +
+      (li.receivedPayments || []).reduce(
+        (t, rp) => t + (parseFloat(rp.amount) || 0),
+        0,
+      ),
+    0,
+  );
+  const totalBalance = totalAmount - totalReceived;
+
   // Find the earliest sent date from all loan investors
-  const earliestSentDate = loan.loanInvestors.reduce((earliest, li) => {
-    const sentDate = new Date(li.sentDate);
-    return !earliest || sentDate < earliest ? sentDate : earliest;
-  }, null as Date | null);
-  
-  const duration = calculateLoanDuration(loan.dueDate, earliestSentDate || undefined);
+  const earliestSentDate = loan.loanInvestors.reduce(
+    (earliest, li) => {
+      const sentDate = new Date(li.sentDate);
+      return !earliest || sentDate < earliest ? sentDate : earliest;
+    },
+    null as Date | null,
+  );
+
+  const duration = calculateLoanDuration(
+    loan.dueDate,
+    earliestSentDate || undefined,
+  );
 
   // Calculate funded amount and balance for partially funded loans
   const fundedCapital = loan.loanInvestors.reduce((sum, li) => {
-    return li.isPaid ? sum + parseFloat(li.amount) : sum;
+    return li.isPaid ? sum + (parseFloat(li.amount) || 0) : sum;
   }, 0);
 
   const balance = totalPrincipal - fundedCapital;
-
-  // Calculate multiple interest payment status
-  const multipleInterestPaymentStatus = calculateMultipleInterestPaymentStatus(
-    loan.loanInvestors
-  );
 
   return (
     <div className="space-y-6">
@@ -74,12 +86,18 @@ export function LoanDetailContent({
         averageRate={averageRate}
         totalInterest={totalInterest}
         totalAmount={totalAmount}
+        totalReceived={totalReceived}
+        totalBalance={totalBalance}
         uniqueInvestors={uniqueInvestors}
         status={loan.status}
         balance={balance}
         showStatus={false}
-        multipleInterestPaymentStatus={multipleInterestPaymentStatus}
       />
+
+      {/* Overdue Interest Computation */}
+      {loan.status === 'Overdue' && (
+        <OverdueInterestCard loan={loan} onApply={() => onRefresh?.()} />
+      )}
 
       {/* Loan Details */}
       <Card>
@@ -89,12 +107,12 @@ export function LoanDetailContent({
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Loan Name</p>
-              <p className="font-medium">{loan.loanName}</p>
+              <p className="text-xs text-muted-foreground">Loan Name</p>
+              <p className="text-sm font-medium">{loan.loanName}</p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Type</p>
+              <p className="text-xs text-muted-foreground">Type</p>
               <Badge
                 variant={getLoanTypeBadge(loan.type).variant}
                 className={getLoanTypeBadge(loan.type).className}
@@ -104,9 +122,11 @@ export function LoanDetailContent({
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Due Date</p>
+              <p className="text-xs text-muted-foreground">Due Date</p>
               <div className="flex items-center gap-2">
-                <span className="font-medium">{formatDate(loan.dueDate)}</span>
+                <span className="font-sm font-medium">
+                  {formatDate(loan.dueDate)}
+                </span>
               </div>
             </div>
 
@@ -121,23 +141,23 @@ export function LoanDetailContent({
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Free Lot (sqm)</p>
+              <p className="text-xs text-muted-foreground">Free Lot (sqm)</p>
               <div className="flex items-center gap-2">
-                <span className="font-medium">
+                <span className="font-sm font-medium">
                   {loan.freeLotSqm ? `${loan.freeLotSqm} sqm` : '-'}
                 </span>
               </div>
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Duration</p>
-              <span className="font-medium">{duration}</span>
+              <p className="text-xs text-muted-foreground">Duration</p>
+              <span className="font-sm font-medium">{duration}</span>
             </div>
           </div>
 
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Notes</p>
-            <p className="font-medium whitespace-pre-wrap">
+            <p className="text-xs text-muted-foreground">Notes</p>
+            <p className="font-sm font-medium whitespace-pre-wrap">
               {loan.notes || '-'}
             </p>
           </div>
@@ -147,16 +167,30 @@ export function LoanDetailContent({
       {/* Investors Section */}
       <LoanInvestorsSection
         investorsWithTransactions={Array.from(
-          groupByInvestor(loan.loanInvestors).values()
+          groupByInvestor(loan.loanInvestors).values(),
         ).map((transactions) => {
           // Find the transaction that has interest periods (if any)
           const transactionWithPeriods = transactions.find(
-            (t) => t.interestPeriods && t.interestPeriods.length > 0
+            (t) => t.interestPeriods && t.interestPeriods.length > 0,
+          );
+
+          const receivedPayments = transactions.flatMap((li) =>
+            (li.receivedPayments || []).map((rp) => ({
+              amount: rp.amount,
+              receivedDate:
+                typeof rp.receivedDate === 'string'
+                  ? rp.receivedDate
+                  : rp.receivedDate instanceof Date
+                    ? rp.receivedDate.toISOString().slice(0, 10)
+                    : String(rp.receivedDate),
+            })),
           );
 
           return {
             investor: transactions[0].investor,
             transactions,
+            receivedPayments:
+              receivedPayments.length > 0 ? receivedPayments : undefined,
             hasMultipleInterest: transactions[0].hasMultipleInterest || false,
             interestPeriods: transactionWithPeriods?.interestPeriods || [],
           };

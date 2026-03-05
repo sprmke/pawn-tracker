@@ -26,8 +26,15 @@ interface Transaction {
   isPaid: boolean;
 }
 
+interface ReceivedPaymentForm {
+  id: string;
+  amount: string;
+  receivedDate: string;
+}
+
 interface InvestorConfiguration {
   transactions: Transaction[];
+  receivedPayments: ReceivedPaymentForm[];
   hasMultipleInterest: boolean;
   interestPeriods: InterestPeriodData[];
 }
@@ -99,6 +106,23 @@ export function CopyInvestorModal({
         if (t1.interestAmount !== t2.interestAmount) {
           return false;
         }
+      }
+    }
+
+    // Compare received payments
+    if (config1.receivedPayments.length !== config2.receivedPayments.length) {
+      return false;
+    }
+    const sortReceived = (rps: ReceivedPaymentForm[]) =>
+      [...rps].sort((a, b) => a.receivedDate.localeCompare(b.receivedDate));
+    const sortedRp1 = sortReceived(config1.receivedPayments);
+    const sortedRp2 = sortReceived(config2.receivedPayments);
+    for (let i = 0; i < sortedRp1.length; i++) {
+      if (
+        sortedRp1[i].amount !== sortedRp2[i].amount ||
+        sortedRp1[i].receivedDate !== sortedRp2[i].receivedDate
+      ) {
+        return false;
       }
     }
 
@@ -305,8 +329,9 @@ export function CopyInvestorModal({
           <DialogTitle>Copy Investor Configuration</DialogTitle>
           <DialogDescription>
             Select investors to copy all configurations from{' '}
-            <strong>{sourceInvestor.name}</strong>. This will copy all principal
-            payments, interest configurations, and multiple interest periods.
+            <strong>{sourceInvestor.name}</strong>. This will copy principal
+            payments, received payments, interest configurations, and multiple
+            interest periods.
           </DialogDescription>
         </DialogHeader>
 

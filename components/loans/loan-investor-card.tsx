@@ -38,9 +38,16 @@ interface Transaction {
   isPaid: boolean;
 }
 
+interface ReceivedPaymentForm {
+  id: string;
+  amount: string;
+  receivedDate: string;
+}
+
 interface SelectedInvestor {
   investor: Investor;
   transactions: Transaction[];
+  receivedPayments: ReceivedPaymentForm[];
   hasMultipleInterest: boolean;
   interestPeriods: InterestPeriodData[];
 }
@@ -57,9 +64,21 @@ interface LoanInvestorCardProps {
     field: keyof Omit<Transaction, 'id'>,
     value: string
   ) => void;
+  onAddReceivedPayment: (investorId: number) => void;
+  onRemoveReceivedPayment: (
+    investorId: number,
+    receivedPaymentId: string
+  ) => void;
+  onUpdateReceivedPayment: (
+    investorId: number,
+    receivedPaymentId: string,
+    field: keyof Omit<ReceivedPaymentForm, 'id'>,
+    value: string
+  ) => void;
   onPeriodsChange: (periods: InterestPeriodData[]) => void;
   onModeChange: (mode: 'single' | 'multiple') => void;
   onCopy: (investorId: number) => void;
+  totalAmountDue?: number;
 }
 
 export function LoanInvestorCard({
@@ -69,10 +88,25 @@ export function LoanInvestorCard({
   onAddTransaction,
   onRemoveTransaction,
   onUpdateTransaction,
+  onAddReceivedPayment,
+  onRemoveReceivedPayment,
+  onUpdateReceivedPayment,
   onPeriodsChange,
   onModeChange,
   onCopy,
+  totalAmountDue,
 }: LoanInvestorCardProps) {
+  const principalTotal = si.transactions.reduce(
+    (sum, t) => sum + (parseFloat(t.amount) || 0),
+    0
+  );
+  const receivedTotal = si.receivedPayments.reduce(
+    (sum, r) => sum + (parseFloat(r.amount) || 0),
+    0
+  );
+  const maxAllowed = totalAmountDue ?? principalTotal;
+  const receivedExceedsMax = maxAllowed > 0 && receivedTotal > maxAllowed + 0.01;
+
   return (
     <Collapsible defaultOpen={true}>
       <Card>
@@ -132,6 +166,18 @@ export function LoanInvestorCard({
             </div>
 
             <CollapsibleContent className="space-y-4 mt-2">
+              <Tabs defaultValue="principal" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="principal" className="text-xs sm:text-sm">
+                    Principal Disbursement
+                  </TabsTrigger>
+                  <TabsTrigger value="received" className="text-xs sm:text-sm">
+                    Received Payments
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Principal Disbursement tab */}
+                <TabsContent value="principal" className="space-y-4 mt-3">
               {/* Transactions */}
               <div
                 className={`space-y-3 p-4 border rounded-lg bg-muted/30 ${
@@ -348,10 +394,11 @@ export function LoanInvestorCard({
 
               {/* Multiple Interest Manager - at investor level */}
               {watchDueDate &&
-                si.transactions.some(
-                  (t) =>
-                    t.sentDate && isMoreThanOneMonthAndFifteenDays(t.sentDate, watchDueDate)
-                ) && (
+                (si.hasMultipleInterest ||
+                  si.transactions.some(
+                    (t) =>
+                      t.sentDate && isMoreThanOneMonthAndFifteenDays(t.sentDate, watchDueDate)
+                  )) && (
                   <div className="space-y-3 p-4 border rounded-lg bg-muted/30 border-blue-400">
                     <Label className="text-sm font-semibold inline-flex">
                       Interest Configuration
@@ -417,6 +464,119 @@ export function LoanInvestorCard({
                     />
                   </div>
                 )}
+                </TabsContent>
+
+                {/* Received Payments tab */}
+                <TabsContent value="received" className="space-y-3 mt-3">
+                  <div
+                    className={`space-y-3 p-4 border rounded-lg bg-muted/30 ${
+                      receivedExceedsMax ? 'border-destructive' : ''
+                    }`}
+                  >
+                    <Label className="text-sm font-semibold inline-flex">
+                      Received Payments
+                    </Label>
+                    {receivedExceedsMax && (
+                      <Alert className="bg-destructive/10 border-destructive">
+                        <AlertCircle className="h-4 w-4 text-destructive" />
+                        <AlertDescription className="text-xs">
+                          Total received (₱
+                          {receivedTotal.toLocaleString('en-PH', {
+                            minimumFractionDigits: 2,
+                          })}
+                          ) cannot exceed total amount due (₱
+                          {maxAllowed.toLocaleString('en-PH', {
+                            minimumFractionDigits: 2,
+                          })}
+                          ).
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    {si.receivedPayments.map((rp, index) => (
+                      <Collapsible key={rp.id} defaultOpen={true}>
+                        <div className="border rounded-lg bg-muted/50">
+                          <div className="p-3 flex items-center justify-between gap-2">
+                            <CollapsibleTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="group flex-1 justify-between p-0 h-auto hover:bg-transparent"
+                              >
+                                <span className="text-sm font-medium text-muted-foreground">
+                                  Payment {index + 1}
+                                </span>
+                                <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180 flex-shrink-0" />
+                              </Button>
+                            </CollapsibleTrigger>
+                            {si.receivedPayments.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  onRemoveReceivedPayment(si.investor.id, rp.id)
+                                }
+                                className="h-7 w-7 p-0"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                          <CollapsibleContent>
+                            <div className="px-3 pb-3 space-y-3 border-t pt-3">
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                  <Label className="text-xs">Amount *</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={rp.amount}
+                                    onChange={(e) =>
+                                      onUpdateReceivedPayment(
+                                        si.investor.id,
+                                        rp.id,
+                                        'amount',
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label className="text-xs">
+                                    Received Date
+                                  </Label>
+                                  <DatePicker
+                                    value={rp.receivedDate}
+                                    onChange={(newDate) =>
+                                      onUpdateReceivedPayment(
+                                        si.investor.id,
+                                        rp.id,
+                                        'receivedDate',
+                                        newDate
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onAddReceivedPayment(si.investor.id)}
+                      className="w-full"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add more received payments
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CollapsibleContent>
           </div>
         </CardContent>

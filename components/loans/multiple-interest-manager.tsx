@@ -135,14 +135,10 @@ export function MultipleInterestManager({
     }
   }, [sentDate, loanDueDate, mode, isEditMode]);
 
-  // Ensure the last period (Final Due Date) always has the loan due date
-  // ONLY do this on CREATE, not on UPDATE (when isEditMode is true)
+  // Ensure the last period (Final Due Date) always has the loan due date.
+  // This runs in all modes (create, edit, duplicate) because the final period's
+  // DatePicker is always disabled and displays loanDueDate — the state must match.
   useEffect(() => {
-    // Skip auto-update if we're editing an existing loan with periods
-    if (isEditMode) {
-      return;
-    }
-
     if (mode === 'multiple' && periods.length > 0 && loanDueDate) {
       const lastPeriod = periods[periods.length - 1];
       if (lastPeriod.dueDate !== loanDueDate) {
@@ -155,7 +151,7 @@ export function MultipleInterestManager({
         onPeriodsChange(updatedPeriods);
       }
     }
-  }, [loanDueDate, mode, periods, isEditMode]);
+  }, [loanDueDate, mode, periods]);
 
   // Calculate interest amount when rate or amount changes
   useEffect(() => {

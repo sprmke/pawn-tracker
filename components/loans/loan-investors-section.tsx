@@ -19,6 +19,11 @@ interface InterestPeriod {
   interestType?: string;
 }
 
+interface ReceivedPaymentDisplay {
+  amount: string;
+  receivedDate: string;
+}
+
 interface InvestorWithTransactions {
   investor: {
     id: number;
@@ -26,6 +31,7 @@ interface InvestorWithTransactions {
     email?: string;
   };
   transactions: InvestorTransaction[];
+  receivedPayments?: ReceivedPaymentDisplay[];
   hasMultipleInterest?: boolean;
   interestPeriods?: InterestPeriod[];
 }

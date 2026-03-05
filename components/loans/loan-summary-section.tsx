@@ -4,26 +4,18 @@ import { formatCurrency } from '@/lib/format';
 import { getLoanStatusBadge } from '@/lib/badge-config';
 import { LoanStatus } from '@/lib/types';
 
-interface MultipleInterestPaymentStatus {
-  hasMultipleDueDates: boolean;
-  totalPeriods: number;
-  completedPeriods: number;
-  pendingPeriods: number;
-  paidAmount: number;
-  pendingAmount: number;
-}
-
 interface LoanSummarySectionProps {
   totalPrincipal: number;
   averageRate: number;
   totalInterest: number;
   totalAmount: number;
+  totalReceived?: number;
+  totalBalance?: number;
   uniqueInvestors: number;
   status?: LoanStatus;
   balance?: number;
   showStatus?: boolean;
   title?: string;
-  multipleInterestPaymentStatus?: MultipleInterestPaymentStatus;
 }
 
 export function LoanSummarySection({
@@ -31,19 +23,20 @@ export function LoanSummarySection({
   averageRate,
   totalInterest,
   totalAmount,
+  totalReceived,
+  totalBalance,
   uniqueInvestors,
   status,
   balance,
   showStatus = true,
   title = 'Summary',
-  multipleInterestPaymentStatus,
 }: LoanSummarySectionProps) {
-  // Handle case where principal is 0 but there's fixed interest
-  const hasFixedInterestWithZeroCapital =
-    totalPrincipal === 0 && totalInterest > 0;
-
-  const hasMultipleDueDates =
-    multipleInterestPaymentStatus?.hasMultipleDueDates ?? false;
+  const rateDisplay =
+    totalPrincipal > 0
+      ? `${averageRate.toFixed(2)}%`
+      : totalInterest > 0
+        ? 'Fixed'
+        : '0.00%';
 
   return (
     <Card>
@@ -51,7 +44,7 @@ export function LoanSummarySection({
         <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               Total Principal
@@ -64,11 +57,7 @@ export function LoanSummarySection({
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               Avg. Rate
             </p>
-            <p className="text-base font-semibold">
-              {hasFixedInterestWithZeroCapital
-                ? `Fixed ${formatCurrency(totalInterest)}`
-                : `${averageRate.toFixed(2)}%`}
-            </p>
+            <p className="text-base font-semibold">{rateDisplay}</p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
@@ -86,6 +75,26 @@ export function LoanSummarySection({
               {formatCurrency(totalAmount)}
             </p>
           </div>
+          {totalReceived !== undefined && (
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+                Total Received
+              </p>
+              <p className="text-base font-semibold">
+                {formatCurrency(totalReceived)}
+              </p>
+            </div>
+          )}
+          {totalBalance !== undefined && (
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+                Total Balance
+              </p>
+              <p className="text-base font-semibold">
+                {formatCurrency(totalBalance)}
+              </p>
+            </div>
+          )}
           {status === 'Partially Funded' &&
             balance !== undefined &&
             balance > 0 && (
@@ -127,34 +136,6 @@ export function LoanSummarySection({
               </div>
             )}
         </div>
-
-        {/* Multiple Due Dates Payment Status */}
-        {hasMultipleDueDates && multipleInterestPaymentStatus && (
-          <div className="pt-4 border-t">
-            <p className="text-sm font-medium text-muted-foreground mb-3">
-              Payment Progress ({multipleInterestPaymentStatus.completedPeriods}/
-              {multipleInterestPaymentStatus.totalPeriods} periods completed)
-            </p>
-            <div className="grid gap-4 grid-cols-2">
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-xs sm:text-sm text-green-800 font-medium mb-1">
-                  Amount Paid
-                </p>
-                <p className="text-base font-semibold text-green-900">
-                  {formatCurrency(multipleInterestPaymentStatus.paidAmount)}
-                </p>
-              </div>
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-xs sm:text-sm text-amber-800 font-medium mb-1">
-                  Balance Remaining
-                </p>
-                <p className="text-base font-semibold text-amber-900">
-                  {formatCurrency(multipleInterestPaymentStatus.pendingAmount)}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

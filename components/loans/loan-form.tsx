@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -67,15 +67,22 @@ interface Transaction {
   isPaid: boolean;
 }
 
+interface ReceivedPaymentForm {
+  id: string;
+  amount: string;
+  receivedDate: string;
+}
+
 interface InvestorAllocation {
   investor: Investor;
   transactions: Transaction[];
+  receivedPayments: ReceivedPaymentForm[];
   hasMultipleInterest: boolean;
   interestPeriods: InterestPeriodData[];
 }
 
 interface LoanFormProps {
-  investors: Investor[];
+  investors?: Investor[];
   existingLoan?: LoanWithInvestors;
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -85,12 +92,12 @@ interface LoanFormProps {
 }
 
 export function LoanForm({
-  investors: initialInvestors,
+  investors: initialInvestors = [],
   existingLoan,
   onSuccess,
   onCancel,
   preselectedInvestorId,
-  isLoadingInvestors = false,
+  isLoadingInvestors: externalLoadingInvestors = false,
   duplicateData,
 }: LoanFormProps) {
   const router = useRouter();
@@ -108,7 +115,36 @@ export function LoanForm({
 
   // State for investors list (can be updated when new investor is added)
   const [investors, setInvestors] = useState<Investor[]>(initialInvestors);
+  const [isFetchingInvestors, setIsFetchingInvestors] = useState(false);
+  const investorsFetched = useRef(initialInvestors.length > 0);
   const [showInvestorModal, setShowInvestorModal] = useState(false);
+
+  const isLoadingInvestors = externalLoadingInvestors || isFetchingInvestors;
+
+  const fetchInvestorsIfNeeded = useCallback(async () => {
+    if (investorsFetched.current) return;
+    investorsFetched.current = true;
+    setIsFetchingInvestors(true);
+    try {
+      const response = await fetch('/api/investors?simple=true');
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setInvestors(data);
+      }
+    } catch (error) {
+      console.error('Error fetching investors:', error);
+      investorsFetched.current = false;
+    } finally {
+      setIsFetchingInvestors(false);
+    }
+  }, []);
+
+  const handleInvestorDropdownOpen = useCallback(
+    (open: boolean) => {
+      if (open) fetchInvestorsIfNeeded();
+    },
+    [fetchInvestorsIfNeeded],
+  );
   const [copySourceInvestorId, setCopySourceInvestorId] = useState<
     number | null
   >(null);
@@ -168,10 +204,25 @@ export function LoanForm({
               }))
             : [];
 
+        // Collect all received payments for this investor from any of their loan_investor rows
+        const receivedPayments: ReceivedPaymentForm[] = [];
+        existingLoan.loanInvestors
+          .filter((li) => li.investor.id === investorId)
+          .forEach((li) => {
+            (li.receivedPayments || []).forEach((rp) => {
+              receivedPayments.push({
+                id: rp.id.toString(),
+                amount: rp.amount,
+                receivedDate: toLocalDateString(rp.receivedDate),
+              });
+            });
+          });
+
         if (investor) {
           result.push({
             investor,
             transactions,
+            receivedPayments,
             hasMultipleInterest:
               firstLoanInvestor?.hasMultipleInterest || false,
             interestPeriods: interestPeriods,
@@ -236,6 +287,7 @@ export function LoanForm({
           result.push({
             investor,
             transactions,
+            receivedPayments: [],
             hasMultipleInterest:
               firstLoanInvestor?.hasMultipleInterest || false,
             interestPeriods: interestPeriods,
@@ -266,6 +318,7 @@ export function LoanForm({
                 isPaid: true,
               },
             ],
+            receivedPayments: [],
             hasMultipleInterest: false,
             interestPeriods: [],
           },
@@ -296,7 +349,7 @@ export function LoanForm({
         }
       : duplicateData
         ? {
-            loanName: '', // Empty name for duplicate
+            loanName: `${duplicateData.name} - Copy`,
             type: duplicateData.type,
             dueDate: toLocalDateString(duplicateData.dueDate),
             freeLotSqm: duplicateData.freeLotSqm?.toString() || '',
@@ -378,6 +431,7 @@ export function LoanForm({
               isPaid: true,
             },
           ],
+          receivedPayments: [],
           hasMultipleInterest: false,
           interestPeriods: [],
         },
@@ -419,6 +473,7 @@ export function LoanForm({
             isPaid: true,
           },
         ],
+        receivedPayments: [],
         hasMultipleInterest: false,
         interestPeriods: [],
       },
@@ -463,6 +518,64 @@ export function LoanForm({
               ...si,
               transactions: si.transactions.filter(
                 (t) => t.id !== transactionId,
+              ),
+            }
+          : si,
+      ),
+    );
+  };
+
+  const addReceivedPayment = (investorId: number) => {
+    setSelectedInvestors(
+      selectedInvestors.map((si) =>
+        si.investor.id === investorId
+          ? {
+              ...si,
+              receivedPayments: [
+                ...si.receivedPayments,
+                {
+                  id: `temp-rp-${Date.now()}-${Math.random()}`,
+                  amount: '',
+                  receivedDate: toLocalDateString(new Date()),
+                },
+              ],
+            }
+          : si,
+      ),
+    );
+  };
+
+  const removeReceivedPayment = (
+    investorId: number,
+    receivedPaymentId: string,
+  ) => {
+    setSelectedInvestors(
+      selectedInvestors.map((si) =>
+        si.investor.id === investorId
+          ? {
+              ...si,
+              receivedPayments: si.receivedPayments.filter(
+                (rp) => rp.id !== receivedPaymentId,
+              ),
+            }
+          : si,
+      ),
+    );
+  };
+
+  const updateReceivedPayment = (
+    investorId: number,
+    receivedPaymentId: string,
+    field: keyof Omit<ReceivedPaymentForm, 'id'>,
+    value: string,
+  ) => {
+    setSelectedInvestors(
+      selectedInvestors.map((si) =>
+        si.investor.id === investorId
+          ? {
+              ...si,
+              receivedPayments: si.receivedPayments.map((rp) =>
+                rp.id === receivedPaymentId ? { ...rp, [field]: value } : rp,
               ),
             }
           : si,
@@ -681,13 +794,26 @@ export function LoanForm({
     return result;
   };
 
+  const getTotalReceived = () => {
+    return selectedInvestors.reduce((sum, si) => {
+      return (
+        sum +
+        si.receivedPayments.reduce(
+          (s, rp) => s + (parseFloat(rp.amount) || 0),
+          0,
+        )
+      );
+    }, 0);
+  };
+
   const calculateSummary = () => {
     const preview = calculatePreview();
     const totalCapital = preview.reduce((sum, p) => sum + p.capital, 0);
     const totalInterest = preview.reduce((sum, p) => sum + p.interest, 0);
     const totalAmount = totalCapital + totalInterest;
+    const totalReceived = getTotalReceived();
+    const totalBalance = totalAmount - totalReceived;
 
-    // Calculate weighted average interest rate
     const averageRate =
       totalCapital > 0 ? (totalInterest / totalCapital) * 100 : 0;
 
@@ -708,6 +834,8 @@ export function LoanForm({
       totalCapital,
       totalInterest,
       totalAmount,
+      totalReceived,
+      totalBalance,
       averageRate,
       uniqueInvestors,
       status,
@@ -779,6 +907,30 @@ export function LoanForm({
     if (hasInvalidTransactions) {
       toast.error(
         'Please enter valid amounts for all transactions. Transactions with 0 principal must have interest configured (fixed amount, rate % with other investors, or multiple interest periods).',
+      );
+      return;
+    }
+
+    // Validate received payments do not exceed total amount due (principal + interest)
+    const previewForValidation = calculatePreview();
+    const hasInvalidReceivedPayments = selectedInvestors.some((si) => {
+      const investorPreviewItems = previewForValidation.filter(
+        (p) => p.investor.id === si.investor.id,
+      );
+      const totalDue = investorPreviewItems.reduce(
+        (s, p) => s + p.total,
+        0,
+      );
+      if (totalDue <= 0) return false;
+      const received = si.receivedPayments.reduce(
+        (s, r) => s + (parseFloat(r.amount) || 0),
+        0,
+      );
+      return received > totalDue + 0.01;
+    });
+    if (hasInvalidReceivedPayments) {
+      toast.error(
+        'For each investor, total received payments cannot exceed the total amount due (principal + interest).',
       );
       return;
     }
@@ -884,13 +1036,25 @@ export function LoanForm({
         });
       });
 
+      const receivedPaymentsByInvestor = selectedInvestors.map((si) => ({
+        investorId: si.investor.id,
+        receivedPayments: si.receivedPayments.map((rp) => ({
+          amount: rp.amount,
+          receivedDate: rp.receivedDate,
+        })),
+      }));
+
       const url = isEditMode ? `/api/loans/${existingLoan.id}` : '/api/loans';
       const method = isEditMode ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ loanData, investorData }),
+        body: JSON.stringify({
+          loanData,
+          investorData,
+          receivedPaymentsByInvestor,
+        }),
       });
 
       if (!response.ok)
@@ -935,6 +1099,7 @@ export function LoanForm({
   };
 
   const handleCopy = (sourceInvestorId: number) => {
+    fetchInvestorsIfNeeded();
     setCopySourceInvestorId(sourceInvestorId);
   };
 
@@ -963,6 +1128,7 @@ export function LoanForm({
           newInvestorsToAdd.push({
             investor,
             transactions: [],
+            receivedPayments: [],
             hasMultipleInterest: false,
             interestPeriods: [],
           });
@@ -971,6 +1137,13 @@ export function LoanForm({
     });
 
     // Deep clone the source investor's configuration
+    const cloneReceivedPayments = (): ReceivedPaymentForm[] =>
+      sourceInvestor.receivedPayments.map((rp) => ({
+        id: `temp-rp-${Date.now()}-${Math.random()}`,
+        amount: rp.amount,
+        receivedDate: rp.receivedDate,
+      }));
+
     setSelectedInvestors((prev) => {
       // Update existing investors
       const updated = prev.map((si) => {
@@ -1001,6 +1174,7 @@ export function LoanForm({
           return {
             ...si,
             transactions: clonedTransactions,
+            receivedPayments: cloneReceivedPayments(),
             hasMultipleInterest: sourceInvestor.hasMultipleInterest,
             interestPeriods: clonedInterestPeriods,
           };
@@ -1034,6 +1208,7 @@ export function LoanForm({
         return {
           ...newInvestor,
           transactions: clonedTransactions,
+          receivedPayments: cloneReceivedPayments(),
           hasMultipleInterest: sourceInvestor.hasMultipleInterest,
           interestPeriods: clonedInterestPeriods,
         };
@@ -1164,6 +1339,7 @@ export function LoanForm({
             <Select
               value={investorSelectValue}
               onValueChange={addInvestor}
+              onOpenChange={handleInvestorDropdownOpen}
               disabled={isLoadingInvestors}
             >
               <SelectTrigger>
@@ -1214,18 +1390,30 @@ export function LoanForm({
             </p>
           ) : (
             <div className="space-y-4">
-              {selectedInvestors.map((si) => (
+              {selectedInvestors.map((si) => {
+                const investorPreviewItems = preview.filter(
+                  (p) => p.investor.id === si.investor.id,
+                );
+                const investorTotalDue = investorPreviewItems.reduce(
+                  (s, p) => s + p.total,
+                  0,
+                );
+                return (
                 <LoanInvestorCard
                   key={si.investor.id}
                   selectedInvestor={si}
                   watchDueDate={watchDueDate}
+                  totalAmountDue={investorTotalDue}
                   onRemoveInvestor={removeInvestor}
                   onAddTransaction={addTransaction}
                   onRemoveTransaction={removeTransaction}
                   onUpdateTransaction={updateTransaction}
+                  onAddReceivedPayment={addReceivedPayment}
+                  onRemoveReceivedPayment={removeReceivedPayment}
+                  onUpdateReceivedPayment={updateReceivedPayment}
                   onPeriodsChange={(periods) => {
-                    setSelectedInvestors(
-                      selectedInvestors.map((inv) =>
+                    setSelectedInvestors((prev) =>
+                      prev.map((inv) =>
                         inv.investor.id === si.investor.id
                           ? { ...inv, interestPeriods: periods }
                           : inv,
@@ -1233,8 +1421,8 @@ export function LoanForm({
                     );
                   }}
                   onModeChange={(mode) => {
-                    setSelectedInvestors(
-                      selectedInvestors.map((inv) =>
+                    setSelectedInvestors((prev) =>
+                      prev.map((inv) =>
                         inv.investor.id === si.investor.id
                           ? {
                               ...inv,
@@ -1246,7 +1434,8 @@ export function LoanForm({
                   }}
                   onCopy={handleCopy}
                 />
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -1295,6 +1484,11 @@ export function LoanForm({
 
                         return {
                           investor: transactions[0].investor,
+                          receivedPayments:
+                            investorData?.receivedPayments?.map((rp) => ({
+                              amount: rp.amount,
+                              receivedDate: rp.receivedDate,
+                            })) ?? [],
                           transactions: transactions.map((t, index) => {
                             // Find the original transaction to get the actual interestType
                             const originalTransaction =
@@ -1383,6 +1577,8 @@ export function LoanForm({
           averageRate={summary.averageRate}
           totalInterest={summary.totalInterest}
           totalAmount={summary.totalAmount}
+          totalReceived={summary.totalReceived}
+          totalBalance={summary.totalBalance}
           uniqueInvestors={summary.uniqueInvestors}
           status={summary.status}
           balance={summary.balance}
@@ -1428,6 +1624,7 @@ export function LoanForm({
               si.investor.id,
               {
                 transactions: si.transactions,
+                receivedPayments: si.receivedPayments,
                 hasMultipleInterest: si.hasMultipleInterest,
                 interestPeriods: si.interestPeriods,
               },
@@ -1442,6 +1639,7 @@ export function LoanForm({
               sourceInvestor={sourceInvestorData.investor}
               sourceInvestorConfig={{
                 transactions: sourceInvestorData.transactions,
+                receivedPayments: sourceInvestorData.receivedPayments,
                 hasMultipleInterest: sourceInvestorData.hasMultipleInterest,
                 interestPeriods: sourceInvestorData.interestPeriods,
               }}
