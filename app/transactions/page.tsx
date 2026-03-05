@@ -128,7 +128,7 @@ export default function TransactionsPage() {
 
   const fetchInvestors = async () => {
     try {
-      const response = await fetch('/api/investors');
+      const response = await fetch('/api/investors?simple=true');
       const data = await response.json();
       const uniqueInvestors = data
         .map((inv: any) => ({ id: inv.id, name: inv.name }))
