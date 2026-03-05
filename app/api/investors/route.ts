@@ -1,17 +1,67 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { investors, users, loanInvestors } from '@/db/schema';
 import { auth } from '@/auth';
 import { eq } from 'drizzle-orm';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get investors created by this user
+    const simple = request.nextUrl.searchParams.get('simple') === 'true';
+
+    if (simple) {
+      const ownedInvestors = await db.query.investors.findMany({
+        where: eq(investors.userId, session.user.id),
+        columns: { id: true, name: true, email: true, contactNumber: true },
+      });
+
+      const userAsInvestor = await db.query.investors.findFirst({
+        where: eq(investors.investorUserId, session.user.id),
+        columns: { id: true },
+      });
+
+      if (!userAsInvestor) {
+        return NextResponse.json(ownedInvestors);
+      }
+
+      const loanInvestments = await db.query.loanInvestors.findMany({
+        where: eq(loanInvestors.investorId, userAsInvestor.id),
+        columns: {},
+        with: {
+          loan: {
+            columns: {},
+            with: {
+              loanInvestors: {
+                columns: {},
+                with: {
+                  investor: {
+                    columns: { id: true, name: true, email: true, contactNumber: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const allInvestorsMap = new Map<number, typeof ownedInvestors[number]>();
+      ownedInvestors.forEach((inv) => allInvestorsMap.set(inv.id, inv));
+      loanInvestments.forEach((li) => {
+        li.loan.loanInvestors.forEach((loanInv) => {
+          if (!allInvestorsMap.has(loanInv.investor.id)) {
+            allInvestorsMap.set(loanInv.investor.id, loanInv.investor);
+          }
+        });
+      });
+
+      return NextResponse.json(Array.from(allInvestorsMap.values()));
+    }
+
+    // Full query with nested relations (for investors page, etc.)
     const ownedInvestors = await db.query.investors.findMany({
       where: eq(investors.userId, session.user.id),
       with: {
@@ -24,14 +74,12 @@ export async function GET() {
       },
     });
 
-    // Get investors from loans where this user is an investor
     const userAsInvestor = await db.query.investors.findFirst({
       where: eq(investors.investorUserId, session.user.id),
     });
 
     let sharedInvestors: any[] = [];
     if (userAsInvestor) {
-      // Get loans where this user is an investor
       const loanInvestments = await db.query.loanInvestors.findMany({
         where: eq(loanInvestors.investorId, userAsInvestor.id),
         with: {
@@ -56,7 +104,6 @@ export async function GET() {
         },
       });
 
-      // Extract all investors from these loans
       const investorSet = new Set();
       loanInvestments.forEach(li => {
         li.loan.loanInvestors.forEach(loanInv => {
@@ -68,7 +115,6 @@ export async function GET() {
       });
     }
 
-    // Combine and deduplicate investors
     const allInvestorsMap = new Map();
     [...ownedInvestors, ...sharedInvestors].forEach(investor => {
       allInvestorsMap.set(investor.id, investor);
