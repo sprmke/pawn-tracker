@@ -37,7 +37,7 @@ export function TransactionCreateModal({
   const fetchInvestors = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/investors');
+      const response = await fetch('/api/investors?simple=true');
       const data = await response.json();
       setInvestors(data);
     } catch (error) {
