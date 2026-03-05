@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { LoanWithInvestors, InterestType, InterestPeriodStatus } from '@/lib/types';
 
 export interface DuplicateLoanData {
+  name: string;
   type: 'Lot Title' | 'OR/CR' | 'Agent';
   dueDate: string | Date;
   freeLotSqm: number | null;
@@ -60,6 +61,7 @@ export const useLoanDuplicateStore = create<LoanDuplicateState>((set) => ({
 // Helper function to create duplicate data from a loan
 export function createDuplicateDataFromLoan(loan: LoanWithInvestors): DuplicateLoanData {
   return {
+    name: loan.loanName,
     type: loan.type,
     dueDate: loan.dueDate,
     freeLotSqm: loan.freeLotSqm,
