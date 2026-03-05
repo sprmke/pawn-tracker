@@ -62,9 +62,29 @@ Todos & Improvements:
 - ✅ Let's remove saving/updating of each transaction whenever we add/update a loan/transaction. we don't need to do that anymore. Remove the balance computation, investor balance and overall balance on transactions page/module as well.
 - ✅ Improve table pagination
 - It looks like when we create a new loan on dev env, we are not creating any google event calendar
-- Display the loan detail modal when we click a loan from the dashboard page instead of loan page redirection
-- When we are on Investor detail page, what we should see from the table is the investor information. Instead of displaying the loan total principal, display the investor principal. Same for avg rate, interest and amount. We can update the table header to prevent confusion
-- Correct badges for the 4 cards to display the loan type with their respective correct color. Use the same loan type colors from loans table type column
-- Can we improve the dashboard cards summary
-- Rearrange complete and incoming loans
+- ✅ Display the loan detail modal when we click a loan from the dashboard page instead of loan page redirection
+- ✅ When we are on Investor detail page, what we should see from the table is the investor information. Instead of displaying the loan total principal, display the investor principal. Same for avg rate, interest and amount. We can update the table header to prevent confusion
+- ✅ Correct badges for the 4 cards to display the loan type with their respective correct color. Use the same loan type colors from loans table type column
+- ✅ Can we improve the dashboard cards summary
+- ✅ Rearrange complete and incoming loans
+- ✅ Update loan action buttons from page and modal from multiple listed buttons to menu dropdown action buttons
 - Implement backup data system
+- ✅ On edit loan page/modal, let's update the Investors card/section to also manage received payments. For each investor, let's have a tab view for Principal Disbursement & Received Payments. For Principal Disbursement, let's keep the existing fields that we have but for Received Payments, let's have the below fields. But for the amount, we should have a validation that it would not exceed the principal disbursement amount. Then, we should also update the loan preview and summary cards to display the summary info of disbursement & received payments. For summary section, let's add Total Received & Total Balance. The loan should still be manually be completed for now. Then, for existing completed loans, let's just create a migration script to fullfil our database for the received payments for the balance to be 0. We should also consider these new received payments to be copied on our Copy Investor Configuration
+  - Add investor (keep)
+  - Principal Payments -> Received Payments
+  - Amount (keep)
+  - Sent Date -> Received Date
+  - (no more interest fields)
+  - Add more received payments
+- ✅ Let's turn off google calendar sync on every loan update. I think it's op. We can just use the manual calendar sync for all the loans.
+- ✅ When a loan is overdue, on loan detail page, let's add a new section/card for computing the additional interest/s based on existing computation logic that we have for that loan. Let's analyze the loan details and use this as default values for the fields. We should rely this on the loan duration. If the loan duration is weekly, then list down new interest each weeks we the same interest rate and computation. Let's make the date and amount editable so we can update the additional interest manually. Then, we should display a 'Apply' button which will update our loan details. Once updated, we will hide this new computation card.
+- The duplicate loan is not working from dashboard page and investor detail page.
+- ✅ Fix calendar format on loan forms
+- ✅ When we duplicate the loan, do not reset or clear the loan name. Instead just add '<Name> - Copy'
+- ✅ When we duplicate a loan, I noticed that we are not displaying the interest fields
+- ✅ Cache /api/investors since this data is not always updating so. that we have fast result we we call this from our app
+- ✅ Improve edit loan process because it takes 5+ seconds. First, why we need to call /loans API? This is very bad UX
+  - GET /api/loans/18 200 in 1942ms
+  - GET /api/loans 200 in 4093ms
+  - GET /api/investors 200 in 12316ms
+- Check all API endpoints and make them faster
