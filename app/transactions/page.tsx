@@ -60,8 +60,8 @@ export default function TransactionsPage() {
     isReady: isViewModeReady,
   } = useResponsiveViewMode<'cards' | 'table' | 'calendar'>({
     includeCalendar: true,
-    defaultDesktopMode: 'calendar',
-    defaultMobileMode: 'calendar',
+    defaultDesktopMode: 'table',
+    defaultMobileMode: 'cards',
   });
   const itemsPerPage = 10;
 
