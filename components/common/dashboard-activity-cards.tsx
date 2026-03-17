@@ -6,7 +6,8 @@ import { CompletedLoansCard } from './completed-loans-card';
 import { PastDueLoansCard } from './past-due-loans-card';
 import { PendingDisbursementsCard } from './pending-disbursements-card';
 import { MaturingLoansCard } from './maturing-loans-card';
-import { LoanDetailModal } from '@/components/loans/loan-detail-modal';
+import { LoanDetailModal, LoanCreateModal } from '@/components/loans';
+import { useLoanDuplicateStore } from '@/stores/loan-duplicate-store';
 import type { LoanWithInvestors, LoanType, LoanStatus } from '@/lib/types';
 
 interface PendingDisbursement {
@@ -97,6 +98,14 @@ export function DashboardActivityCards({
     router.refresh();
   }, [router]);
 
+  // Create modal state for duplicate-from-detail flow
+  const isCreateModalOpen = useLoanDuplicateStore(
+    (state) => state.isCreateModalOpen,
+  );
+  const closeCreateModal = useLoanDuplicateStore(
+    (state) => state.closeCreateModal,
+  );
+
   return (
     <>
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
@@ -139,6 +148,15 @@ export function DashboardActivityCards({
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onUpdate={handleUpdate}
+      />
+
+      {/* Create/Duplicate Loan Modal - opened via store when user clicks Duplicate in detail modal */}
+      <LoanCreateModal
+        open={isCreateModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeCreateModal();
+        }}
+        onSuccess={() => router.refresh()}
       />
     </>
   );
