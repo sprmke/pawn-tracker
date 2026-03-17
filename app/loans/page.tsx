@@ -96,8 +96,8 @@ export default function LoansPage() {
     isReady: isViewModeReady,
   } = useResponsiveViewMode<'cards' | 'table' | 'calendar'>({
     includeCalendar: true,
-    defaultDesktopMode: 'calendar',
-    defaultMobileMode: 'calendar',
+    defaultDesktopMode: 'table',
+    defaultMobileMode: 'cards',
   });
   const [sortField, setSortField] = useState<SortField>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
