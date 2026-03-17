@@ -61,6 +61,7 @@ import {
   TransactionCard,
 } from '@/components/transactions';
 import { LoanCreateModal, LoanDetailModal } from '@/components/loans';
+import { useLoanDuplicateStore } from '@/stores/loan-duplicate-store';
 import type { TransactionWithInvestor } from '@/lib/types';
 import { addDays, isAfter, isBefore, isPast } from 'date-fns';
 import { loansCSVColumns, transactionsCSVColumns } from '@/lib/csv-columns';
@@ -85,6 +86,14 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     null,
   );
   const [showLoanDetailModal, setShowLoanDetailModal] = useState(false);
+
+  // Create modal can open from "Add loan" button (showLoanModal) or "Duplicate" in loan detail (store)
+  const isCreateModalOpenFromStore = useLoanDuplicateStore(
+    (state) => state.isCreateModalOpen,
+  );
+  const closeCreateModal = useLoanDuplicateStore(
+    (state) => state.closeCreateModal,
+  );
 
   // View modes - using responsive hook for SSR-safe view mode detection
   const {
@@ -1430,10 +1439,15 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         }}
       />
 
-      {/* Loan Create Modal */}
+      {/* Loan Create Modal - open from "Add loan" button or "Duplicate" in loan detail */}
       <LoanCreateModal
-        open={showLoanModal}
-        onOpenChange={setShowLoanModal}
+        open={showLoanModal || isCreateModalOpenFromStore}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowLoanModal(false);
+            closeCreateModal();
+          }
+        }}
         preselectedInvestorId={investor.id}
         onSuccess={() => {
           fetchLoansData();
