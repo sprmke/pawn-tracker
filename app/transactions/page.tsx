@@ -5,15 +5,7 @@ import { useResponsiveViewMode } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu } from '@/components/ui/dropdown-menu';
-import {
-  PlusCircle,
-  X,
-  Filter,
-  ChevronDown,
-  ArrowLeftRight,
-  Coins,
-} from 'lucide-react';
+import { PlusCircle, X, Filter, ArrowLeftRight } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -41,7 +33,8 @@ import {
   ExportButton,
 } from '@/components/common';
 import { DollarSign, Users } from 'lucide-react';
-import { transactionsCSVColumns } from '@/lib/csv-columns';
+import { transactionPDFSections } from '@/lib/pdf-sections';
+import { renderTransactionsPDF } from '@/components/pdf/transactions-pdf-document';
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -291,33 +284,18 @@ export default function TransactionsPage() {
             <ExportButton
               data={transactions}
               filteredData={sortedTransactions}
-              columns={transactionsCSVColumns}
-              filename="transactions"
+              sections={transactionPDFSections}
+              onGeneratePDF={renderTransactionsPDF}
               variant="outline"
               size="default"
             />
-            <DropdownMenu
-              trigger={
-                <Button className="w-full sm:w-auto h-9 px-3">
-                  <PlusCircle className="h-4 w-4 xl:mr-2" />
-                  <span className="hidden xl:inline">New Transaction</span>
-                  <ChevronDown className="ml-1 xl:ml-2 h-4 w-4" />
-                </Button>
-              }
-              items={[
-                {
-                  label: 'Investment',
-                  icon: <ArrowLeftRight className="h-4 w-4" />,
-                  onClick: () => router.push('/transactions/new'),
-                },
-                {
-                  label: 'Loan',
-                  icon: <Coins className="h-4 w-4" />,
-                  onClick: () => router.push('/loans/new'),
-                },
-              ]}
-              align="end"
-            />
+            <Button
+              className="w-full sm:w-auto h-9 px-3"
+              onClick={() => router.push('/transactions/new')}
+            >
+              <PlusCircle className="h-4 w-4 xl:mr-2" />
+              <span className="hidden xl:inline">New Transaction</span>
+            </Button>
           </>
         }
       />
@@ -360,7 +338,6 @@ export default function TransactionsPage() {
             <MultiSelectFilter
               options={[
                 { value: 'Investment', label: 'Investment' },
-                { value: 'Loan', label: 'Loan' },
               ]}
               selected={typeFilter}
               onChange={(value) => {
@@ -458,7 +435,6 @@ export default function TransactionsPage() {
                   <MultiSelectFilter
                     options={[
                       { value: 'Investment', label: 'Investment' },
-                      { value: 'Loan', label: 'Loan' },
                     ]}
                     selected={typeFilter}
                     onChange={(value) => {
