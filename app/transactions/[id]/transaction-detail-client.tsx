@@ -56,17 +56,6 @@ export function TransactionDetailClient({
     router.refresh();
   };
 
-  const handleViewLoan = () => {
-    if (!transaction.loanId) {
-      toast.error('This transaction is not linked to a loan.');
-      return;
-    }
-
-    router.push(`/loans/${transaction.loanId}`);
-  };
-
-  const isLoanTransaction = transaction.type === 'Loan';
-
   const handleUpdate = async () => {
     setIsSubmitting(true);
     try {
@@ -188,7 +177,6 @@ export function TransactionDetailClient({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Loan">Loan</SelectItem>
                     <SelectItem value="Investment">Investment</SelectItem>
                   </SelectContent>
                 </Select>
@@ -280,10 +268,6 @@ export function TransactionDetailClient({
         onDelete={handleDelete}
         deleteTitle="Delete Transaction"
         deleteDescription="Are you sure you want to delete this transaction? This action cannot be undone."
-        canEdit={!isLoanTransaction}
-        editDisabledReason="Loan transactions cannot be edited directly. Please edit the loan instead."
-        onViewLoan={handleViewLoan}
-        showViewLoan={isLoanTransaction}
       />
 
       <TransactionDetailContent transaction={transaction} showHeader={false} />

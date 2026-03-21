@@ -27,7 +27,6 @@ export const loanStatusEnum = pgEnum('loan_status', [
   'Completed',
 ]);
 export const transactionTypeEnum = pgEnum('transaction_type', [
-  'Loan',
   'Investment',
 ]);
 export const transactionDirectionEnum = pgEnum('transaction_direction', [
@@ -37,6 +36,7 @@ export const transactionDirectionEnum = pgEnum('transaction_direction', [
 export const interestTypeEnum = pgEnum('interest_type', ['rate', 'fixed']);
 export const interestPeriodStatusEnum = pgEnum('interest_period_status', [
   'Pending',
+  'Incomplete',
   'Completed',
   'Overdue',
 ]);
@@ -115,6 +115,11 @@ export const receivedPayments = pgTable('received_payments', {
   loanInvestorId: integer('loan_investor_id')
     .references(() => loanInvestors.id, { onDelete: 'cascade' })
     .notNull(),
+  /** When set, this receipt applies toward this interest period (partial or full). */
+  interestPeriodId: integer('interest_period_id').references(
+    () => interestPeriods.id,
+    { onDelete: 'set null' },
+  ),
   amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
   receivedDate: timestamp('received_date').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -248,16 +253,21 @@ export const receivedPaymentsRelations = relations(
       fields: [receivedPayments.loanInvestorId],
       references: [loanInvestors.id],
     }),
+    interestPeriod: one(interestPeriods, {
+      fields: [receivedPayments.interestPeriodId],
+      references: [interestPeriods.id],
+    }),
   })
 );
 
 export const interestPeriodsRelations = relations(
   interestPeriods,
-  ({ one }) => ({
+  ({ one, many }) => ({
     loanInvestor: one(loanInvestors, {
       fields: [interestPeriods.loanInvestorId],
       references: [loanInvestors.id],
     }),
+    linkedReceivedPayments: many(receivedPayments),
   })
 );
 

@@ -86,17 +86,6 @@ export async function PUT(
       );
     }
 
-    // Prevent editing loan transactions
-    if (existingTransaction.type === 'Loan') {
-      return NextResponse.json(
-        {
-          error:
-            'Loan transactions cannot be edited directly. Please edit the loan instead.',
-        },
-        { status: 403 },
-      );
-    }
-
     // Remove balance from body if present (balance should never be editable)
     const { balance, ...updateData } = body;
 
