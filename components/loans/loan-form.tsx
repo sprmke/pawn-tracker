@@ -71,6 +71,7 @@ interface ReceivedPaymentForm {
   id: string;
   amount: string;
   receivedDate: string;
+  interestPeriodId?: number | null;
 }
 
 interface InvestorAllocation {
@@ -214,6 +215,7 @@ export function LoanForm({
                 id: rp.id.toString(),
                 amount: rp.amount,
                 receivedDate: toLocalDateString(rp.receivedDate),
+                interestPeriodId: rp.interestPeriodId ?? null,
               });
             });
           });
@@ -1142,6 +1144,7 @@ export function LoanForm({
         id: `temp-rp-${Date.now()}-${Math.random()}`,
         amount: rp.amount,
         receivedDate: rp.receivedDate,
+        interestPeriodId: rp.interestPeriodId ?? null,
       }));
 
     setSelectedInvestors((prev) => {
@@ -1488,6 +1491,10 @@ export function LoanForm({
                             investorData?.receivedPayments?.map((rp) => ({
                               amount: rp.amount,
                               receivedDate: rp.receivedDate,
+                              interestPeriodId: rp.interestPeriodId ?? null,
+                              id: /^\d+$/.test(rp.id)
+                                ? parseInt(rp.id, 10)
+                                : undefined,
                             })) ?? [],
                           transactions: transactions.map((t, index) => {
                             // Find the original transaction to get the actual interestType

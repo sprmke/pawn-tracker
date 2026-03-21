@@ -176,7 +176,10 @@ export function LoanDetailContent({
 
           const receivedPayments = transactions.flatMap((li) =>
             (li.receivedPayments || []).map((rp) => ({
+              id: rp.id,
               amount: rp.amount,
+              /** Required so each period can show paid/remaining and payment rows */
+              interestPeriodId: rp.interestPeriodId ?? null,
               receivedDate:
                 typeof rp.receivedDate === 'string'
                   ? rp.receivedDate

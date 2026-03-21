@@ -16,7 +16,7 @@ import { LoanWithInvestors } from '@/lib/types';
 import { calculateInterest } from '@/lib/calculations';
 import { formatCurrency } from '@/lib/format';
 import { toast } from '@/lib/toast';
-import { Calculator, Trash2 } from 'lucide-react';
+import { Calculator, Plus, Trash2 } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 
 interface OverdueInterestEntry {
@@ -266,6 +266,52 @@ export function OverdueInterestCard({
     setEntries((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleAddEntry = () => {
+    const nextDate = (() => {
+      if (entries.length === 0) {
+        return new Date().toISOString().slice(0, 10);
+      }
+      const lastEntry = entries[entries.length - 1];
+      const lastDate = new Date(lastEntry.date);
+      switch (interval) {
+        case 'every-week':
+          lastDate.setDate(lastDate.getDate() + 7);
+          break;
+        case 'every-2-weeks':
+          lastDate.setDate(lastDate.getDate() + 14);
+          break;
+        case 'every-3-weeks':
+          lastDate.setDate(lastDate.getDate() + 21);
+          break;
+        case 'every-month':
+          lastDate.setMonth(lastDate.getMonth() + 1);
+          break;
+        case 'every-1.5-months':
+          lastDate.setDate(lastDate.getDate() + 45);
+          break;
+        case 'every-2-months':
+          lastDate.setMonth(lastDate.getMonth() + 2);
+          break;
+        case 'every-3-months':
+          lastDate.setMonth(lastDate.getMonth() + 3);
+          break;
+        case 'every-year':
+          lastDate.setFullYear(lastDate.getFullYear() + 1);
+          break;
+      }
+      return lastDate.toISOString().slice(0, 10);
+    })();
+
+    setEntries((prev) => [
+      ...prev,
+      {
+        date: nextDate,
+        amount: perPeriodInterest,
+        originalAmount: perPeriodInterest,
+      },
+    ]);
+  };
+
   const totalAdditionalInterest = entries.reduce((sum, e) => sum + e.amount, 0);
 
   const handleApply = async () => {
@@ -341,12 +387,7 @@ export function OverdueInterestCard({
           </Select>
         </div>
 
-        {entries.length === 0 ? (
-          <p className="text-center py-4 text-muted-foreground text-sm px-12 sm:px-20">
-            No additional interest periods to compute. The loan may have just
-            become overdue or has still pending interest periods.
-          </p>
-        ) : (
+        {entries.length > 0 && (
           <div className="space-y-3">
             <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-medium text-muted-foreground px-1">
               <span>Due Date</span>
@@ -382,6 +423,24 @@ export function OverdueInterestCard({
               </div>
             ))}
           </div>
+        )}
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleAddEntry}
+          className="w-full border-dashed"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add More
+        </Button>
+
+        {entries.length === 0 && (
+          <p className="text-center py-2 text-muted-foreground text-sm">
+            No interest entries yet. Use the interval selector or add rows
+            manually.
+          </p>
         )}
 
         {entries.length > 0 && (
