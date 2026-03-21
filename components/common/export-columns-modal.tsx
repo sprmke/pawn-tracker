@@ -13,39 +13,39 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, CheckSquare, Square } from 'lucide-react';
-import { CSVColumn } from '@/lib/csv-export';
+import { FileText, CheckSquare, Square, Loader2 } from 'lucide-react';
+import { PDFSection } from '@/lib/pdf-export';
 
 interface ExportColumnsModalProps<T> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  columns: CSVColumn<T>[];
-  onExport: (selectedColumns: CSVColumn<T>[]) => void;
+  sections: PDFSection<T>[];
+  onExport: (selectedSections: PDFSection<T>[]) => void | Promise<void>;
   title?: string;
   description?: string;
+  isGenerating?: boolean;
 }
 
 export function ExportColumnsModal<T>({
   open,
   onOpenChange,
-  columns,
+  sections,
   onExport,
-  title = 'Select Columns to Export',
-  description = 'Choose which columns you want to include in the exported CSV file.',
+  title = 'Configure PDF Export',
+  description = 'Choose which sections to include in the exported PDF.',
+  isGenerating = false,
 }: ExportColumnsModalProps<T>) {
-  // Track selected column indices (all selected by default)
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(
-    new Set(columns.map((_, index) => index))
+    new Set(sections.map((_, index) => index))
   );
 
-  // Reset selections when modal opens or columns change
   useEffect(() => {
     if (open) {
-      setSelectedIndices(new Set(columns.map((_, index) => index)));
+      setSelectedIndices(new Set(sections.map((_, index) => index)));
     }
-  }, [open, columns]);
+  }, [open, sections]);
 
-  const handleToggleColumn = (index: number) => {
+  const handleToggleSection = (index: number) => {
     setSelectedIndices((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(index)) {
@@ -58,46 +58,42 @@ export function ExportColumnsModal<T>({
   };
 
   const handleSelectAll = () => {
-    setSelectedIndices(new Set(columns.map((_, index) => index)));
+    setSelectedIndices(new Set(sections.map((_, index) => index)));
   };
 
   const handleDeselectAll = () => {
     setSelectedIndices(new Set());
   };
 
-  const handleExport = () => {
-    const selectedColumns = columns.filter((_, index) =>
+  const handleExport = async () => {
+    const selectedSections = sections.filter((_, index) =>
       selectedIndices.has(index)
     );
-
-    if (selectedColumns.length === 0) {
-      alert('Please select at least one column to export');
-      return;
-    }
-
-    onExport(selectedColumns);
-    onOpenChange(false);
+    await onExport(selectedSections);
   };
 
-  const allSelected = selectedIndices.size === columns.length;
+  const allSelected = selectedIndices.size === sections.length;
   const noneSelected = selectedIndices.size === 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={isGenerating ? undefined : onOpenChange}>
+      <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            {title}
+          </DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Select/Deselect All Buttons */}
+          {/* Select/Deselect All */}
           <div className="flex items-center gap-2 pb-3 border-b">
             <Button
               variant="outline"
               size="sm"
               onClick={handleSelectAll}
-              disabled={allSelected}
+              disabled={allSelected || isGenerating}
               className="flex-1"
             >
               <CheckSquare className="mr-2 h-4 w-4" />
@@ -107,7 +103,7 @@ export function ExportColumnsModal<T>({
               variant="outline"
               size="sm"
               onClick={handleDeselectAll}
-              disabled={noneSelected}
+              disabled={noneSelected || isGenerating}
               className="flex-1"
             >
               <Square className="mr-2 h-4 w-4" />
@@ -115,27 +111,36 @@ export function ExportColumnsModal<T>({
             </Button>
           </div>
 
-          {/* Column Selection List */}
-          <ScrollArea className="h-[300px] pr-4">
+          {/* Section Selection List */}
+          <ScrollArea className="h-[280px] pr-4">
             <div className="space-y-1">
-              {columns.map((column, index) => (
+              {sections.map((section, index) => (
                 <div
-                  key={index}
-                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => handleToggleColumn(index)}
+                  key={section.key}
+                  className="flex items-start space-x-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => !isGenerating && handleToggleSection(index)}
                 >
                   <Checkbox
-                    id={`column-${index}`}
+                    id={`section-${section.key}`}
                     checked={selectedIndices.has(index)}
-                    onCheckedChange={() => handleToggleColumn(index)}
+                    onCheckedChange={() => handleToggleSection(index)}
                     onClick={(e) => e.stopPropagation()}
+                    disabled={isGenerating}
+                    className="mt-0.5"
                   />
-                  <Label
-                    htmlFor={`column-${index}`}
-                    className="flex-1 cursor-pointer font-medium text-sm"
-                  >
-                    {column.header}
-                  </Label>
+                  <div className="flex-1">
+                    <Label
+                      htmlFor={`section-${section.key}`}
+                      className="cursor-pointer font-medium text-sm leading-none"
+                    >
+                      {section.header}
+                    </Label>
+                    {section.description && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {section.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -143,21 +148,34 @@ export function ExportColumnsModal<T>({
 
           {/* Selection Summary */}
           <div className="text-sm text-muted-foreground pt-3 border-t">
-            {selectedIndices.size} of {columns.length} columns selected
+            {selectedIndices.size} of {sections.length} sections selected
           </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isGenerating}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleExport}
-            disabled={noneSelected}
-            className="gap-2"
+            disabled={noneSelected || isGenerating}
+            className="gap-2 min-w-[130px]"
           >
-            <Download className="h-4 w-4" />
-            Export CSV
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generating…
+              </>
+            ) : (
+              <>
+                <FileText className="h-4 w-4" />
+                Export PDF
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
