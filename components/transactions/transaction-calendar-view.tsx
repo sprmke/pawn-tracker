@@ -56,7 +56,6 @@ export function TransactionCalendarView({
       },
       renderEventCard,
       alwaysShowSummary: true,
-      allEvents: calendarEvents,
       legendGroups: [
         {
           title: 'Out',

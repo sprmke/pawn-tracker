@@ -10,11 +10,7 @@ import {
   useRegisterDialogFormState,
 } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
-import {
-  TransactionWithInvestor,
-  Investor,
-  LoanWithInvestors,
-} from '@/lib/types';
+import { TransactionWithInvestor, Investor } from '@/lib/types';
 import { TransactionDetailContent } from './transaction-detail-content';
 import { DetailModalHeader } from '@/components/common';
 import {
@@ -40,7 +36,6 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { toLocalDateString } from '@/lib/date-utils';
-import { LoanDetailModal } from '@/components/loans/loan-detail-modal';
 
 interface TransactionDetailModalProps {
   transaction: TransactionWithInvestor | null;
@@ -60,10 +55,6 @@ export function TransactionDetailModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [investors, setInvestors] = useState<Investor[]>([]);
-  const [showLoanModal, setShowLoanModal] = useState(false);
-  const [selectedLoan, setSelectedLoan] = useState<LoanWithInvestors | null>(
-    null
-  );
   const [transaction, setTransaction] =
     useState<TransactionWithInvestor | null>(initialTransaction);
 
@@ -90,7 +81,7 @@ export function TransactionDetailModal({
   // Form state
   const [formData, setFormData] = useState({
     name: '',
-    type: 'Investment' as 'Loan' | 'Investment',
+    type: 'Investment' as 'Investment',
     direction: 'In' as 'In' | 'Out',
     amount: '',
     date: '',
@@ -155,32 +146,6 @@ export function TransactionDetailModal({
     }
   };
 
-  const handleViewLoan = async () => {
-    if (!transaction.loanId) {
-      toast.error('This transaction is not linked to a loan.');
-      return;
-    }
-
-    try {
-      // Fetch loan data
-      const response = await fetch(`/api/loans/${transaction.loanId}`);
-      if (!response.ok) throw new Error('Failed to fetch loan');
-
-      const loan = await response.json();
-      setSelectedLoan(loan);
-      setShowLoanModal(true);
-    } catch (error) {
-      console.error('Error fetching loan:', error);
-      toast.error('Failed to load loan details');
-    }
-  };
-
-  const handleLoanModalUpdate = async () => {
-    // Refresh transaction data if needed
-    await fetchTransaction();
-  };
-
-  const isLoanTransaction = transaction?.type === 'Loan';
 
   const handleUpdate = async () => {
     setIsSubmitting(true);
@@ -241,10 +206,6 @@ export function TransactionDetailModal({
                   onEdit={() => setIsEditing(true)}
                   onDelete={() => setShowDeleteDialog(true)}
                   onClose={() => onOpenChange(false)}
-                  canEdit={!isLoanTransaction}
-                  editDisabledReason="Loan transactions cannot be edited directly. Please edit the loan instead."
-                  onViewLoan={handleViewLoan}
-                  showViewLoan={isLoanTransaction}
                 />
               </div>
             </DialogHeader>
@@ -321,7 +282,6 @@ export function TransactionDetailModal({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Loan">Loan</SelectItem>
                             <SelectItem value="Investment">
                               Investment
                             </SelectItem>
@@ -439,12 +399,6 @@ export function TransactionDetailModal({
         </AlertDialogContent>
       </AlertDialog>
 
-      <LoanDetailModal
-        loan={selectedLoan}
-        open={showLoanModal}
-        onOpenChange={setShowLoanModal}
-        onUpdate={handleLoanModalUpdate}
-      />
     </>
   );
 }

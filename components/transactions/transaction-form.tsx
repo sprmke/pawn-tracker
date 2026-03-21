@@ -1,10 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useId, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,54 +16,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useRegisterDialogFormState } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { FormHeader } from '@/components/common';
 import { toLocalDateString } from '@/lib/date-utils';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Calendar, UserPlus } from 'lucide-react';
+import { Plus, Trash2, UserPlus, Calendar, X } from 'lucide-react';
 import type { Investor } from '@/lib/types';
 import { InvestorFormModal } from '@/components/investors/investor-form-modal';
+import { MultiSelectFilter } from '@/components/common/multi-select-filter';
 
-// Schema for form validation
-const baseSchema = z.object({
-  name: z.string().min(1, 'Name/Label is required'),
-  template: z.enum(['None', 'Credit Card']),
-});
-
-// Extended schema for None template (standard transaction)
-const standardTransactionSchema = baseSchema.extend({
-  direction: z.enum(['In', 'Out']),
-  amount: z.string().min(1, 'Amount is required'),
-  transactionDate: z.string().min(1, 'Transaction date is required'),
-  isRecurring: z.boolean(),
-  duration: z.string().optional(),
-  interval: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-// Extended schema for Credit Card
-const creditCardSchema = baseSchema.extend({
-  loanAmount: z.string().min(1, 'Loan amount is required'),
-  loanDate: z.string().min(1, 'Loan date is required'),
-  dueDates: z.string().min(1, 'Due dates is required'),
-  duration: z.string().min(1, 'Duration is required'),
-  interestType: z.enum(['fixed', 'rate']),
-  interestValue: z.string().min(1, 'Interest value is required'),
-  otherFees: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-// Union schema that validates based on template
-const transactionSchema = z.discriminatedUnion('template', [
-  standardTransactionSchema.extend({
-    template: z.literal('None'),
-  }),
-  creditCardSchema.extend({
-    template: z.literal('Credit Card'),
-  }),
-]);
-
-type TransactionFormData = z.infer<typeof transactionSchema>;
+interface TransactionEntry {
+  id: string;
+  name: string;
+  direction: 'In' | 'Out';
+  amount: string;
+  transactionDate: string;
+  isRecurring: boolean;
+  duration: string;
+  interval: string;
+  notes: string;
+}
 
 interface RecurringDate {
   date: Date;
@@ -80,6 +47,303 @@ interface TransactionFormProps {
   onCancel?: () => void;
 }
 
+const INTERVAL_OPTIONS = [
+  { value: 'every-week', label: 'Every week' },
+  { value: 'every-2-weeks', label: 'Every 2 weeks' },
+  { value: 'every-3-weeks', label: 'Every 3 weeks' },
+  { value: 'every-month', label: 'Every month' },
+  { value: 'every-1.5-months', label: 'Every 1½ month' },
+  { value: 'every-2-months', label: 'Every 2 months' },
+  { value: 'every-3-months', label: 'Every 3 months' },
+  { value: 'every-year', label: 'Every year' },
+];
+
+function makeEntry(id: string): TransactionEntry {
+  return {
+    id,
+    name: '',
+    direction: 'In',
+    amount: '',
+    transactionDate: toLocalDateString(new Date()),
+    isRecurring: false,
+    duration: '',
+    interval: '',
+    notes: '',
+  };
+}
+
+function calculateRecurringDates(
+  entry: TransactionEntry,
+): RecurringDate[] {
+  const { transactionDate, duration, interval, name } = entry;
+  if (!transactionDate || !duration || !interval) return [];
+
+  const count = parseInt(duration);
+  if (isNaN(count) || count <= 0) return [];
+
+  const start = new Date(transactionDate);
+  const transactionName = name || 'Transaction';
+  const dates: RecurringDate[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const currentDate = new Date(start);
+    switch (interval) {
+      case 'every-week':
+        currentDate.setDate(currentDate.getDate() + i * 7);
+        break;
+      case 'every-2-weeks':
+        currentDate.setDate(currentDate.getDate() + i * 14);
+        break;
+      case 'every-3-weeks':
+        currentDate.setDate(currentDate.getDate() + i * 21);
+        break;
+      case 'every-month':
+        currentDate.setMonth(currentDate.getMonth() + i);
+        break;
+      case 'every-1.5-months':
+        currentDate.setMonth(currentDate.getMonth() + Math.floor(i * 1.5));
+        currentDate.setDate(currentDate.getDate() + (i % 2 === 1 ? 15 : 0));
+        break;
+      case 'every-2-months':
+        currentDate.setMonth(currentDate.getMonth() + i * 2);
+        break;
+      case 'every-3-months':
+        currentDate.setMonth(currentDate.getMonth() + i * 3);
+        break;
+      case 'every-year':
+        currentDate.setFullYear(currentDate.getFullYear() + i);
+        break;
+    }
+    dates.push({
+      date: currentDate,
+      label: `${transactionName} - ${i + 1}/${count}`,
+    });
+  }
+
+  return dates;
+}
+
+const formatPHP = (amount: number) =>
+  new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount);
+
+// ─── Single entry card ──────────────────────────────────────────────────────
+
+interface EntryCardProps {
+  entry: TransactionEntry;
+  index: number;
+  total: number;
+  errors: Record<string, string>;
+  onChange: (id: string, field: keyof TransactionEntry, value: any) => void;
+  onRemove: (id: string) => void;
+}
+
+function TransactionEntryCard({
+  entry,
+  index,
+  total,
+  errors,
+  onChange,
+  onRemove,
+}: EntryCardProps) {
+  const recurringDates =
+    entry.isRecurring ? calculateRecurringDates(entry) : [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg sm:text-xl">
+            Transaction Details
+            {total > 1 && (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                #{index + 1}
+              </span>
+            )}
+          </CardTitle>
+          {total > 1 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onRemove(entry.id)}
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Name */}
+        <div className="space-y-2">
+          <Label>Name / Label *</Label>
+          <Input
+            value={entry.name}
+            onChange={(e) => onChange(entry.id, 'name', e.target.value)}
+            placeholder="e.g., Payment, Salary, Expenses"
+          />
+          {errors.name && (
+            <p className="text-sm text-red-600">{errors.name}</p>
+          )}
+        </div>
+
+        {/* Direction / Amount / Date */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-2">
+            <Label>Direction *</Label>
+            <Select
+              value={entry.direction}
+              onValueChange={(v) => onChange(entry.id, 'direction', v as 'In' | 'Out')}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="In">In</SelectItem>
+                <SelectItem value="Out">Out</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Amount *</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={entry.amount}
+              onChange={(e) => onChange(entry.id, 'amount', e.target.value)}
+              placeholder="0.00"
+            />
+            {errors.amount && (
+              <p className="text-sm text-red-600">{errors.amount}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Transaction Date *</Label>
+            <DatePicker
+              value={entry.transactionDate}
+              onChange={(date) => onChange(entry.id, 'transactionDate', date)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Used as start date for recurring.
+            </p>
+            {errors.transactionDate && (
+              <p className="text-sm text-red-600">{errors.transactionDate}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Recurring */}
+        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id={`isRecurring-${entry.id}`}
+              checked={entry.isRecurring}
+              onChange={(e) => onChange(entry.id, 'isRecurring', e.target.checked)}
+              className="h-4 w-4"
+            />
+            <Label htmlFor={`isRecurring-${entry.id}`} className="cursor-pointer">
+              Is Recurring?
+            </Label>
+          </div>
+
+          {entry.isRecurring && (
+            <div className="space-y-4 pt-4 border-t">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Number of Transactions *</Label>
+                  <Input
+                    type="number"
+                    value={entry.duration}
+                    onChange={(e) => onChange(entry.id, 'duration', e.target.value)}
+                    placeholder="e.g., 12"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Interval *</Label>
+                  <Select
+                    value={entry.interval}
+                    onValueChange={(v) => onChange(entry.id, 'interval', v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select interval..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INTERVAL_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Recurring preview */}
+              {recurringDates.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    Preview — {recurringDates.length} transaction
+                    {recurringDates.length !== 1 ? 's' : ''}
+                  </p>
+                  <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                    {recurringDates.map((item, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between p-2 border rounded bg-background text-xs"
+                      >
+                        <span className="text-muted-foreground">
+                          {item.date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </span>
+                        <span
+                          className={
+                            entry.direction === 'In'
+                              ? 'text-emerald-600 font-medium'
+                              : 'text-rose-600 font-medium'
+                          }
+                        >
+                          {entry.direction === 'In' ? '+' : '-'}
+                          {formatPHP(parseFloat(entry.amount) || 0)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between text-xs pt-1 border-t">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className="font-semibold">
+                      {formatPHP((parseFloat(entry.amount) || 0) * recurringDates.length)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Notes */}
+        <div className="space-y-2">
+          <Label>Notes (optional)</Label>
+          <textarea
+            value={entry.notes}
+            onChange={(e) => onChange(entry.id, 'notes', e.target.value)}
+            placeholder="Add any additional notes..."
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main form ──────────────────────────────────────────────────────────────
+
 export function TransactionForm({
   investors: initialInvestors,
   preselectedInvestorId,
@@ -87,200 +351,57 @@ export function TransactionForm({
   onCancel,
 }: TransactionFormProps) {
   const router = useRouter();
-  const formRef = useRef<HTMLFormElement>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [recurringDates, setRecurringDates] = useState<RecurringDate[]>([]);
+  const baseId = useId();
+  const entryCounterRef = useRef(1);
 
-  // State for investors list (can be updated when new investor is added)
+  const makeEmptyEntry = (): TransactionEntry =>
+    makeEntry(`${baseId}-${entryCounterRef.current++}`);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [investors, setInvestors] = useState<Investor[]>(initialInvestors);
-  const [selectedInvestorId, setSelectedInvestorId] = useState<number | null>(
-    preselectedInvestorId || null,
-  );
-  const [investorSelectValue, setInvestorSelectValue] = useState<string>(
-    preselectedInvestorId ? preselectedInvestorId.toString() : '',
+  const [selectedInvestorIds, setSelectedInvestorIds] = useState<string[]>(
+    preselectedInvestorId ? [preselectedInvestorId.toString()] : [],
   );
   const [showInvestorModal, setShowInvestorModal] = useState(false);
+  // Initial entry uses a stable SSR-safe id derived from useId()
+  const [entries, setEntries] = useState<TransactionEntry[]>([makeEntry(`${baseId}-0`)]);
+  const [entryErrors, setEntryErrors] = useState<Record<string, Record<string, string>>>({});
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors, isDirty },
-  } = useForm<any>({
-    resolver: zodResolver(transactionSchema),
-    defaultValues: {
-      template: 'None',
-      direction: 'In',
-      isRecurring: false,
-      interestType: 'fixed',
-      transactionDate: toLocalDateString(new Date()),
-      loanDate: toLocalDateString(new Date()),
-    },
-  });
+  const hasChanges =
+    selectedInvestorIds.length > 0 ||
+    entries.some((e) => e.name || e.amount || e.notes);
 
-  // Track if form has changes (including investor selection)
-  const hasChanges = isDirty || selectedInvestorId !== null;
-
-  // Register form state with dialog to prevent accidental close
   useRegisterDialogFormState(hasChanges, isSubmitting);
 
-  const watchTemplate = watch('template');
-  const watchName = watch('name');
-  const watchDirection = watch('direction');
-  const watchDuration = watch('duration');
-  const watchInterval = watch('interval');
-  const watchTransactionDate = watch('transactionDate');
-  const watchLoanDate = watch('loanDate');
-  const watchDueDates = watch('dueDates');
-  const watchCreditCardDuration = watch('duration');
-  const watchInterestType = watch('interestType');
-  const watchAmount = watch('amount');
-  const watchOtherFees = watch('otherFees');
-
-  // Calculate recurring dates for None template (standard transactions)
-  const calculateRecurringDates = (
-    startDate: string,
-    numTransactions: string,
-    interval: string,
-    name: string = '',
-  ): RecurringDate[] => {
-    if (!startDate || !numTransactions || !interval) return [];
-
-    const dates: RecurringDate[] = [];
-    const start = new Date(startDate);
-    const count = parseInt(numTransactions);
-
-    if (isNaN(count) || count <= 0) return [];
-
-    const transactionName = name || 'Transaction';
-
-    for (let i = 0; i < count; i++) {
-      let currentDate = new Date(start);
-
-      switch (interval) {
-        case 'every-week':
-          currentDate.setDate(currentDate.getDate() + i * 7);
-          break;
-        case 'every-2-weeks':
-          currentDate.setDate(currentDate.getDate() + i * 14);
-          break;
-        case 'every-3-weeks':
-          currentDate.setDate(currentDate.getDate() + i * 21);
-          break;
-        case 'every-month':
-          currentDate.setMonth(currentDate.getMonth() + i);
-          break;
-        case 'every-1.5-months':
-          // Add 1.5 months = 1 month + 15 days
-          currentDate.setMonth(currentDate.getMonth() + Math.floor(i * 1.5));
-          currentDate.setDate(currentDate.getDate() + (i % 2 === 1 ? 15 : 0));
-          break;
-        case 'every-2-months':
-          currentDate.setMonth(currentDate.getMonth() + i * 2);
-          break;
-        case 'every-3-months':
-          currentDate.setMonth(currentDate.getMonth() + i * 3);
-          break;
-        case 'every-year':
-          currentDate.setFullYear(currentDate.getFullYear() + i);
-          break;
-      }
-
-      dates.push({
-        date: currentDate,
-        label: `${transactionName} - ${i + 1}/${count}`,
+  const handleEntryChange = (id: string, field: keyof TransactionEntry, value: any) => {
+    setEntries((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, [field]: value } : e)),
+    );
+    // Clear error for this field on change
+    if (entryErrors[id]?.[field]) {
+      setEntryErrors((prev) => {
+        const next = { ...prev };
+        if (next[id]) {
+          next[id] = { ...next[id] };
+          delete next[id][field];
+        }
+        return next;
       });
     }
-
-    return dates;
   };
 
-  // Calculate recurring dates for Credit Card
-  const calculateCreditCardDates = (
-    loanDate: string,
-    dueDate: string,
-    duration: string,
-    name: string = '',
-  ): RecurringDate[] => {
-    if (!loanDate || !dueDate || !duration) return [];
+  const handleAddEntry = () => {
+    setEntries((prev) => [...prev, makeEmptyEntry()]);
+  };
 
-    const dates: RecurringDate[] = [];
-    const start = new Date(dueDate);
-    const months = parseInt(duration);
 
-    if (isNaN(months) || months <= 0) return [];
-
-    const transactionName = name || 'Transaction';
-
-    // Add the loan date as the first transaction (IN)
-    dates.push({
-      date: new Date(loanDate),
-      label: `${transactionName} - Loan`,
+  const handleRemoveEntry = (id: string) => {
+    setEntries((prev) => prev.filter((e) => e.id !== id));
+    setEntryErrors((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
     });
-
-    // Add monthly payments (OUT)
-    for (let i = 0; i < months; i++) {
-      const currentDate = new Date(start);
-      currentDate.setMonth(currentDate.getMonth() + i);
-      dates.push({
-        date: currentDate,
-        label: `${transactionName} - Payment ${i + 1}/${months}`,
-      });
-    }
-
-    return dates;
-  };
-
-  // Update recurring dates when relevant fields change
-  const updateRecurringPreview = () => {
-    if (watchTemplate === 'Credit Card') {
-      const dates = calculateCreditCardDates(
-        watchLoanDate,
-        watchDueDates,
-        watchCreditCardDuration,
-        watchName,
-      );
-      setRecurringDates(dates);
-    } else if (isRecurring) {
-      const dates = calculateRecurringDates(
-        watchTransactionDate,
-        watchDuration,
-        watchInterval,
-        watchName,
-      );
-      setRecurringDates(dates);
-    } else {
-      setRecurringDates([]);
-    }
-  };
-
-  // Effect to update preview when fields change
-  useEffect(() => {
-    updateRecurringPreview();
-  }, [
-    watchTemplate,
-    watchName,
-    watchTransactionDate,
-    watchDuration,
-    watchInterval,
-    isRecurring,
-    watchLoanDate,
-    watchDueDates,
-    watchCreditCardDuration,
-  ]);
-
-  const handleInvestorSelect = (investorId: string) => {
-    // Check if user wants to create new investor
-    if (investorId === 'new') {
-      setShowInvestorModal(true);
-      setInvestorSelectValue('');
-      return;
-    }
-
-    setSelectedInvestorId(parseInt(investorId));
-    setInvestorSelectValue(investorId);
   };
 
   const handleNewInvestorSuccess = (newInvestor: {
@@ -288,142 +409,109 @@ export function TransactionForm({
     name: string;
     email: string;
   }) => {
-    // Convert to full Investor type with dates
     const fullInvestor: Investor = {
       ...newInvestor,
       contactNumber: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-
-    // Add the new investor to the list
-    setInvestors([...investors, fullInvestor]);
-
-    // Automatically select the new investor
-    setSelectedInvestorId(fullInvestor.id);
-    setInvestorSelectValue(fullInvestor.id.toString());
+    setInvestors((prev) => [...prev, fullInvestor]);
+    setSelectedInvestorIds((prev) => [...prev, fullInvestor.id.toString()]);
   };
 
-  const onSubmit = async (data: any) => {
-    // Validate investor is selected
-    if (!selectedInvestorId) {
-      toast.error('Please select an investor');
+  const handleRemoveInvestor = (id: string) => {
+    setSelectedInvestorIds((prev) => prev.filter((v) => v !== id));
+  };
+
+  const validate = (): boolean => {
+    const errors: Record<string, Record<string, string>> = {};
+    let valid = true;
+
+    entries.forEach((entry) => {
+      const e: Record<string, string> = {};
+      if (!entry.name.trim()) { e.name = 'Name / Label is required'; valid = false; }
+      if (!entry.amount || parseFloat(entry.amount) <= 0) { e.amount = 'A valid amount is required'; valid = false; }
+      if (!entry.transactionDate) { e.transactionDate = 'Date is required'; valid = false; }
+      if (Object.keys(e).length) errors[entry.id] = e;
+    });
+
+    setEntryErrors(errors);
+    return valid;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (selectedInvestorIds.length === 0) {
+      toast.error('Please select at least one investor');
+      return;
+    }
+
+    if (!validate()) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const isCreditCard = data.template === 'Credit Card';
+      const transactionsToCreate: any[] = [];
 
-      // Prepare transactions array
-      const transactions: any[] = [];
+      for (const investorIdStr of selectedInvestorIds) {
+        const investorId = parseInt(investorIdStr);
 
-      if (isCreditCard) {
-        // Credit Card: Create IN transaction for loan + OUT transactions for payments
-        const loanAmount = parseFloat(data.loanAmount);
-        const duration = parseInt(data.duration);
-        const interestValue = parseFloat(data.interestValue);
-        const otherFees = parseFloat(data.otherFees || '0');
-        const monthlyInterest =
-          data.interestType === 'rate'
-            ? loanAmount * (interestValue / 100)
-            : interestValue;
-        const monthlyPayment = loanAmount / duration + monthlyInterest;
+        for (const entry of entries) {
+          const amount = parseFloat(entry.amount);
 
-        // Calculate balance progression
-        let currentBalance = 0;
-
-        // Add loan transaction (IN)
-        currentBalance += loanAmount;
-        transactions.push({
-          investorId: selectedInvestorId,
-          date: new Date(data.loanDate).toISOString(),
-          type: 'Loan',
-          direction: 'In',
-          name: data.name + ' - Loan',
-          amount: loanAmount.toFixed(2),
-          balance: currentBalance.toFixed(2),
-          notes: data.notes || '',
-        });
-
-        // Add payment transactions (OUT)
-        const dueDate = new Date(data.dueDates);
-        for (let i = 0; i < duration; i++) {
-          const currentDueDate = new Date(dueDate);
-          currentDueDate.setMonth(currentDueDate.getMonth() + i);
-
-          // Add other fees to first payment only
-          const paymentAmount =
-            i === 0 ? monthlyPayment + otherFees : monthlyPayment;
-          currentBalance -= paymentAmount;
-
-          transactions.push({
-            investorId: selectedInvestorId,
-            date: currentDueDate.toISOString(),
-            type: 'Loan',
-            direction: 'Out',
-            name: data.name + ` - Payment ${i + 1}/${duration}`,
-            amount: paymentAmount.toFixed(2),
-            balance: currentBalance.toFixed(2),
-            notes: data.notes || '',
-          });
-        }
-      } else if (data.isRecurring && recurringDates.length > 0) {
-        // Recurring transactions
-        const amount = parseFloat(data.amount);
-        let currentBalance = 0;
-
-        recurringDates.forEach((dateInfo, index) => {
-          if (data.direction === 'In') {
-            currentBalance += amount;
+          if (entry.isRecurring) {
+            const dates = calculateRecurringDates(entry);
+            if (dates.length === 0) {
+              toast.error(`Entry "${entry.name}": Please configure recurring settings`);
+              setIsSubmitting(false);
+              return;
+            }
+            let runningBalance = 0;
+            dates.forEach((dateInfo, index) => {
+              runningBalance += entry.direction === 'In' ? amount : -amount;
+              transactionsToCreate.push({
+                investorId,
+                date: dateInfo.date.toISOString(),
+                type: 'Investment',
+                direction: entry.direction,
+                name: `${entry.name} - ${index + 1}/${dates.length}`,
+                amount: amount.toFixed(2),
+                balance: runningBalance.toFixed(2),
+                notes: entry.notes || '',
+              });
+            });
           } else {
-            currentBalance -= amount;
+            const balance = entry.direction === 'In' ? amount : -amount;
+            transactionsToCreate.push({
+              investorId,
+              date: new Date(entry.transactionDate).toISOString(),
+              type: 'Investment',
+              direction: entry.direction,
+              name: entry.name,
+              amount: amount.toFixed(2),
+              balance: balance.toFixed(2),
+              notes: entry.notes || '',
+            });
           }
-
-          transactions.push({
-            investorId: selectedInvestorId,
-            date: dateInfo.date.toISOString(),
-            type: 'Investment',
-            direction: data.direction,
-            name: `${data.name} - ${index + 1}/${recurringDates.length}`,
-            amount: amount.toFixed(2),
-            balance: currentBalance.toFixed(2),
-            notes: data.notes || '',
-          });
-        });
-      } else {
-        // Single transaction
-        const amount = parseFloat(data.amount);
-        const balance = data.direction === 'In' ? amount : -amount;
-
-        transactions.push({
-          investorId: selectedInvestorId,
-          date: new Date(data.transactionDate).toISOString(),
-          type: 'Investment',
-          direction: data.direction,
-          name: data.name,
-          amount: amount.toFixed(2),
-          balance: balance.toFixed(2),
-          notes: data.notes || '',
-        });
+        }
       }
 
-      // Create all transactions via API
-      const createPromises = transactions.map((transaction) =>
-        fetch('/api/transactions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(transaction),
-        }),
+      await Promise.all(
+        transactionsToCreate.map((t) =>
+          fetch('/api/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(t),
+          }),
+        ),
       );
 
-      await Promise.all(createPromises);
-
       toast.success(
-        `Successfully created ${transactions.length} transaction${
-          transactions.length > 1 ? 's' : ''
-        }!`,
+        `Successfully created ${transactionsToCreate.length} transaction${transactionsToCreate.length !== 1 ? 's' : ''}!`,
       );
 
       if (onSuccess) {
@@ -433,15 +521,11 @@ export function TransactionForm({
         router.refresh();
       }
     } catch (error) {
-      console.error('Error creating transaction:', error);
-      toast.error('Failed to create transaction. Please try again.');
+      console.error('Error creating transactions:', error);
+      toast.error('Failed to create transactions. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleFormSubmit = () => {
-    formRef.current?.requestSubmit();
   };
 
   const handleCancelClick = () => {
@@ -452,582 +536,116 @@ export function TransactionForm({
     }
   };
 
-  const isCreditCard = watchTemplate === 'Credit Card';
+  const transactionsPerInvestor = entries.reduce((sum, entry) => {
+    if (entry.isRecurring) {
+      const dates = calculateRecurringDates(entry);
+      return sum + (dates.length || 1);
+    }
+    return sum + 1;
+  }, 0);
+
+  const totalTransactionCount = transactionsPerInvestor * Math.max(selectedInvestorIds.length, 1);
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <FormHeader
         title="Create Transaction"
-        description="Add a new transaction"
+        description="Add a new investment transaction"
         onCancel={handleCancelClick}
-        onSubmit={handleFormSubmit}
+        onSubmit={() => {}}
         isSubmitting={isSubmitting}
         isEditMode={false}
-        submitLabel={isSubmitting ? 'Creating...' : 'Create Transaction'}
+        submitLabel={isSubmitting ? 'Creating...' : `Create Transaction${entries.length > 1 ? 's' : ''}`}
       />
 
       {/* Investor Selection */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Select Investor</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Select Investors</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label>Investor *</Label>
-            <Select
-              value={investorSelectValue}
-              onValueChange={handleInvestorSelect}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select an investor..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="new" className="text-primary font-medium">
-                  <div className="flex items-center gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    <span>Add New Investor</span>
-                  </div>
-                </SelectItem>
-                {investors.length > 0 && (
-                  <div className="h-px bg-border my-1" />
-                )}
-                {investors.map((investor) => (
-                  <SelectItem key={investor.id} value={investor.id.toString()}>
-                    {investor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">
-            Transaction Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Common Fields */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name / Label *</Label>
-              <Input
-                id="name"
-                {...register('name')}
-                placeholder="e.g., Payment, Salary, Expenses, Credit Card"
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <MultiSelectFilter
+                options={investors.map((inv) => ({
+                  value: inv.id.toString(),
+                  label: inv.name,
+                }))}
+                selected={selectedInvestorIds}
+                onChange={setSelectedInvestorIds}
+                placeholder="Select investors"
+                allLabel="Select investors..."
+                triggerClassName="w-full h-10"
               />
-              {errors.name && (
-                <p className="text-sm text-red-600">
-                  {String(errors.name.message)}
-                </p>
-              )}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="template">Template *</Label>
-              <Select
-                value={watchTemplate}
-                onValueChange={(value) => setValue('template', value as any)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="None">None</SelectItem>
-                  <SelectItem value="Credit Card">Credit Card</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.template && (
-                <p className="text-sm text-red-600">
-                  {String(errors.template.message)}
-                </p>
-              )}
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowInvestorModal(true)}
+              className="h-10 px-3 shrink-0"
+            >
+              <UserPlus className="h-4 w-4 mr-1.5" />
+              New
+            </Button>
           </div>
 
-          {/* Fields for None template */}
-          {!isCreditCard && (
-            <>
-              <div className="grid gap-4 sm:grid-cols-3">
-                {/* Direction - Hide for Credit Card */}
-                {!isCreditCard && (
-                  <div className="space-y-2">
-                    <Label htmlFor="direction">Direction *</Label>
-                    <Select
-                      value={watchDirection}
-                      onValueChange={(value) => setValue('direction', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="In">In</SelectItem>
-                        <SelectItem value="Out">Out</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {errors.direction && (
-                      <p className="text-sm text-red-600">
-                        {String(errors.direction.message)}
-                      </p>
-                    )}
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Amount *</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    {...register('amount')}
-                    placeholder="0.00"
-                  />
-                  {errors.amount && (
-                    <p className="text-sm text-red-600">
-                      {String(errors.amount.message)}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="transactionDate">Transaction Date *</Label>
-                  <DatePicker
-                    id="transactionDate"
-                    value={watchTransactionDate}
-                    onChange={(date) => setValue('transactionDate', date)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    This will be used for succeeding dates.
-                  </p>
-                  {errors.transactionDate && (
-                    <p className="text-sm text-red-600">
-                      {String(errors.transactionDate.message)}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Recurring Section */}
-              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="isRecurring"
-                    checked={isRecurring}
-                    onChange={(e) => {
-                      setIsRecurring(e.target.checked);
-                      setValue('isRecurring', e.target.checked);
-                    }}
-                    className="h-4 w-4"
-                  />
-                  <Label htmlFor="isRecurring" className="cursor-pointer">
-                    Is Recurring?
-                  </Label>
-                </div>
-
-                {isRecurring && (
-                  <div className="space-y-4 pt-4 border-t">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="duration">
-                          Number of Transactions *
-                        </Label>
-                        <Input
-                          id="duration"
-                          type="number"
-                          {...register('duration')}
-                          placeholder="e.g., 12"
-                        />
-                        {errors.duration && (
-                          <p className="text-sm text-red-600">
-                            {String(errors.duration.message)}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="interval">Interval *</Label>
-                        <Select
-                          value={watchInterval}
-                          onValueChange={(value) => setValue('interval', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select interval..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="every-week">
-                              Every week
-                            </SelectItem>
-                            <SelectItem value="every-2-weeks">
-                              Every 2 weeks
-                            </SelectItem>
-                            <SelectItem value="every-3-weeks">
-                              Every 3 weeks
-                            </SelectItem>
-                            <SelectItem value="every-month">
-                              Every month
-                            </SelectItem>
-                            <SelectItem value="every-1.5-months">
-                              Every 1½ month
-                            </SelectItem>
-                            <SelectItem value="every-2-months">
-                              Every 2 months
-                            </SelectItem>
-                            <SelectItem value="every-3-months">
-                              Every 3 months
-                            </SelectItem>
-                            <SelectItem value="every-year">
-                              Every year
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {errors.interval && (
-                          <p className="text-sm text-red-600">
-                            {String(errors.interval.message)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {/* Fields for Credit Card */}
-          {isCreditCard && (
-            <>
-              <Alert className="bg-blue-50 border-blue-200 [&>svg+div]:translate-y-[0] [&>svg]:text-blue-600">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-xs text-blue-800">
-                  <strong>Note:</strong> Credit card transactions automatically
-                  create an <strong>IN</strong> transaction for the loan amount
-                  and <strong>OUT</strong> transactions for each payment period.
-                </AlertDescription>
-              </Alert>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="loanAmount">Loan Amount *</Label>
-                  <Input
-                    id="loanAmount"
-                    type="number"
-                    step="0.01"
-                    {...register('loanAmount')}
-                    placeholder="0.00"
-                  />
-                  {errors.loanAmount && (
-                    <p className="text-sm text-red-600">
-                      {String(errors.loanAmount.message)}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="loanDate">Loan Date *</Label>
-                  <DatePicker
-                    id="loanDate"
-                    value={watchLoanDate}
-                    onChange={(date) => setValue('loanDate', date)}
-                  />
-                  {errors.loanDate && (
-                    <p className="text-sm text-red-600">
-                      {String(errors.loanDate.message)}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="dueDates">Due Dates *</Label>
-                  <DatePicker
-                    id="dueDates"
-                    value={watchDueDates}
-                    onChange={(date) => setValue('dueDates', date)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    These will be used for succeeding due dates.
-                  </p>
-                  {errors.dueDates && (
-                    <p className="text-sm text-red-600">
-                      {String(errors.dueDates.message)}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duration (months) *</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    {...register('duration')}
-                    placeholder="e.g., 12"
-                  />
-                  {errors.duration && (
-                    <p className="text-sm text-red-600">
-                      {String(errors.duration.message)}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Interest per Month *</Label>
-                <Tabs
-                  value={watchInterestType}
-                  onValueChange={(value) =>
-                    setValue('interestType', value as 'fixed' | 'rate')
-                  }
-                >
-                  <TabsList className="grid w-full grid-cols-2 h-8">
-                    <TabsTrigger value="fixed" className="text-xs">
-                      Fixed Amount (₱)
-                    </TabsTrigger>
-                    <TabsTrigger value="rate" className="text-xs">
-                      Interest Rate (%)
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="fixed" className="mt-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...register('interestValue')}
-                      placeholder="e.g., 5000.00"
-                    />
-                  </TabsContent>
-                  <TabsContent value="rate" className="mt-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...register('interestValue')}
-                      placeholder="e.g., 10"
-                    />
-                  </TabsContent>
-                </Tabs>
-                {errors.interestValue && (
-                  <p className="text-sm text-red-600">
-                    {String(errors.interestValue.message)}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="otherFees">Other Fees (one-time)</Label>
-                <Input
-                  id="otherFees"
-                  type="number"
-                  step="0.01"
-                  {...register('otherFees')}
-                  placeholder="0.00"
-                />
-                <p className="text-xs text-muted-foreground">
-                  One-time processing or service fees (optional)
-                </p>
-              </div>
-            </>
-          )}
-
-          {/* Notes Field - Common for all templates */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optional)</Label>
-            <textarea
-              id="notes"
-              {...register('notes')}
-              placeholder="Add any additional notes..."
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Preview Section */}
-      {recurringDates.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Preview - Projected Dates
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-96 overflow-y-auto space-y-2">
-              {recurringDates.map((item, index) => {
-                // Determine if this is IN or OUT
-                const isIncoming = isCreditCard
-                  ? index === 0 // First transaction is the loan (IN)
-                  : watchDirection === 'In';
-
-                // Calculate amount
-                const amount = isCreditCard
-                  ? index === 0
-                    ? parseFloat(watch('loanAmount') || '0')
-                    : (() => {
-                        const loanAmount = parseFloat(
-                          watch('loanAmount') || '0',
-                        );
-                        const duration = parseInt(
-                          watchCreditCardDuration || '1',
-                        );
-                        const interestValue = parseFloat(
-                          watch('interestValue') || '0',
-                        );
-                        const otherFees = parseFloat(watchOtherFees || '0');
-                        const monthlyInterest =
-                          watchInterestType === 'rate'
-                            ? loanAmount * (interestValue / 100)
-                            : interestValue;
-                        // Add other fees only to the first payment (index 1)
-                        const oneTimeFees = index === 1 ? otherFees : 0;
-                        return (
-                          loanAmount / duration + monthlyInterest + oneTimeFees
-                        );
-                      })()
-                  : parseFloat(watchAmount || '0');
-
-                const sign = isIncoming ? '+' : '-';
-
+          {/* Selected investor pills */}
+          {selectedInvestorIds.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {selectedInvestorIds.map((id) => {
+                const inv = investors.find((i) => i.id.toString() === id);
+                if (!inv) return null;
                 return (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 border rounded-lg bg-muted/30"
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
                   >
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium">{item.label}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {item.date.toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span
-                        className={`text-sm font-semibold ${
-                          isIncoming ? 'text-emerald-600' : 'text-rose-600'
-                        }`}
-                      >
-                        {sign}{' '}
-                        {new Intl.NumberFormat('en-PH', {
-                          style: 'currency',
-                          currency: 'PHP',
-                        }).format(amount)}
-                      </span>
-                    </div>
-                  </div>
+                    {inv.name}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveInvestor(id)}
+                      className="ml-0.5 hover:text-destructive transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
                 );
               })}
             </div>
-            <div className="mt-4 p-4 bg-gray-100 border border-gray-200 rounded-lg space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-900">No. of Transactions:</span>
-                <span className="text-gray-900">{recurringDates.length}</span>
-              </div>
-              {!isCreditCard && (
-                <>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-900">
-                      Amount per Transaction:
-                    </span>
-                    <span className="text-gray-900 font-medium">
-                      {new Intl.NumberFormat('en-PH', {
-                        style: 'currency',
-                        currency: 'PHP',
-                      }).format(parseFloat(watchAmount || '0'))}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-300">
-                    <span className="text-gray-900 font-bold">
-                      Total Amount:
-                    </span>
-                    <span className="text-gray-900 font-bold">
-                      {new Intl.NumberFormat('en-PH', {
-                        style: 'currency',
-                        currency: 'PHP',
-                      }).format(
-                        parseFloat(watchAmount || '0') * recurringDates.length,
-                      )}
-                    </span>
-                  </div>
-                </>
-              )}
-              {isCreditCard &&
-                (() => {
-                  const loanAmount = parseFloat(watch('loanAmount') || '0');
-                  const duration = parseInt(watchCreditCardDuration || '1');
-                  const interestValue = parseFloat(
-                    watch('interestValue') || '0',
-                  );
-                  const otherFees = parseFloat(watchOtherFees || '0');
-                  const monthlyInterest =
-                    watchInterestType === 'rate'
-                      ? loanAmount * (interestValue / 100)
-                      : interestValue;
-                  const totalInterest = monthlyInterest * duration;
-                  const totalAmount = loanAmount + totalInterest + otherFees;
+          )}
 
-                  return (
-                    <>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-900">Loan Amount:</span>
-                        <span className="text-gray-900 font-medium">
-                          {new Intl.NumberFormat('en-PH', {
-                            style: 'currency',
-                            currency: 'PHP',
-                          }).format(loanAmount)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-900">Monthly Interest:</span>
-                        <span className="text-gray-900 font-medium">
-                          {new Intl.NumberFormat('en-PH', {
-                            style: 'currency',
-                            currency: 'PHP',
-                          }).format(monthlyInterest)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-900">Total Interest:</span>
-                        <span className="text-gray-900 font-medium">
-                          {new Intl.NumberFormat('en-PH', {
-                            style: 'currency',
-                            currency: 'PHP',
-                          }).format(totalInterest)}
-                        </span>
-                      </div>
-                      {otherFees > 0 && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-900">
-                            Other Fees (one-time):
-                          </span>
-                          <span className="text-gray-900 font-medium">
-                            {new Intl.NumberFormat('en-PH', {
-                              style: 'currency',
-                              currency: 'PHP',
-                            }).format(otherFees)}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-300">
-                        <span className="text-gray-900 font-bold">
-                          Total Amount to Pay:
-                        </span>
-                        <span className="text-gray-900 font-bold">
-                          {new Intl.NumberFormat('en-PH', {
-                            style: 'currency',
-                            currency: 'PHP',
-                          }).format(totalAmount)}
-                        </span>
-                      </div>
-                    </>
-                  );
-                })()}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          {selectedInvestorIds.length > 1 && (
+            <p className="text-xs text-muted-foreground">
+              All transaction entries below will be created for each of the {selectedInvestorIds.length} selected investors.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Transaction Entry Cards */}
+      {entries.map((entry, index) => (
+        <TransactionEntryCard
+          key={entry.id}
+          entry={entry}
+          index={index}
+          total={entries.length}
+          errors={entryErrors[entry.id] || {}}
+          onChange={handleEntryChange}
+          onRemove={handleRemoveEntry}
+        />
+      ))}
+
+      {/* Add more button */}
+      <Button
+        type="button"
+        variant="outline"
+        onClick={handleAddEntry}
+        className="w-full border-dashed"
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        Add more transactions
+      </Button>
 
       {/* Submit Buttons */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -1040,11 +658,12 @@ export function TransactionForm({
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting} className="flex-1 w-full">
-          {isSubmitting ? 'Creating...' : 'Create Transaction'}
+          {isSubmitting
+            ? 'Creating...'
+            : `Create ${totalTransactionCount > 1 ? `${totalTransactionCount} ` : ''}Transaction${totalTransactionCount !== 1 ? 's' : ''}`}
         </Button>
       </div>
 
-      {/* Investor Creation Modal */}
       <InvestorFormModal
         open={showInvestorModal}
         onOpenChange={setShowInvestorModal}
