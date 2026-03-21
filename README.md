@@ -122,6 +122,12 @@ DATABASE_URL=your_neon_database_url_here
 bun run db:push
 ```
 
+   If you already had a database from an older deploy and see **`column ... interest_period_id does not exist`** (or **`interest_period_status`** errors), apply the pending migration:
+
+   - **Option A (recommended):** run `bun run db:push` again so Drizzle adds missing columns/enums from `db/schema.ts`.
+   - **Option B:** in the Neon **SQL Editor**, run the file `db/migrations/0001_interest_incomplete_and_period_link.sql` (adds `Incomplete` enum value + `interest_period_id` + index).  
+     On PostgreSQL before version 15, replace the first line with `ALTER TYPE interest_period_status ADD VALUE 'Incomplete';` (no `IF NOT EXISTS`).
+
 5. Seed the database with default investors:
 
 ```bash
