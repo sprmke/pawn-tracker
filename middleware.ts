@@ -29,5 +29,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico).*)'],
+  // Exclude all /api/* so route handlers return JSON (401, etc.) instead of a
+  // sign-in redirect — fetch('/api/loans') must not receive HTML from a 302.
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

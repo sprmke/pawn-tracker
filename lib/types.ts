@@ -4,10 +4,14 @@ export type LoanStatus =
   | 'Fully Funded'
   | 'Overdue'
   | 'Completed';
-export type TransactionType = 'Loan' | 'Investment';
+export type TransactionType = 'Investment';
 export type TransactionDirection = 'In' | 'Out';
 export type InterestType = 'rate' | 'fixed';
-export type InterestPeriodStatus = 'Pending' | 'Completed' | 'Overdue';
+export type InterestPeriodStatus =
+  | 'Pending'
+  | 'Incomplete'
+  | 'Completed'
+  | 'Overdue';
 
 export interface Investor {
   id: number;
@@ -46,6 +50,7 @@ export interface InterestPeriod {
 export interface ReceivedPayment {
   id: number;
   loanInvestorId: number;
+  interestPeriodId?: number | null;
   amount: string;
   receivedDate: Date;
   createdAt: Date;

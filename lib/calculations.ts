@@ -296,11 +296,15 @@ export function calculateOverdueAmount(
           new Date(a.dueDate || 0).getTime() -
           new Date(b.dueDate || 0).getTime(),
       );
-      const overduePeriods = periods.filter((p) => p.status === 'Overdue');
+      const overduePeriods = periods.filter(
+        (p) => p.status === 'Overdue' || p.status === 'Incomplete',
+      );
 
       if (overduePeriods.length > 0) {
         const finalPeriod = periods[periods.length - 1];
-        const isFinalPeriodOverdue = finalPeriod.status === 'Overdue';
+        const isFinalPeriodOverdue =
+          finalPeriod.status === 'Overdue' ||
+          finalPeriod.status === 'Incomplete';
         const base =
           investorTotalCapital === 0
             ? loanTotalPrincipal

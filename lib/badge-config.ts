@@ -74,11 +74,6 @@ export const transactionTypeConfig: Record<
     className?: string;
   }
 > = {
-  Loan: {
-    variant: 'outline',
-    className:
-      'border-fuchsia-400 text-fuchsia-700 bg-fuchsia-100 dark:bg-fuchsia-900 dark:text-fuchsia-300 dark:border-fuchsia-600',
-  },
   Investment: {
     variant: 'outline',
     className:
@@ -117,6 +112,12 @@ export const interestPeriodStatusConfig: Record<
     variant: 'secondary',
     className: 'bg-amber-300 hover:bg-amber-400 text-amber-950',
     dotColor: 'bg-amber-300',
+  },
+  Incomplete: {
+    variant: 'outline',
+    className:
+      'border-orange-400 text-orange-800 bg-orange-100 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-600',
+    dotColor: 'bg-orange-400',
   },
   Completed: {
     variant: 'default',
