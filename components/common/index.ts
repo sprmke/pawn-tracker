@@ -16,7 +16,6 @@ export { CollapsibleSection, CollapsibleContent } from './collapsible-section';
 export { Pagination } from './pagination';
 export { CardPagination } from './card-pagination';
 export { SortButton } from './sort-button';
-export { InvestorTransactionCard } from './investor-transaction-card';
 export { FormHeader } from './form-header';
 export { DetailHeader } from './detail-header';
 export { DetailModalHeader } from './detail-modal-header';
@@ -41,6 +40,8 @@ export { ExportButton } from './export-button';
 export { ExportColumnsModal } from './export-columns-modal';
 export { SyncCalendarButton } from './sync-calendar-button';
 export { DownloadBackupButton } from './download-backup-button';
+export { FixReceivedPaymentsButton } from './fix-received-payments-button';
+export { SyncLoanDueDatesButton } from './sync-loan-due-dates-button';
 export {
   NavigationProgressProvider,
   useNavigationProgress,
