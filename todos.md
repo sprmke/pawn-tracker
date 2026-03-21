@@ -88,3 +88,4 @@ Todos & Improvements:
   - GET /api/loans 200 in 4093ms
   - GET /api/investors 200 in 12316ms
 - Check all API endpoints and make them faster
+- I noticed that some loans have already completed status on 1st interest period, but when we check the loan, the total received is still 0.
