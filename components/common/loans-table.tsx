@@ -8,15 +8,12 @@ import { ActionButtonsGroup } from './action-buttons';
 import { formatCurrency } from '@/lib/format';
 import { calculateTransactionStats } from '@/lib/calculations';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
-import { InvestorTransactionCard } from './investor-transaction-card';
 import { DateListWithViewMore } from './date-list-with-view-more';
 
 interface LoansTableProps {
   loans: LoanWithInvestors[];
   itemsPerPage?: number;
   hideFields?: string[];
-  expandedRows?: Set<string | number>;
-  onToggleExpand?: (loanId: string | number) => void;
   onQuickView?: (loan: LoanWithInvestors) => void;
   /** When provided, shows investor-specific stats instead of loan totals */
   investorId?: number;
@@ -26,8 +23,6 @@ export function LoansTable({
   loans,
   itemsPerPage = 10,
   hideFields = [],
-  expandedRows,
-  onToggleExpand,
   onQuickView,
   investorId,
 }: LoansTableProps) {
@@ -291,15 +286,6 @@ export function LoansTable({
       headerClassName: 'hidden 2xl:table-cell text-center',
       cell: (loan) => (
         <ActionButtonsGroup
-          isExpanded={expandedRows?.has(loan.id)}
-          onToggle={
-            onToggleExpand
-              ? (e) => {
-                  e.stopPropagation();
-                  onToggleExpand(loan.id);
-                }
-              : undefined
-          }
           viewHref={`/loans/${loan.id}`}
           onQuickView={
             onQuickView
@@ -310,62 +296,12 @@ export function LoansTable({
                 }
               : undefined
           }
-          showToggle={!!onToggleExpand}
           showView={false}
           size="sm"
         />
       ),
     },
   ];
-
-  const expandedContent = (loan: LoanWithInvestors) => {
-    return (
-      <div className="space-y-4">
-        {/* Investors Section */}
-        {loan.loanInvestors.length > 0 && (
-          <div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {(() => {
-                // Group by investor
-                const investorMap = new Map<
-                  number,
-                  Array<(typeof loan.loanInvestors)[0]>
-                >();
-                loan.loanInvestors.forEach((li) => {
-                  const existing = investorMap.get(li.investor.id) || [];
-                  existing.push(li);
-                  investorMap.set(li.investor.id, existing);
-                });
-
-                return Array.from(investorMap.values()).map((transactions) => {
-                  const investor = transactions[0].investor;
-
-                  // Calculate totals
-                  const stats = calculateTransactionStats(transactions);
-                  const totalPrincipal = stats.totalPrincipal;
-                  const totalInterest = stats.totalInterest;
-                  const avgRate = stats.averageRate;
-                  const total = stats.total;
-
-                  return (
-                    <InvestorTransactionCard
-                      key={investor.id}
-                      investorName={investor.name}
-                      transactions={transactions}
-                      totalPrincipal={totalPrincipal}
-                      avgRate={avgRate}
-                      totalInterest={totalInterest}
-                      total={total}
-                    />
-                  );
-                });
-              })()}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <DataTable
@@ -374,8 +310,6 @@ export function LoansTable({
       itemsPerPage={itemsPerPage}
       itemName="loans"
       getRowId={(loan) => loan.id}
-      expandedContent={expandedContent}
-      expandedRows={expandedRows}
       onRowClick={onQuickView ? onQuickView : undefined}
       rowClickOnMobileOnly={true}
     />
