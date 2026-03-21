@@ -40,6 +40,7 @@ export async function POST(request: Request) {
     // Process each loan
     for (const loan of userLoans) {
       let hasOverduePeriod = false;
+      let hasIncompletePeriod = false;
       let hasAnyPendingPeriod = false;
 
       // Check and update interest periods
@@ -59,6 +60,9 @@ export async function POST(request: Request) {
               hasOverduePeriod = true;
             } else if (period.status === 'Overdue') {
               hasOverduePeriod = true;
+            } else if (period.status === 'Incomplete') {
+              // Partially paid — keep as Incomplete (not Overdue)
+              hasIncompletePeriod = true;
             } else if (period.status === 'Pending') {
               hasAnyPendingPeriod = true;
             }
@@ -77,8 +81,12 @@ export async function POST(request: Request) {
       let shouldUpdateLoanStatus = false;
       let newLoanStatus = loan.status;
 
-      // If there are overdue periods, loan should be overdue
-      if (hasOverduePeriod && loan.status !== 'Overdue' && loan.status !== 'Completed') {
+      // If there are overdue or incomplete periods, loan should be overdue
+      if (
+        (hasOverduePeriod || hasIncompletePeriod) &&
+        loan.status !== 'Overdue' &&
+        loan.status !== 'Completed'
+      ) {
         newLoanStatus = 'Overdue';
         shouldUpdateLoanStatus = true;
       }
@@ -96,6 +104,7 @@ export async function POST(request: Request) {
       else if (
         loan.status === 'Overdue' &&
         !hasOverduePeriod &&
+        !hasIncompletePeriod &&
         !hasAnyPendingPeriod &&
         now <= loanDueDate
       ) {

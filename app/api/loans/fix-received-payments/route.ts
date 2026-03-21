@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { loanInvestors, interestPeriods, receivedPayments, loans } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { loanInvestors, receivedPayments, loans } from '@/db/schema';
+import { eq, isNull, inArray } from 'drizzle-orm';
 import { auth } from '@/auth';
 
 /**
- * This endpoint fixes the data inconsistency where interest periods are marked
- * as "Completed" but no corresponding receivedPayments records exist.
+ * This endpoint fixes data inconsistencies in received_payments:
  *
- * For each loanInvestor with hasMultipleInterest:
- * - Fetches all completed periods sorted by due date
- * - Counts existing received payments
- * - For each completed period without a matching received payment (by count), 
- *   creates a received payment record using the period's interest amount and due date
+ * 1. For completed interest periods that have no linked received payment, creates
+ *    a received_payment row with the correct interest amount, properly linked via
+ *    interestPeriodId.
+ *
+ * 2. Removes orphaned received_payments (interestPeriodId IS NULL) for
+ *    hasMultipleInterest = true loan investors, since every multi-interest payment
+ *    must be period-linked to display correctly in the UI and PDF.
  */
 export async function POST() {
   try {
@@ -21,7 +22,7 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all loans for this user
+    // Get all loans for this user with full investor/period/payment data
     const userLoans = await db.query.loans.findMany({
       where: eq(loans.userId, session.user.id),
       with: {
@@ -40,10 +41,16 @@ export async function POST() {
     for (const loan of userLoans) {
       let loanFixed = false;
 
+      // Loan-wide total principal (for 0-capital investors)
+      const loanTotalPrincipal = loan.loanInvestors.reduce(
+        (s, li) => s + (parseFloat(li.amount) || 0),
+        0,
+      );
+
       for (const li of loan.loanInvestors) {
         if (!li.hasMultipleInterest || !li.interestPeriods?.length) continue;
 
-        // Get completed periods sorted by due date
+        // Completed periods sorted by due date
         const completedPeriods = li.interestPeriods
           .filter((p) => p.status === 'Completed')
           .sort(
@@ -53,27 +60,37 @@ export async function POST() {
 
         if (completedPeriods.length === 0) continue;
 
-        const existingPaymentsCount = (li.receivedPayments || []).length;
+        // Periods that already have a linked received payment
+        const linkedPeriodIds = new Set(
+          (li.receivedPayments || [])
+            .filter((rp) => rp.interestPeriodId != null)
+            .map((rp) => rp.interestPeriodId),
+        );
 
-        // Periods that need a received payment (those beyond what's already recorded)
-        const missingPeriods = completedPeriods.slice(existingPaymentsCount);
+        // Only create payments for completed periods without a linked payment
+        const missingPeriods = completedPeriods.filter(
+          (p) => !linkedPeriodIds.has(p.id),
+        );
 
         if (missingPeriods.length === 0) continue;
 
-        // Calculate the principal for this loan investor
-        const principal = parseFloat(li.amount) || 0;
+        const investorPrincipal = parseFloat(li.amount) || 0;
+        const principalBase =
+          investorPrincipal === 0 ? loanTotalPrincipal : investorPrincipal;
 
         for (const period of missingPeriods) {
           const rate = parseFloat(period.interestRate) || 0;
           const interestAmount =
             period.interestType === 'fixed'
               ? rate
-              : principal * (rate / 100);
+              : principalBase * (rate / 100);
 
           if (interestAmount <= 0) continue;
 
+          // Always link to the specific period
           await db.insert(receivedPayments).values({
             loanInvestorId: li.id,
+            interestPeriodId: period.id,
             amount: String(interestAmount),
             receivedDate: new Date(period.dueDate),
           });
@@ -88,11 +105,38 @@ export async function POST() {
       }
     }
 
+    // Step 2: Remove orphaned payments (interestPeriodId IS NULL) from multi-interest
+    // loan investors across all user loans.  These can occur from old script runs.
+    const multiInterestLiIds = userLoans
+      .flatMap((loan) => loan.loanInvestors)
+      .filter((li) => li.hasMultipleInterest)
+      .map((li) => li.id);
+
+    let orphanedDeleted = 0;
+    if (multiInterestLiIds.length > 0) {
+      const orphans = await db.query.receivedPayments.findMany({
+        where: (rp, { and: qAnd, isNull: qIsNull, inArray: qInArray }) =>
+          qAnd(
+            qIsNull(rp.interestPeriodId),
+            qInArray(rp.loanInvestorId, multiInterestLiIds),
+          ),
+      });
+
+      if (orphans.length > 0) {
+        const orphanIds = orphans.map((rp) => rp.id);
+        await db
+          .delete(receivedPayments)
+          .where(inArray(receivedPayments.id, orphanIds));
+        orphanedDeleted = orphanIds.length;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       createdPayments: createdPaymentsCount,
+      orphanedPaymentsRemoved: orphanedDeleted,
       fixedLoans,
-      message: `Created ${createdPaymentsCount} missing received payment(s) across ${fixedLoans.length} loan(s)`,
+      message: `Created ${createdPaymentsCount} missing payment(s) and removed ${orphanedDeleted} orphaned payment(s) across ${fixedLoans.length} loan(s)`,
     });
   } catch (error) {
     console.error('Error fixing received payments:', error);
