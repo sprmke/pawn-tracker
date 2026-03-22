@@ -1,12 +1,20 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { interestPeriods, loanInvestors, loans, receivedPayments } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import {
+  interestPeriods,
+  loanInvestors,
+  loans,
+  receivedPayments,
+} from '@/db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { calculateInterest } from '@/lib/calculations';
+
+const AMOUNT_TOLERANCE = 0.02;
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth();
@@ -20,18 +28,23 @@ export async function PATCH(
 
     if (!status || !['Pending', 'Completed', 'Overdue'].includes(status)) {
       return NextResponse.json(
-        { error: 'Invalid status. Must be Pending, Completed, or Overdue.' },
-        { status: 400 }
+        {
+          error:
+            'Invalid status. Must be Pending, Completed (record payment), or Overdue.',
+        },
+        { status: 400 },
       );
     }
 
-    // Get the interest period with loan investor info
     const period = await db.query.interestPeriods.findFirst({
       where: eq(interestPeriods.id, periodId),
       with: {
         loanInvestor: {
           with: {
             loan: true,
+            receivedPayments: {
+              orderBy: [desc(receivedPayments.createdAt)],
+            },
           },
         },
       },
@@ -40,32 +53,157 @@ export async function PATCH(
     if (!period) {
       return NextResponse.json(
         { error: 'Interest period not found' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    // Verify ownership through the loan
     if (period.loanInvestor.loan.userId !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Update the period status
-    await db
-      .update(interestPeriods)
-      .set({ status, updatedAt: new Date() })
-      .where(eq(interestPeriods.id, periodId));
+    const wasCompleted = period.status === 'Completed';
+    const wasIncomplete = period.status === 'Incomplete';
+    const isReverting =
+      (wasCompleted || wasIncomplete) &&
+      (status === 'Pending' || status === 'Overdue');
 
-    // Create a received payment record if amount and date are provided
-    if (receivedAmount && receivedDate) {
+    const loanIdForPrincipal = period.loanInvestor.loanId;
+    const coInvestors = await db.query.loanInvestors.findMany({
+      where: eq(loanInvestors.loanId, loanIdForPrincipal),
+    });
+    const loanTotalPrincipal = coInvestors.reduce(
+      (s, li) => s + (parseFloat(li.amount) || 0),
+      0,
+    );
+    const investorPrincipal = parseFloat(period.loanInvestor.amount) || 0;
+    const principalBase =
+      investorPrincipal === 0 ? loanTotalPrincipal : investorPrincipal;
+    const expectedInterest = calculateInterest(
+      principalBase,
+      period.interestRate,
+      period.interestType,
+    );
+
+    /** Response status may differ from request (e.g. Incomplete vs Completed). */
+    let responseStatus: string = status;
+
+    if (status === 'Completed') {
+      if (period.status === 'Completed') {
+        return NextResponse.json(
+          { error: 'This period is already completed.' },
+          { status: 400 },
+        );
+      }
+
+      const rawAmt = receivedAmount;
+      const parsedAmount =
+        rawAmt === '' || rawAmt === null || rawAmt === undefined
+          ? NaN
+          : parseFloat(String(rawAmt));
+      const dateStr =
+        receivedDate === null || receivedDate === undefined
+          ? ''
+          : String(receivedDate).trim();
+
+      if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+        return NextResponse.json(
+          {
+            error:
+              'Enter a valid received amount greater than zero to record this payment.',
+          },
+          { status: 400 },
+        );
+      }
+      if (!dateStr) {
+        return NextResponse.json(
+          { error: 'Received date is required.' },
+          { status: 400 },
+        );
+      }
+      const receivedDateObj = new Date(dateStr);
+      if (Number.isNaN(receivedDateObj.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid received date.' },
+          { status: 400 },
+        );
+      }
+
+      const linkedBefore = (period.loanInvestor.receivedPayments || []).filter(
+        (rp) => rp.interestPeriodId === periodId,
+      );
+      const priorTotal = linkedBefore.reduce(
+        (s, rp) => s + (parseFloat(rp.amount) || 0),
+        0,
+      );
+
+      if (priorTotal + AMOUNT_TOLERANCE >= expectedInterest) {
+        return NextResponse.json(
+          { error: 'This period is already fully paid.' },
+          { status: 400 },
+        );
+      }
+
+      const newTotal = priorTotal + parsedAmount;
+      if (newTotal > expectedInterest + AMOUNT_TOLERANCE) {
+        return NextResponse.json(
+          {
+            error: `This payment would exceed the interest due for this period (${expectedInterest.toFixed(2)}). Remaining: ${(expectedInterest - priorTotal).toFixed(2)}.`,
+          },
+          { status: 400 },
+        );
+      }
+
+      const newPeriodStatus =
+        newTotal + AMOUNT_TOLERANCE >= expectedInterest
+          ? 'Completed'
+          : 'Incomplete';
+
+      await db
+        .update(interestPeriods)
+        .set({ status: newPeriodStatus, updatedAt: new Date() })
+        .where(eq(interestPeriods.id, periodId));
+
       await db.insert(receivedPayments).values({
         loanInvestorId: period.loanInvestor.id,
-        amount: String(receivedAmount),
-        receivedDate: new Date(receivedDate),
+        interestPeriodId: periodId,
+        amount: String(parsedAmount),
+        receivedDate: receivedDateObj,
       });
+
+      responseStatus = newPeriodStatus;
+    } else if (isReverting) {
+      await db
+        .update(interestPeriods)
+        .set({ status, updatedAt: new Date() })
+        .where(eq(interestPeriods.id, periodId));
+
+      const removed = await db
+        .delete(receivedPayments)
+        .where(eq(receivedPayments.interestPeriodId, periodId))
+        .returning({ id: receivedPayments.id });
+
+      if (removed.length === 0) {
+        const existingPayments = period.loanInvestor.receivedPayments || [];
+        const matchingPayment =
+          existingPayments.find(
+            (rp) =>
+              Math.abs((parseFloat(rp.amount) || 0) - expectedInterest) <=
+              AMOUNT_TOLERANCE,
+          ) ?? existingPayments[0];
+
+        if (matchingPayment) {
+          await db
+            .delete(receivedPayments)
+            .where(eq(receivedPayments.id, matchingPayment.id));
+        }
+      }
+    } else {
+      await db
+        .update(interestPeriods)
+        .set({ status, updatedAt: new Date() })
+        .where(eq(interestPeriods.id, periodId));
     }
 
-    // After updating period, check if we need to update loan status
-    // Get all periods for this loan
     const loanId = period.loanInvestor.loanId;
     const allLoanInvestors = await db.query.loanInvestors.findMany({
       where: eq(loanInvestors.loanId, loanId),
@@ -74,17 +212,13 @@ export async function PATCH(
       },
     });
 
-    // First, check and update any other pending periods that are past their due date
-    // This ensures we have an accurate view of which periods are actually overdue
     const now = new Date();
     for (const li of allLoanInvestors) {
       if (li.hasMultipleInterest && li.interestPeriods) {
         for (const p of li.interestPeriods) {
-          // Skip the period we just updated
           if (p.id === periodId) continue;
-          
+
           const periodDueDate = new Date(p.dueDate);
-          // If period is Pending and past due date, mark as Overdue
           if (p.status === 'Pending' && now > periodDueDate) {
             await db
               .update(interestPeriods)
@@ -95,7 +229,6 @@ export async function PATCH(
       }
     }
 
-    // Re-fetch all periods after potential updates to get accurate statuses
     const updatedLoanInvestors = await db.query.loanInvestors.findMany({
       where: eq(loanInvestors.loanId, loanId),
       with: {
@@ -103,7 +236,6 @@ export async function PATCH(
       },
     });
 
-    // Collect all period statuses across all loan investors
     const allPeriods: Array<{ status: string }> = [];
     updatedLoanInvestors.forEach((li) => {
       if (li.hasMultipleInterest && li.interestPeriods) {
@@ -111,12 +243,14 @@ export async function PATCH(
       }
     });
 
-    // Check period statuses
     const hasOverduePeriod = allPeriods.some((p) => p.status === 'Overdue');
-    const hasPendingPeriod = allPeriods.some((p) => p.status === 'Pending');
-    const allPeriodsCompleted = allPeriods.length > 0 && allPeriods.every((p) => p.status === 'Completed');
+    const hasIncompletePeriod = allPeriods.some(
+      (p) => p.status === 'Incomplete',
+    );
+    const allPeriodsCompleted =
+      allPeriods.length > 0 &&
+      allPeriods.every((p) => p.status === 'Completed');
 
-    // Update loan status based on period statuses
     const currentLoan = await db.query.loans.findFirst({
       where: eq(loans.id, loanId),
     });
@@ -124,26 +258,22 @@ export async function PATCH(
     if (currentLoan) {
       let newLoanStatus = currentLoan.status;
 
-      // Priority 1: If any period is overdue, loan should be overdue
-      if (hasOverduePeriod) {
+      if (hasOverduePeriod || hasIncompletePeriod) {
         newLoanStatus = 'Overdue';
-      } 
-      // Priority 2: If all periods are completed, automatically mark loan as completed
-      else if (allPeriodsCompleted) {
-        // Check if all loan investors are paid
+      } else if (allPeriodsCompleted) {
         const allPaid = updatedLoanInvestors.every((li) => li.isPaid);
-        
+
         if (allPaid) {
-          // All periods completed and all paid - loan should be Completed
           newLoanStatus = 'Completed';
         }
-      }
-      // Priority 3: If loan was overdue but all periods are now pending/completed (no overdue)
-      else if (currentLoan.status === 'Overdue' && !hasOverduePeriod) {
+      } else if (
+        currentLoan.status === 'Overdue' &&
+        !hasOverduePeriod &&
+        !hasIncompletePeriod
+      ) {
         newLoanStatus = 'Fully Funded';
       }
 
-      // Update loan status if changed
       if (newLoanStatus !== currentLoan.status) {
         await db
           .update(loans)
@@ -152,13 +282,12 @@ export async function PATCH(
       }
     }
 
-    return NextResponse.json({ success: true, status });
+    return NextResponse.json({ success: true, status: responseStatus });
   } catch (error) {
     console.error('Error updating interest period status:', error);
     return NextResponse.json(
       { error: 'Failed to update interest period status' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
