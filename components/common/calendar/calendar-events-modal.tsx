@@ -40,8 +40,6 @@ export function CalendarEventsModal({
             events={events}
             formatCurrency={formatCurrency}
             alwaysShow={config.alwaysShowSummary}
-            allEvents={config.allEvents}
-            currentDate={date}
           />
         </div>
 
