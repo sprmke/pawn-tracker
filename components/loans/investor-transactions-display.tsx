@@ -857,9 +857,10 @@ export function InvestorTransactionsDisplay({
                                         remaining
                                         <span className="text-muted-foreground/90">
                                           {' '}
-                                          (of{' '}
-                                          {formatCurrency(periodInterest)} due
-                                          for this period)
+                                          (of {formatCurrency(
+                                            periodInterest,
+                                          )}{' '}
+                                          due for this period)
                                         </span>
                                       </p>
                                     )}
@@ -997,9 +998,6 @@ export function InvestorTransactionsDisplay({
                           <CalendarRange className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                            Terms · Interest
-                          </p>
                           <p className="text-sm font-semibold mt-0.5">
                             Single repayment
                           </p>
@@ -1019,17 +1017,7 @@ export function InvestorTransactionsDisplay({
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <div className="p-3 sm:p-4 space-y-3 bg-muted/10">
-                          <div className="rounded-lg border-2 border-dashed border-violet-200/60 dark:border-violet-900/40 bg-violet-500/3 dark:bg-violet-950/20 p-4 space-y-3">
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                              Interest at loan maturity from principal
-                              disbursement(s) and the agreed rate or fixed
-                              amount per tranche. Received payments are listed
-                              below; use{' '}
-                              <span className="font-medium text-foreground">
-                                edit loan
-                              </span>{' '}
-                              to add or change them.
-                            </p>
+                          <div className="rounded-lg border-2 bg-violet-500/3 dark:bg-violet-950/20 p-4 space-y-3">
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 text-sm">
                               <div>
                                 <p className="text-[11px] font-medium text-muted-foreground">
