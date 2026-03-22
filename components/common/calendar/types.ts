@@ -70,6 +70,5 @@ export interface CalendarConfig {
     eventIndex: number
   ) => React.ReactNode;
   alwaysShowSummary?: boolean;
-  allEvents?: CalendarEvent[];
   legendGroups?: LegendGroup[];
 }

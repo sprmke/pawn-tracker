@@ -96,8 +96,6 @@ export function CalendarMonthView({
                     formatCurrency={config.formatCurrency}
                     size="sm"
                     alwaysShow={config.alwaysShowSummary}
-                    allEvents={config.allEvents}
-                    currentDate={cell.date}
                   />
 
                   {/* Events - Only show limited number */}
