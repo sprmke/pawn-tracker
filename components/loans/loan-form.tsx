@@ -375,15 +375,30 @@ export function LoanForm({
   const calculateLoanStatus = ():
     | 'Fully Funded'
     | 'Partially Funded'
-    | 'Overdue' => {
+    | 'Overdue'
+    | 'Completed' => {
     const today = getTodayAtMidnight();
 
-    // Check if any transaction is unpaid
+    // Check if any transaction is unpaid (principal not yet disbursed to investors)
     const hasUnpaidTransactions = selectedInvestors.some((si) =>
       si.transactions.some((t) => !t.isPaid),
     );
 
-    // Check if loan is overdue
+    if (hasUnpaidTransactions) {
+      return 'Partially Funded';
+    }
+
+    // Fully settled from borrower (received ≥ principal + interest) → Completed.
+    // This must run before the due-date check, otherwise saving a completed loan
+    // with a past due date would incorrectly force "Overdue".
+    const preview = calculatePreview();
+    const totalAmount = preview.reduce((sum, p) => sum + p.total, 0);
+    const totalReceived = getTotalReceived();
+    const totalBalance = totalAmount - totalReceived;
+    if (totalAmount > 0 && totalBalance <= 0.01) {
+      return 'Completed';
+    }
+
     if (watchDueDate) {
       const dueDate = normalizeToMidnight(watchDueDate);
       if (today >= dueDate) {
@@ -391,12 +406,6 @@ export function LoanForm({
       }
     }
 
-    // If there are unpaid transactions, mark as Partially Funded
-    if (hasUnpaidTransactions) {
-      return 'Partially Funded';
-    }
-
-    // Default is Fully Funded
     return 'Fully Funded';
   };
 

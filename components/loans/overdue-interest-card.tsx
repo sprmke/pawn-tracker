@@ -430,7 +430,7 @@ export function OverdueInterestCard({
           variant="outline"
           size="sm"
           onClick={handleAddEntry}
-          className="w-full border-dashed"
+          className="w-full"
         >
           <Plus className="mr-2 h-4 w-4" />
           Add More
