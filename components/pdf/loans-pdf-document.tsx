@@ -19,6 +19,8 @@ import {
 import {
   calculateLoanStats,
   calculateInterest,
+  calculateTotalPrincipal,
+  calculateTotalInterest,
 } from '@/lib/calculations';
 import { LoanWithInvestors, LoanStatus, LoanType, InterestPeriodStatus } from '@/lib/types';
 
@@ -338,9 +340,8 @@ const styles = StyleSheet.create({
     color: PDF_COLORS.muted,
   },
 
-  // ── Summary Totals (last page) ──
+  // ── Summary Totals ──
   totalsCard: {
-    marginTop: 16,
     borderRadius: 6,
     border: `1.5 solid ${PDF_COLORS.accentBlue}`,
   },
@@ -743,25 +744,47 @@ interface LoansPDFDocumentProps {
   data: LoanWithInvestors[];
   enabledSections: string[];
   generatedAt?: Date;
+  /** When set, grand totals reflect only this investor's entries in each loan */
+  investorId?: number;
 }
 
 const LoansPDFDocument = ({
   data,
   enabledSections,
   generatedAt = new Date(),
+  investorId,
 }: LoansPDFDocumentProps) => {
   const enabledSet = new Set(enabledSections);
 
-  // Compute grand totals
+  // Compute grand totals — filter to investor-specific entries when investorId is provided
+  const getRelevantInvestors = (loan: LoanWithInvestors) =>
+    investorId
+      ? loan.loanInvestors.filter((li) => li.investor.id === investorId)
+      : loan.loanInvestors;
+
   const grandTotalPrincipal = data.reduce((sum, loan) => {
-    const stats = calculateLoanStats(loan);
-    return sum + stats.totalPrincipal;
+    return sum + calculateTotalPrincipal(getRelevantInvestors(loan));
   }, 0);
   const grandTotalInterest = data.reduce((sum, loan) => {
-    const stats = calculateLoanStats(loan);
-    return sum + stats.totalInterest;
+    return sum + calculateTotalInterest(getRelevantInvestors(loan));
   }, 0);
   const grandTotalAmount = grandTotalPrincipal + grandTotalInterest;
+
+  const grandTotalReceived = data.reduce((sum, loan) => {
+    return sum + getRelevantInvestors(loan).reduce(
+      (lSum, li) =>
+        lSum + (li.receivedPayments || []).reduce(
+          (t, rp) => t + (parseFloat(rp.amount) || 0),
+          0,
+        ),
+      0,
+    );
+  }, 0);
+  const grandTotalBalance = Math.max(0, grandTotalAmount - grandTotalReceived);
+  const grandTotalLotSqm = data.reduce(
+    (sum, loan) => sum + (loan.freeLotSqm ?? 0),
+    0,
+  );
 
   const statusCounts = data.reduce(
     (acc, loan) => {
@@ -797,30 +820,14 @@ const LoansPDFDocument = ({
           </View>
         </View>
 
-        {/* Loan Cards */}
-        {data.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No loans to display.</Text>
-          </View>
-        ) : (
-          data.map((loan, idx) => (
-            <LoanCard
-              key={loan.id}
-              loan={loan}
-              enabledSections={enabledSet}
-              isFirst={idx === 0}
-              isLast={idx === data.length - 1}
-            />
-          ))
-        )}
-
-        {/* Grand Totals Card */}
+        {/* Grand Totals Card — shown first, on page 1 */}
         {data.length > 0 && (
-          <View style={styles.totalsCard} wrap={false}>
+          <View style={[styles.totalsCard, { marginTop: 0, marginBottom: 16 }]} wrap={false}>
             <View style={styles.totalsHeader}>
               <Text style={styles.totalsHeaderText}>Grand Totals — {data.length} Loan{data.length !== 1 ? 's' : ''}</Text>
             </View>
-            <View style={styles.totalsGrid}>
+            {/* Row 1: Principal / Interest / Total Amount / Total Received / Balance */}
+            <View style={[styles.totalsGrid, { paddingBottom: 4 }]}>
               <View style={styles.totalsCell}>
                 <Text style={styles.totalsCellLabel}>Total Principal</Text>
                 <Text style={styles.totalsCellValue}>{formatCurrencyForPDF(grandTotalPrincipal)}</Text>
@@ -836,15 +843,57 @@ const LoansPDFDocument = ({
                 </Text>
               </View>
               <View style={styles.totalsCell}>
-                <Text style={styles.totalsCellLabel}>By Status</Text>
-                {Object.entries(statusCounts).map(([status, count]) => (
-                  <Text key={status} style={styles.totalsCellCount}>
-                    {status}: {count}
-                  </Text>
-                ))}
+                <Text style={styles.totalsCellLabel}>Total Received</Text>
+                <Text style={[styles.totalsCellValue, { color: PDF_COLORS.fullyFunded }]}>
+                  {formatCurrencyForPDF(grandTotalReceived)}
+                </Text>
+              </View>
+              <View style={styles.totalsCell}>
+                <Text style={styles.totalsCellLabel}>Total Balance</Text>
+                <Text style={[styles.totalsCellValue, { color: grandTotalBalance <= 0 ? PDF_COLORS.fullyFunded : PDF_COLORS.lotTitle }]}>
+                  {formatCurrencyForPDF(grandTotalBalance)}
+                </Text>
               </View>
             </View>
+            {/* Row 2: By Status / Total Lot */}
+            <View style={[styles.totalsGrid, { paddingTop: 0, paddingBottom: 12, borderTop: `0.5 solid #dbeafe` }]}>
+              <View style={[styles.totalsCell, { flex: 2 }]}>
+                <Text style={[styles.totalsCellLabel, { marginTop: 8 }]}>By Status</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+                  {Object.entries(statusCounts).map(([status, count]) => (
+                    <Text key={status} style={styles.totalsCellCount}>
+                      {status}: {count}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+              {grandTotalLotSqm > 0 && (
+                <View style={[styles.totalsCell, { flex: 1 }]}>
+                  <Text style={[styles.totalsCellLabel, { marginTop: 8 }]}>Total Lot</Text>
+                  <Text style={[styles.totalsCellValue, { fontSize: 11 }]}>
+                    {grandTotalLotSqm.toLocaleString()} sqm
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
+        )}
+
+        {/* Loan Cards */}
+        {data.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No loans to display.</Text>
+          </View>
+        ) : (
+          data.map((loan, idx) => (
+            <LoanCard
+              key={loan.id}
+              loan={loan}
+              enabledSections={enabledSet}
+              isFirst={idx === 0}
+              isLast={idx === data.length - 1}
+            />
+          ))
         )}
 
         {/* Page Footer */}
@@ -868,13 +917,19 @@ const LoansPDFDocument = ({
 
 /**
  * Generates and downloads a PDF for the given loans data.
+ * Pass `investorId` to scope grand totals to a single investor's entries.
  */
 export async function renderLoansPDF(
   data: LoanWithInvestors[],
   enabledSectionKeys: string[],
+  investorId?: number,
 ): Promise<void> {
   const blob = await pdf(
-    <LoansPDFDocument data={data} enabledSections={enabledSectionKeys} />
+    <LoansPDFDocument
+      data={data}
+      enabledSections={enabledSectionKeys}
+      investorId={investorId}
+    />
   ).toBlob();
   const timestamp = formatDateForPDF(new Date()).replace(/\//g, '-');
   downloadBlob(blob, `loans_${timestamp}.pdf`);
