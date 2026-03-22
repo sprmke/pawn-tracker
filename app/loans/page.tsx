@@ -47,11 +47,10 @@ import { useLoanDuplicateStore } from '@/stores/loan-duplicate-store';
 import {
   calculateTotalInterest,
   calculateAverageRate,
-  calculateTransactionStats,
 } from '@/lib/calculations';
-import { loansCSVColumns } from '@/lib/csv-columns';
+import { loanPDFSections } from '@/lib/pdf-sections';
+import { renderLoansPDF } from '@/components/pdf/loans-pdf-document';
 import {
-  InvestorTransactionCard,
   LoansTable,
   ActionButtonsGroup,
   SearchFilter,
@@ -102,9 +101,6 @@ export default function LoansPage() {
   const [sortField, setSortField] = useState<SortField>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const itemsPerPage = 10;
-  const [expandedInvestors, setExpandedInvestors] = useState<Set<number>>(
-    new Set(),
-  );
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
@@ -140,6 +136,9 @@ export default function LoansPage() {
   // Get due date filter from URL query parameter
   const dueDateFilter = searchParams.get('dueDate');
 
+  /** API may return `{ error }` on failure; never call array methods on raw `loans`. */
+  const loansList = Array.isArray(loans) ? loans : [];
+
   // Initialize filters from URL query parameters
   useEffect(() => {
     const viewParam = searchParams.get('view');
@@ -170,20 +169,66 @@ export default function LoansPage() {
   useEffect(() => {
     if (
       !loading &&
-      loans.length === 0 &&
+      loansList.length === 0 &&
       (viewMode === 'cards' || viewMode === 'calendar')
     ) {
       setViewMode('table');
     }
-  }, [loading, loans.length, viewMode]);
+  }, [loading, loansList.length, viewMode]);
 
   const fetchLoans = async () => {
     try {
       const response = await fetch('/api/loans');
-      const data = await response.json();
+      const text = await response.text();
+      let data: unknown;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        console.warn(
+          'fetchLoans: response was not JSON',
+          response.status,
+          text.slice(0, 120),
+        );
+        setLoans([]);
+        return;
+      }
+
+      if (!response.ok) {
+        // Session missing/expired — avoid noisy console; API returns JSON body.
+        if (response.status === 401) {
+          setLoans([]);
+          return;
+        }
+        const errMsg =
+          data &&
+          typeof data === 'object' &&
+          data !== null &&
+          'error' in data &&
+          typeof (data as { error: unknown }).error === 'string'
+            ? (data as { error: string }).error
+            : '';
+        console.warn(
+          `fetchLoans failed: ${response.status} ${response.statusText}`,
+          errMsg || text.slice(0, 200) || '(empty body)',
+        );
+        setLoans([]);
+        return;
+      }
+
+      if (!Array.isArray(data)) {
+        console.warn(
+          'fetchLoans: expected an array, got',
+          typeof data,
+          data,
+        );
+        setLoans([]);
+        return;
+      }
+
       setLoans(data);
     } catch (error) {
-      console.error('Error fetching loans:', error);
+      console.error('fetchLoans: network error', error);
+      setLoans([]);
     } finally {
       setLoading(false);
     }
@@ -224,20 +269,6 @@ export default function LoansPage() {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    });
-  };
-
-  const toggleInvestors = (loanId: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setExpandedInvestors((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(loanId)) {
-        newSet.delete(loanId);
-      } else {
-        newSet.add(loanId);
-      }
-      return newSet;
     });
   };
 
@@ -311,7 +342,7 @@ export default function LoansPage() {
     !!dueDateFilter;
 
   // Filter loans based on search and filters
-  const filteredLoans = loans.filter((loan) => {
+  const filteredLoans = loansList.filter((loan) => {
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -551,14 +582,14 @@ export default function LoansPage() {
               viewMode={viewMode}
               onViewModeChange={setViewMode}
               showCalendar={true}
-              hasData={loans.length > 0}
+              hasData={loansList.length > 0}
             />
             <SyncCalendarButton variant="outline" size="default" />
             <ExportButton
-              data={loans}
+              data={loansList}
               filteredData={sortedLoans}
-              columns={loansCSVColumns}
-              filename="loans"
+              sections={loanPDFSections}
+              onGeneratePDF={renderLoansPDF}
               variant="outline"
               size="default"
             />
@@ -878,7 +909,7 @@ export default function LoansPage() {
         {hasActiveFilters && (
           <div className="flex items-center gap-3 flex-wrap">
             <div className="text-sm text-muted-foreground">
-              Showing {filteredLoans.length} of {loans.length} loans
+              Showing {filteredLoans.length} of {loansList.length} loans
             </div>
             {dueDateFilter && (
               <Badge variant="secondary" className="gap-2">
@@ -904,7 +935,7 @@ export default function LoansPage() {
         )}
       </div>
 
-      {loans.length === 0 ? (
+      {loansList.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground mb-4">No loans found</p>
@@ -1130,8 +1161,6 @@ export default function LoansPage() {
                         {/* Action Buttons */}
                         <div className="pt-2 border-t">
                           <ActionButtonsGroup
-                            isExpanded={expandedInvestors.has(loan.id)}
-                            onToggle={(e) => toggleInvestors(loan.id, e)}
                             viewHref={`/loans/${loan.id}`}
                             onQuickView={(e) => {
                               e.preventDefault();
@@ -1139,68 +1168,10 @@ export default function LoansPage() {
                               setSelectedLoan(loan);
                               setIsModalOpen(true);
                             }}
-                            showToggle={true}
                             showView={false}
                             size="md"
                           />
                         </div>
-
-                        {/* Notes & Investors Section - Only shown when expanded */}
-                        {expandedInvestors.has(loan.id) && (
-                          <div className="space-y-3">
-                            {/* Investors Section */}
-                            {loan.loanInvestors.length > 0 && (
-                              <div className="pt-2 border-t">
-                                <div className="space-y-3">
-                                  {(() => {
-                                    // Group by investor
-                                    const investorMap = new Map<
-                                      number,
-                                      Array<(typeof loan.loanInvestors)[0]>
-                                    >();
-                                    loan.loanInvestors.forEach((li) => {
-                                      const existing =
-                                        investorMap.get(li.investor.id) || [];
-                                      existing.push(li);
-                                      investorMap.set(li.investor.id, existing);
-                                    });
-
-                                    return Array.from(investorMap.values()).map(
-                                      (transactions) => {
-                                        const investor =
-                                          transactions[0].investor;
-
-                                        // Calculate totals
-                                        const stats =
-                                          calculateTransactionStats(
-                                            transactions,
-                                          );
-                                        const totalPrincipal =
-                                          stats.totalPrincipal;
-                                        const totalInterest =
-                                          stats.totalInterest;
-                                        const avgRate = stats.averageRate;
-                                        const total = stats.total;
-
-                                        return (
-                                          <InvestorTransactionCard
-                                            key={investor.id}
-                                            investorName={investor.name}
-                                            transactions={transactions}
-                                            totalPrincipal={totalPrincipal}
-                                            avgRate={avgRate}
-                                            totalInterest={totalInterest}
-                                            total={total}
-                                          />
-                                        );
-                                      },
-                                    );
-                                  })()}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </CardContent>
                     </Card>
                   ))}
@@ -1213,18 +1184,6 @@ export default function LoansPage() {
             <LoansTable
               loans={sortedLoans}
               itemsPerPage={itemsPerPage}
-              expandedRows={expandedInvestors}
-              onToggleExpand={(loanId) => {
-                setExpandedInvestors((prev) => {
-                  const newSet = new Set(prev);
-                  if (newSet.has(loanId as number)) {
-                    newSet.delete(loanId as number);
-                  } else {
-                    newSet.add(loanId as number);
-                  }
-                  return newSet;
-                });
-              }}
               onQuickView={(loan) => {
                 setSelectedLoan(loan);
                 setIsModalOpen(true);
