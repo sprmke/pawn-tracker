@@ -16,6 +16,7 @@ import {
   ArrowLeftRight,
   Coins,
   LogOut,
+  Settings,
 } from 'lucide-react';
 import { useState, ReactNode, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
@@ -56,19 +57,24 @@ const navItems: NavItem[] = [
     icon: Home,
   },
   {
-    title: 'Transactions',
-    href: '/transactions',
-    icon: ArrowLeftRight,
-  },
-  {
     title: 'Loans',
     href: '/loans',
     icon: FileText,
   },
   {
+    title: 'Transactions',
+    href: '/transactions',
+    icon: ArrowLeftRight,
+  },
+  {
     title: 'Investors',
     href: '/investors',
     icon: Users,
+  },
+  {
+    title: 'Settings',
+    href: '/settings',
+    icon: Settings,
   },
 ];
 
@@ -99,7 +105,8 @@ export function Nav({
       if (item.subItems) {
         const isActiveSubItem = item.subItems.some(
           (subItem) =>
-            pathname === subItem.href || pathname.startsWith(subItem.href + '/')
+            pathname === subItem.href ||
+            pathname.startsWith(subItem.href + '/'),
         );
         if (isActiveSubItem) {
           newExpanded.add(item.title);
@@ -193,7 +200,7 @@ export function Nav({
             'lg:hidden fixed top-16 left-0 right-0 bottom-0 z-40 border-t-2 bg-background/98 backdrop-blur-xl transition-all duration-300 flex flex-col',
             isMobileMenuOpen
               ? 'translate-x-0 opacity-100'
-              : 'translate-x-full opacity-0'
+              : 'translate-x-full opacity-0',
           )}
         >
           <nav className="flex-1 space-y-2 p-3 overflow-y-auto">
@@ -209,7 +216,7 @@ export function Nav({
                       onClick={() => toggleMenu(item.title)}
                       className={cn(
                         'flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300',
-                        'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground hover:shadow-sm'
+                        'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground hover:shadow-sm',
                       )}
                     >
                       <div className="flex items-center space-x-3">
@@ -238,7 +245,7 @@ export function Nav({
                                 'flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300',
                                 isActive
                                   ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md'
-                                  : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+                                  : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground',
                               )}
                             >
                               <span>{subItem.title}</span>
@@ -262,7 +269,7 @@ export function Nav({
                     'group flex items-center space-x-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 relative',
                     isActive
                       ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md'
-                      : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground hover:shadow-sm'
+                      : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground hover:shadow-sm',
                   )}
                 >
                   <div
@@ -270,7 +277,7 @@ export function Nav({
                       'flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-300',
                       isActive
                         ? 'bg-primary-foreground/20'
-                        : 'bg-muted/50 group-hover:bg-primary/10'
+                        : 'bg-muted/50 group-hover:bg-primary/10',
                     )}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
@@ -322,7 +329,7 @@ export function Nav({
         <aside
           className={cn(
             'hidden lg:block fixed left-0 top-0 z-40 h-screen border-r-2 bg-background/95 backdrop-blur-lg transition-all duration-300 shadow-lg',
-            isCollapsed ? 'w-20' : 'w-72'
+            isCollapsed ? 'w-20' : 'w-72',
           )}
         >
           <div className="flex h-full flex-col">
@@ -351,7 +358,7 @@ export function Nav({
                 className={cn(
                   'flex items-center justify-center h-8 w-8 rounded-lg bg-muted/50 hover:bg-accent/50 text-muted-foreground hover:text-accent-foreground transition-all duration-300 hover:shadow-md',
                   isCollapsed &&
-                    'absolute -right-3 top-4 bg-background border-2 shadow-lg'
+                    'absolute -right-3 top-4 bg-background border-2 shadow-lg',
                 )}
                 title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
@@ -367,7 +374,7 @@ export function Nav({
             <nav
               className={cn(
                 'flex-1 space-y-1 overflow-y-auto',
-                isCollapsed ? 'p-2' : 'p-4'
+                isCollapsed ? 'p-2' : 'p-4',
               )}
             >
               {navItems.map((item) => {
@@ -384,14 +391,14 @@ export function Nav({
                           'flex items-center w-full rounded-xl py-1.5 text-sm font-medium transition-all duration-300 text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground hover:shadow-sm',
                           isCollapsed
                             ? 'justify-center px-2'
-                            : 'justify-between px-4'
+                            : 'justify-between px-4',
                         )}
                         title={isCollapsed ? item.title : undefined}
                       >
                         <div
                           className={cn(
                             'flex items-center',
-                            !isCollapsed && 'space-x-3'
+                            !isCollapsed && 'space-x-3',
                           )}
                         >
                           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/50">
@@ -422,7 +429,7 @@ export function Nav({
                                   'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-300',
                                   isActive
                                     ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md'
-                                    : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+                                    : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground',
                                 )}
                               >
                                 <span>{subItem.title}</span>
@@ -447,7 +454,7 @@ export function Nav({
                       isActive
                         ? 'bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground shadow-lg'
                         : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground hover:shadow-sm',
-                      isCollapsed ? 'justify-center px-2' : 'space-x-3 px-4'
+                      isCollapsed ? 'justify-center px-2' : 'space-x-3 px-4',
                     )}
                     title={isCollapsed ? item.title : undefined}
                   >
@@ -456,7 +463,7 @@ export function Nav({
                         'flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300',
                         isActive
                           ? 'bg-primary-foreground/20 shadow-sm'
-                          : 'bg-muted/50 group-hover:bg-primary/10'
+                          : 'bg-muted/50 group-hover:bg-primary/10',
                       )}
                     >
                       <Icon className="h-5 w-5 flex-shrink-0" />
@@ -476,7 +483,7 @@ export function Nav({
                   <DropdownMenuTrigger
                     className={cn(
                       'flex w-full items-center rounded-xl py-1.5 text-sm font-medium transition-all duration-300 hover:bg-accent/50 hover:shadow-md',
-                      isCollapsed ? 'justify-center px-2' : 'space-x-3 px-4'
+                      isCollapsed ? 'justify-center px-2' : 'space-x-3 px-4',
                     )}
                   >
                     <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-primary/30 shadow-sm">
@@ -552,8 +559,8 @@ export function Nav({
           user && !isCollapsed
             ? 'lg:pt-0 lg:ml-72'
             : user && isCollapsed
-            ? 'lg:pt-0 lg:ml-20'
-            : 'lg:pt-16 lg:ml-0' // Apply appropriate padding and margin based on auth state
+              ? 'lg:pt-0 lg:ml-20'
+              : 'lg:pt-16 lg:ml-0', // Apply appropriate padding and margin based on auth state
         )}
       >
         {children}
