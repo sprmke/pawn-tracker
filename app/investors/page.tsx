@@ -47,7 +47,8 @@ import {
   calculateInvestorStats,
   calculateAverageRate,
 } from '@/lib/calculations';
-import { investorsCSVColumns } from '@/lib/csv-columns';
+import { investorPDFSections } from '@/lib/pdf-sections';
+import { renderInvestorsPDF } from '@/components/pdf/investors-pdf-document';
 import { addDays, isAfter, isBefore, isPast } from 'date-fns';
 import type { LoanWithInvestors, LoanType } from '@/lib/types';
 
@@ -387,8 +388,8 @@ export default function InvestorsPage() {
             <ExportButton
               data={investors}
               filteredData={filteredInvestors}
-              columns={investorsCSVColumns}
-              filename="investors"
+              sections={investorPDFSections}
+              onGeneratePDF={renderInvestorsPDF}
               variant="outline"
               size="default"
             />
