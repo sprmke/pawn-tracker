@@ -64,7 +64,9 @@ import { LoanCreateModal, LoanDetailModal } from '@/components/loans';
 import { useLoanDuplicateStore } from '@/stores/loan-duplicate-store';
 import type { TransactionWithInvestor } from '@/lib/types';
 import { addDays, isAfter, isBefore, isPast } from 'date-fns';
-import { loansCSVColumns, transactionsCSVColumns } from '@/lib/csv-columns';
+import { loanPDFSections, transactionPDFSections } from '@/lib/pdf-sections';
+import { renderLoansPDF } from '@/components/pdf/loans-pdf-document';
+import { renderTransactionsPDF } from '@/components/pdf/transactions-pdf-document';
 
 interface InvestorDetailClientProps {
   investor: InvestorWithLoans;
@@ -73,7 +75,6 @@ interface InvestorDetailClientProps {
 export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
-  const [expandedLoans, setExpandedLoans] = useState<Set<number>>(new Set());
   const [loans, setLoans] = useState<LoanWithInvestors[]>([]);
   const [loansLoading, setLoansLoading] = useState(true);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
@@ -233,14 +234,10 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const totalEarnings = completedCapital + completedInterest;
   const activeCapital = totalCapital - completedCapital;
 
-  // Count active and completed loans
+  // Count active and completed loans — active includes Fully Funded, Partially Funded, and Overdue
   const activeLoanIds = new Set(
     investor.loanInvestors
-      .filter(
-        (li) =>
-          li.loan.status === 'Fully Funded' ||
-          li.loan.status === 'Partially Funded',
-      )
+      .filter((li) => li.loan.status !== 'Completed')
       .map((li) => li.loan.id),
   );
   const completedLoanIds = new Set(
@@ -834,8 +831,10 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   <ExportButton
                     data={loans}
                     filteredData={filteredLoans}
-                    columns={loansCSVColumns}
-                    filename={`loans_${investor.name.replace(/\s+/g, '_')}`}
+                    sections={loanPDFSections}
+                    onGeneratePDF={(data, keys) =>
+                      renderLoansPDF(data, keys, investor.id)
+                    }
                     variant="outline"
                     size="sm"
                   />
@@ -1137,20 +1136,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                 <LoansTable
                   loans={filteredLoans}
                   itemsPerPage={10}
-                  expandedRows={expandedLoans}
                   hideFields={['sentDates', 'dueDate', 'freeLotSqm']}
                   investorId={investor.id}
-                  onToggleExpand={(loanId) => {
-                    setExpandedLoans((prev) => {
-                      const newSet = new Set(prev);
-                      if (newSet.has(loanId as number)) {
-                        newSet.delete(loanId as number);
-                      } else {
-                        newSet.add(loanId as number);
-                      }
-                      return newSet;
-                    });
-                  }}
                   onQuickView={(loan) => {
                     setSelectedLoan(loan);
                     setShowLoanDetailModal(true);
@@ -1195,7 +1182,6 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   <MultiSelectFilter
                     options={[
                       { value: 'Investment', label: 'Investment' },
-                      { value: 'Loan', label: 'Loan' },
                     ]}
                     selected={transactionTypeFilter}
                     onChange={setTransactionTypeFilter}
@@ -1245,8 +1231,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   <ExportButton
                     data={transactionsWithInvestor}
                     filteredData={filteredTransactions}
-                    columns={transactionsCSVColumns}
-                    filename={`transactions_${investor.name.replace(/\s+/g, '_')}`}
+                    sections={transactionPDFSections}
+                    onGeneratePDF={renderTransactionsPDF}
                     variant="outline"
                     size="sm"
                   />
@@ -1295,7 +1281,6 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                         <MultiSelectFilter
                           options={[
                             { value: 'Investment', label: 'Investment' },
-                            { value: 'Loan', label: 'Loan' },
                           ]}
                           selected={transactionTypeFilter}
                           onChange={setTransactionTypeFilter}
