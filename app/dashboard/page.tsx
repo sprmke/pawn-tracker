@@ -11,7 +11,6 @@ import {
   DashboardActivityCards,
   PageHeader,
   OverdueChecker,
-  DownloadBackupButton,
 } from '@/components/common';
 import dynamic from 'next/dynamic';
 
@@ -249,11 +248,6 @@ async function getDashboardData(userId: string) {
       .filter((t) => t.direction === 'Out')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
-    const loanTransactions = allTransactions.filter((t) => t.type === 'Loan');
-    const investmentTransactions = allTransactions.filter(
-      (t) => t.type === 'Investment',
-    );
-
     // Helper function to check if a transaction qualifies as valid inflow
     // Inflow is only valid if:
     // - No loan attached (general investment transaction), OR
@@ -487,8 +481,6 @@ async function getDashboardData(userId: string) {
       activeInvestors,
       totalInflow,
       totalOutflow,
-      loanTransactions: loanTransactions.length,
-      investmentTransactions: investmentTransactions.length,
       // Chart data
       dailyData,
       weeklyData,
@@ -519,8 +511,6 @@ async function getDashboardData(userId: string) {
       activeInvestors: 0,
       totalInflow: 0,
       totalOutflow: 0,
-      loanTransactions: 0,
-      investmentTransactions: 0,
       dailyData: [],
       weeklyData: [],
       monthlyData: [],
@@ -553,7 +543,6 @@ export default async function DashboardPage() {
       <PageHeader
         title="Dashboard"
         description="Overview of your pawn business"
-        actions={<DownloadBackupButton />}
       />
 
       {/* Summary Card - Compact horizontal layout */}
