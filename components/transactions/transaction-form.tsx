@@ -18,6 +18,7 @@ import {
 import { useRegisterDialogFormState } from '@/components/ui/dialog';
 import { FormHeader } from '@/components/common';
 import { toLocalDateString } from '@/lib/date-utils';
+import { formatCurrency } from '@/lib/format';
 import { Plus, Trash2, UserPlus, Calendar, X } from 'lucide-react';
 import type { Investor } from '@/lib/types';
 import { InvestorFormModal } from '@/components/investors/investor-form-modal';
@@ -122,9 +123,6 @@ function calculateRecurringDates(
 
   return dates;
 }
-
-const formatPHP = (amount: number) =>
-  new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount);
 
 // ─── Single entry card ──────────────────────────────────────────────────────
 
@@ -310,7 +308,7 @@ function TransactionEntryCard({
                           }
                         >
                           {entry.direction == 'In' ? '+' : '-'}
-                          {formatPHP(parseFloat(entry.amount) || 0)}
+                          {formatCurrency(parseFloat(entry.amount) || 0)}
                         </span>
                       </div>
                     ))}
@@ -318,7 +316,7 @@ function TransactionEntryCard({
                   <div className="flex items-center justify-between text-xs pt-1 border-t">
                     <span className="text-muted-foreground">Total</span>
                     <span className="font-semibold">
-                      {formatPHP((parseFloat(entry.amount) || 0) * recurringDates.length)}
+                      {formatCurrency((parseFloat(entry.amount) || 0) * recurringDates.length)}
                     </span>
                   </div>
                 </div>

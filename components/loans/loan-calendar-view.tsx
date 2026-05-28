@@ -16,6 +16,7 @@ import {
   LoanDueEventCard,
   LoanInterestDueEventCard,
 } from './loan-event-cards';
+import { formatCurrencyCompact } from '@/lib/format';
 
 interface LoanCalendarViewProps {
   loans: LoanWithInvestors[];
@@ -28,15 +29,6 @@ export function LoanCalendarView({
 }: LoanCalendarViewProps) {
   const calendarEvents = useLoanCalendarEvents(loans);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const renderEventCard = (event: CalendarEvent, eventIndex: number) => {
     if (event.type == 'sent') {
       const sentEvent = event as CalendarEventSent;
@@ -46,7 +38,7 @@ export function LoanCalendarView({
           key={`${sentEvent.loan.id}-sent-${eventIndex}`}
           loan={sentEvent.loan}
           onClick={() => onLoanClick(sentEvent.loan)}
-          formatCurrency={formatCurrency}
+          formatCurrency={formatCurrencyCompact}
           investors={sentEvent.investors}
           totalAmount={sentEvent.totalAmount}
           size="sm"
@@ -60,7 +52,7 @@ export function LoanCalendarView({
           key={`${dueEvent.loan.id}-due-${eventIndex}`}
           loan={dueEvent.loan}
           onClick={() => onLoanClick(dueEvent.loan)}
-          formatCurrency={formatCurrency}
+          formatCurrency={formatCurrencyCompact}
           totalPrincipal={dueEvent.totalPrincipal}
           totalInterest={dueEvent.totalInterest}
           totalAmount={dueEvent.totalAmount}
@@ -74,7 +66,7 @@ export function LoanCalendarView({
           key={`${interestDueEvent.loan.id}-interest-due-${interestDueEvent.loanInvestor.id}-${interestDueEvent.interestPeriod.id}`}
           loan={interestDueEvent.loan}
           onClick={() => onLoanClick(interestDueEvent.loan)}
-          formatCurrency={formatCurrency}
+          formatCurrency={formatCurrencyCompact}
           investorName={interestDueEvent.loanInvestor.investor.name}
           principal={interestDueEvent.principal}
           interest={interestDueEvent.interest}
@@ -88,7 +80,7 @@ export function LoanCalendarView({
 
   const calendarConfig: CalendarConfig = useMemo(
     () => ({
-      formatCurrency,
+      formatCurrency: formatCurrencyCompact,
       onEventClick: (event) => {
         if (event.type == 'sent') {
           onLoanClick((event as CalendarEventSent).loan);

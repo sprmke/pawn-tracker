@@ -22,6 +22,7 @@ import {
   Copy,
   MoreVertical,
 } from 'lucide-react';
+import { PriceVisibilityToggle } from './price-visibility-toggle';
 
 // Common styles for responsive icon buttons
 const btnClass = 'flex-shrink-0 h-8 px-2 md:px-3';
@@ -50,6 +51,7 @@ interface DetailHeaderProps {
   showViewLoan?: boolean;
   onDuplicate?: () => void;
   showDuplicate?: boolean;
+  showPriceToggle?: boolean;
 }
 
 export function DetailHeader({
@@ -75,6 +77,7 @@ export function DetailHeader({
   showViewLoan = false,
   onDuplicate,
   showDuplicate = false,
+  showPriceToggle = true,
 }: DetailHeaderProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -174,8 +177,9 @@ export function DetailHeader({
         </Button>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+              {showPriceToggle && <PriceVisibilityToggle />}
             </div>
             {description && (
               <p className="text-sm sm:text-base text-muted-foreground">

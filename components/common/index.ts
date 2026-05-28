@@ -8,6 +8,7 @@ export {
 } from '@/lib/summary-grid';
 export { EmptyState } from './empty-state';
 export { PageHeader } from './page-header';
+export { PriceVisibilityToggle } from './price-visibility-toggle';
 export { ViewModeToggle } from './view-mode-toggle';
 export { LoadingState, InlineLoader } from './loading-state';
 export { SearchFilter } from './search-filter';

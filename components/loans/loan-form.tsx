@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/collapsible';
 import { CopyInvestorModal } from './copy-investor-modal';
 import { DuplicateLoanData } from '@/stores/loan-duplicate-store';
+import { formatCurrency } from '@/lib/format';
 
 const loanSchema = z.object({
   loanName: z.string().min(1, 'Loan name is required'),
@@ -853,13 +854,6 @@ export function LoanForm({
       fundedCapital,
       balance,
     };
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP',
-    }).format(amount);
   };
 
   const onSubmit = async (data: z.infer<typeof loanSchema>) => {

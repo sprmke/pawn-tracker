@@ -653,28 +653,29 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         metrics={[
           {
             label: 'Total Capital',
-            value: formatCurrency(totalCapital),
+            amount: totalCapital,
             subValue: `${uniqueLoanCount} loans`,
           },
           {
             label: 'Active',
-            value: formatCurrency(activeCapital),
+            amount: activeCapital,
             subValue: `${activeLoansCount} loans`,
           },
           {
             label: 'Completed',
-            value: formatCurrency(completedCapital),
+            amount: completedCapital,
             subValue: `${completedLoansCount} loans`,
           },
           {
             label: 'Interest Earned',
-            value: formatCurrency(completedInterest),
-            subValue: `of ${formatCurrency(totalInterest)}`,
+            amount: completedInterest,
+            subValueTemplate: 'of {amount}',
+            subAmount: totalInterest,
             valueClassName: 'text-emerald-600 dark:text-emerald-500',
           },
           {
             label: 'Total Earnings',
-            value: formatCurrency(totalEarnings),
+            amount: totalEarnings,
             subValue: 'Completed + Interest Earned',
           },
           ...(totalLot > 0 || totalLotWithDepacto > 0

@@ -3,11 +3,18 @@
  */
 
 import { getTodayAtMidnight, normalizeToMidnight } from './date-utils';
+import {
+  arePricesHidden,
+  HIDDEN_CURRENCY_DISPLAY,
+  HIDDEN_PERCENTAGE_DISPLAY,
+} from './price-visibility';
 
 /**
  * Format a number or string as Philippine Peso currency
  */
 export function formatCurrency(amount: string | number): string {
+  if (arePricesHidden()) return HIDDEN_CURRENCY_DISPLAY;
+
   const numAmount = typeof amount == 'string' ? parseFloat(amount) : amount;
   return new Intl.NumberFormat('en-PH', {
     style: 'currency',
@@ -19,6 +26,8 @@ export function formatCurrency(amount: string | number): string {
  * Format a number or string as Philippine Peso currency without decimals
  */
 export function formatCurrencyCompact(amount: string | number): string {
+  if (arePricesHidden()) return HIDDEN_CURRENCY_DISPLAY;
+
   const numAmount = typeof amount == 'string' ? parseFloat(amount) : amount;
   return new Intl.NumberFormat('en-PH', {
     style: 'currency',
@@ -77,5 +86,6 @@ export function isFutureDate(date: Date | string): boolean {
  * Format a percentage value
  */
 export function formatPercentage(value: number, decimals: number = 2): string {
+  if (arePricesHidden()) return HIDDEN_PERCENTAGE_DISPLAY;
   return `${value.toFixed(decimals)}%`;
 }

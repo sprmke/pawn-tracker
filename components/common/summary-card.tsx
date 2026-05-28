@@ -12,16 +12,41 @@ import {
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { getSummaryMetricGridCols } from '@/lib/summary-grid';
+import { formatCurrency } from '@/lib/format';
+import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
 
 export { getSummaryMetricGridCols } from '@/lib/summary-grid';
 
-interface MetricItem {
+export interface MetricItem {
   label: string;
-  value: string | ReactNode;
+  /** Pre-formatted or custom display (use `amount` for currency that respects visibility). */
+  value?: string | ReactNode;
+  /** Formatted on the client so price visibility toggle applies (including server-rendered pages). */
+  amount?: number;
   subValue?: string;
+  /** e.g. `"of {amount}"` — `{amount}` is replaced with formatted currency. */
+  subValueTemplate?: string;
+  subAmount?: number;
   valueClassName?: string;
   icon?: LucideIcon;
   accentClassName?: string;
+}
+
+function resolveMetricValue(metric: MetricItem): string | ReactNode {
+  if (metric.amount !==undefined) {
+    return formatCurrency(metric.amount);
+  }
+  return metric.value ?? '—';
+}
+
+function resolveMetricSubValue(metric: MetricItem): string | undefined {
+  if (metric.subValueTemplate && metric.subAmount !==undefined) {
+    return metric.subValueTemplate.replace(
+      '{amount}',
+      formatCurrency(metric.subAmount),
+    );
+  }
+  return metric.subValue;
 }
 
 interface SummaryCardProps {
@@ -41,6 +66,8 @@ const defaultMetricStyles: Array<{
 ];
 
 export function SummaryCard({ metrics, className }: SummaryCardProps) {
+  usePriceVisibilityStore((state) => state.pricesHidden);
+
   return (
     <div
       className={cn(
@@ -80,13 +107,18 @@ export function SummaryCard({ metrics, className }: SummaryCardProps) {
                   metric.valueClassName,
                 )}
               >
-                {metric.value}
+                {resolveMetricValue(metric)}
               </p>
-              {metric.subValue && (
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground break-words">
-                  {metric.subValue}
-                </p>
-              )}
+              {(() => {
+                const subValue = resolveMetricSubValue(metric);
+                return (
+                  subValue && (
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground break-words">
+                      {subValue}
+                    </p>
+                  )
+                );
+              })()}
             </CardContent>
           </Card>
         );

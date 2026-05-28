@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Copy } from 'lucide-react';
-import { formatDate } from '@/lib/format';
+import { formatCurrency, formatDate, formatPercentage } from '@/lib/format';
 import type { InterestPeriodData } from './multiple-interest-manager';
 
 interface PeriodConfiguration {
@@ -191,11 +191,8 @@ export function CopyPeriodModal({
   const sourceConfig = getSourceConfig();
   const sourceDisplayValue =
     sourceConfig.interestType == 'rate'
-      ? `${sourceConfig.interestRate}%`
-      : `₱${parseFloat(sourceConfig.interestAmount || '0').toLocaleString('en-PH', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}`;
+      ? formatPercentage(parseFloat(sourceConfig.interestRate || '0'))
+      : formatCurrency(parseFloat(sourceConfig.interestAmount || '0'));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -243,11 +240,12 @@ export function CopyPeriodModal({
                     const periodConfig = getPeriodConfig(period);
                     const periodDisplayValue =
                       periodConfig.interestType == 'rate'
-                        ? `${periodConfig.interestRate}%`
-                        : `₱${parseFloat(periodConfig.interestAmount || '0').toLocaleString('en-PH', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}`;
+                        ? formatPercentage(
+                            parseFloat(periodConfig.interestRate || '0')
+                          )
+                        : formatCurrency(
+                            parseFloat(periodConfig.interestAmount || '0')
+                          );
 
                     return (
                       <div

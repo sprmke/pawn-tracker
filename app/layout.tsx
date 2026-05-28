@@ -6,6 +6,7 @@ import { getCachedAuth } from '@/auth';
 import { Toaster } from '@/components/ui/sonner';
 import { Suspense } from 'react';
 import { NavigationProgressProvider } from '@/components/common';
+import { PriceVisibilityShell } from '@/components/layout/price-visibility-shell';
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -39,7 +40,9 @@ export default async function RootLayout({
             <Nav user={session?.user}>
               {session ? (
                 <main className="app-shell min-h-screen p-4 sm:p-6 lg:p-8 xl:p-10">
-                  <div className="mx-auto max-w-[1680px]">{children}</div>
+                  <PriceVisibilityShell>
+                    <div className="mx-auto max-w-[1680px]">{children}</div>
+                  </PriceVisibilityShell>
                 </main>
               ) : (
                 <main className="min-h-screen">{children}</main>

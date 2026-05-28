@@ -1,6 +1,5 @@
 import { db } from '@/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/lib/format';
 import {
   calculateTotalPrincipal,
   calculateTotalInterest,
@@ -558,28 +557,29 @@ export default async function DashboardPage() {
         metrics={[
           {
             label: 'Total Principal',
-            value: formatCurrency(data.totalPrincipal),
+            amount: data.totalPrincipal,
             subValue: `${data.totalLoans} loans`,
           },
           {
             label: 'Active',
-            value: formatCurrency(activePrincipal),
+            amount: activePrincipal,
             subValue: `${data.activeLoansCount} loans`,
           },
           {
             label: 'Completed',
-            value: formatCurrency(data.completedPrincipal),
+            amount: data.completedPrincipal,
             subValue: `${data.completedLoansCount} loans`,
           },
           {
             label: 'Interest Earned',
-            value: formatCurrency(data.completedInterestEarned),
-            subValue: `of ${formatCurrency(data.totalInterestExpected)}`,
+            amount: data.completedInterestEarned,
+            subValueTemplate: 'of {amount}',
+            subAmount: data.totalInterestExpected,
             valueClassName: 'text-emerald-600 dark:text-emerald-500',
           },
           {
             label: 'Total Earnings',
-            value: formatCurrency(totalEarnings),
+            amount: totalEarnings,
             subValue: 'Completed + Interest Earned',
           },
         ]}

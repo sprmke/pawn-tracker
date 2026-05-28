@@ -12,6 +12,7 @@ import {
   TransactionCalendarEvent,
 } from './use-transaction-calendar-events';
 import { TransactionEventCard } from './transaction-event-card';
+import { formatCurrencyCompact } from '@/lib/format';
 
 interface TransactionCalendarViewProps {
   transactions: TransactionWithInvestor[];
@@ -24,15 +25,6 @@ export function TransactionCalendarView({
 }: TransactionCalendarViewProps) {
   const calendarEvents = useTransactionCalendarEvents(transactions);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const renderEventCard = (event: CalendarEvent, eventIndex: number) => {
     const transactionEvent = event as TransactionCalendarEvent;
 
@@ -41,7 +33,7 @@ export function TransactionCalendarView({
         key={`${transactionEvent.transaction.id}-${eventIndex}`}
         transaction={transactionEvent.transaction}
         onClick={() => onTransactionClick(transactionEvent.transaction)}
-        formatCurrency={formatCurrency}
+        formatCurrency={formatCurrencyCompact}
         size="sm"
       />
     );
@@ -49,7 +41,7 @@ export function TransactionCalendarView({
 
   const calendarConfig: CalendarConfig = useMemo(
     () => ({
-      formatCurrency,
+      formatCurrency: formatCurrencyCompact,
       onEventClick: (event) => {
         const transactionEvent = event as TransactionCalendarEvent;
         onTransactionClick(transactionEvent.transaction);

@@ -65,6 +65,7 @@ import {
   SyncCalendarButton,
 } from '@/components/common';
 import { toLocalDateString } from '@/lib/date-utils';
+import { formatCurrency } from '@/lib/format';
 
 type SortField =
   | 'loanName'
@@ -255,13 +256,6 @@ export default function LoansPage() {
       console.error('Error fetching investors:', error);
       setInvestors([]);
     }
-  };
-
-  const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP',
-    }).format(parseFloat(amount));
   };
 
   const formatDate = (date: Date) => {
