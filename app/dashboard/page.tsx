@@ -14,14 +14,20 @@ import {
 } from '@/components/common';
 import dynamic from 'next/dynamic';
 
-const CurrencyBarChart = dynamic(
-  () => import('@/components/common/charts/currency-bar-chart').then((m) => m.CurrencyBarChart),
+const CurrencyBarChart = dynamic(() =>
+  import('@/components/common/charts/currency-bar-chart').then(
+    (m) => m.CurrencyBarChart,
+  ),
 );
-const LoanTypePieChart = dynamic(
-  () => import('@/components/common/charts/loan-type-pie-chart').then((m) => m.LoanTypePieChart),
+const LoanTypePieChart = dynamic(() =>
+  import('@/components/common/charts/loan-type-pie-chart').then(
+    (m) => m.LoanTypePieChart,
+  ),
 );
-const CashflowTrendChart = dynamic(
-  () => import('@/components/common/charts/cashflow-trend-chart').then((m) => m.CashflowTrendChart),
+const CashflowTrendChart = dynamic(() =>
+  import('@/components/common/charts/cashflow-trend-chart').then(
+    (m) => m.CashflowTrendChart,
+  ),
 );
 import type { LoanType } from '@/lib/types';
 import {
@@ -89,45 +95,49 @@ async function getDashboardData(userId: string) {
     let allTransactions;
 
     if (investorRecord) {
-      const [sharedLoanInvestments, sharedInvestorLoanInvestments, txns] = await Promise.all([
-        db.query.loanInvestors.findMany({
-          where: eq(loanInvestors.investorId, investorRecord.id),
-          with: {
-            loan: {
-              with: {
-                loanInvestors: {
-                  with: {
-                    investor: true,
-                    interestPeriods: true,
-                    receivedPayments: true,
+      const [sharedLoanInvestments, sharedInvestorLoanInvestments, txns] =
+        await Promise.all([
+          db.query.loanInvestors.findMany({
+            where: eq(loanInvestors.investorId, investorRecord.id),
+            with: {
+              loan: {
+                with: {
+                  loanInvestors: {
+                    with: {
+                      investor: true,
+                      interestPeriods: true,
+                      receivedPayments: true,
+                    },
                   },
-                },
-                transactions: {
-                  orderBy: (transactions, { desc }) => [desc(transactions.date)],
+                  transactions: {
+                    orderBy: (transactions, { desc }) => [
+                      desc(transactions.date),
+                    ],
+                  },
                 },
               },
             },
-          },
-        }),
-        db.query.loanInvestors.findMany({
-          where: eq(loanInvestors.investorId, investorRecord.id),
-          with: {
-            loan: {
-              with: {
-                loanInvestors: {
-                  with: {
-                    investor: {
-                      with: {
-                        loanInvestors: {
-                          with: {
-                            loan: true,
-                            interestPeriods: true,
+          }),
+          db.query.loanInvestors.findMany({
+            where: eq(loanInvestors.investorId, investorRecord.id),
+            with: {
+              loan: {
+                with: {
+                  loanInvestors: {
+                    with: {
+                      investor: {
+                        with: {
+                          loanInvestors: {
+                            with: {
+                              loan: true,
+                              interestPeriods: true,
+                            },
                           },
-                        },
-                        transactions: {
-                          orderBy: (transactions, { desc }) => [
-                            desc(transactions.date),
-                          ],
+                          transactions: {
+                            orderBy: (transactions, { desc }) => [
+                              desc(transactions.date),
+                            ],
+                          },
                         },
                       },
                     },
@@ -135,21 +145,20 @@ async function getDashboardData(userId: string) {
                 },
               },
             },
-          },
-        }),
-        db.query.transactions.findMany({
-          where: (transactions, { eq, or }) =>
-            or(
-              eq(transactions.userId, userId),
-              eq(transactions.investorId, investorRecord.id),
-            ),
-          with: {
-            investor: true,
-            loan: true,
-          },
-          orderBy: (transactions, { desc }) => [desc(transactions.date)],
-        }),
-      ]);
+          }),
+          db.query.transactions.findMany({
+            where: (transactions, { eq, or }) =>
+              or(
+                eq(transactions.userId, userId),
+                eq(transactions.investorId, investorRecord.id),
+              ),
+            with: {
+              investor: true,
+              loan: true,
+            },
+            orderBy: (transactions, { desc }) => [desc(transactions.date)],
+          }),
+        ]);
 
       sharedLoans = sharedLoanInvestments.map((li) => li.loan);
       allTransactions = txns;
@@ -344,22 +353,22 @@ async function getDashboardData(userId: string) {
       });
     }
 
-    // Loan type distribution (Pastel Colors)
+    // Loan type distribution
     const loanTypeData = [
       {
         name: 'Lot Title',
         value: allLoans.filter((l) => l.type == 'Lot Title').length,
-        color: '#fb923c', // Orange-400
+        color: '#e8850c', // Primary Orange
       },
       {
         name: 'OR/CR',
         value: allLoans.filter((l) => l.type == 'OR/CR').length,
-        color: '#818cf8', // Indigo-400
+        color: '#7c6dcb', // Violet
       },
       {
         name: 'Agent',
         value: allLoans.filter((l) => l.type == 'Agent').length,
-        color: '#e879f9', // Fuchsia-400
+        color: '#dc6b6b', // Coral
       },
     ].filter((item) => item.value > 0);
 
@@ -376,22 +385,22 @@ async function getDashboardData(userId: string) {
       {
         name: 'Fully Funded',
         value: fullyFundedLoans,
-        color: '#34d399', // Emerald-400
+        color: '#34b39a', // Teal
       },
       {
         name: 'Partially Funded',
         value: partiallyFundedLoans,
-        color: '#fcd34d', // Amber-300
+        color: '#d4a535', // Gold
       },
       {
         name: 'Completed',
         value: completedLoansCount,
-        color: '#38bdf8', // Sky-400
+        color: '#e8850c', // Amber
       },
       {
         name: 'Overdue',
         value: overdueLoansCount,
-        color: '#fb7185', // Rose-400
+        color: '#dc6b6b', // Coral
       },
     ].filter((item) => item.value > 0);
 
@@ -536,16 +545,15 @@ export default async function DashboardPage() {
   const activePrincipal = data.totalPrincipal - data.completedPrincipal;
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Automatically check for overdue loans and periods */}
+    <div className="space-y-8 md:space-y-10">
       <OverdueChecker />
 
       <PageHeader
         title="Dashboard"
-        description="Overview of your pawn business"
+        description="Overview of your pawn business performance and upcoming activity."
+        eyebrow="Welcome back"
       />
 
-      {/* Summary Card - Compact horizontal layout */}
       <SummaryCard
         metrics={[
           {
@@ -577,62 +585,81 @@ export default async function DashboardPage() {
         ]}
       />
 
-      {/* Upcoming Activity */}
-      <DashboardActivityCards
-        completedLoans={data.completedLoansData}
-        overdueLoans={data.overdueLoansData}
-        pendingDisbursements={data.upcomingPaymentsToSend}
-        upcomingPaymentsDue={data.upcomingPaymentsDue}
-      />
-
-      {/* Charts Section */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Cashflow Trend */}
-        <CashflowTrendChart
-          dailyData={data.dailyData}
-          weeklyData={data.weeklyData}
-          monthlyData={data.monthlyData}
-          title="Cashflow Trend"
-          emptyMessage="No cashflow data"
+      <section className="space-y-4">
+        <div>
+          <p className="section-eyebrow">Activity</p>
+          <h2 className="text-lg font-semibold tracking-tight">
+            Needs attention
+          </h2>
+        </div>
+        <DashboardActivityCards
+          completedLoans={data.completedLoansData}
+          overdueLoans={data.overdueLoansData}
+          pendingDisbursements={data.upcomingPaymentsToSend}
+          upcomingPaymentsDue={data.upcomingPaymentsDue}
         />
+      </section>
 
-        {/* Top Investors by Capital */}
-        <CurrencyBarChart
-          data={data.investorCapitalData}
-          title="Top Investors by Capital"
-          xAxisKey="name"
-          dataKeys={[
-            {
-              key: 'capital',
-              label: 'Capital',
-              color: '#5986f9', // Pastel Blue
-            },
-            {
-              key: 'interest',
-              label: 'Interest',
-              color: '#34d399', // Pastel Emerald
-            },
-          ]}
-          emptyMessage="No investors found"
-        />
-      </div>
+      <section className="space-y-4">
+        <div>
+          <p className="section-eyebrow">Analytics</p>
+          <h2 className="text-lg font-semibold tracking-tight">
+            Trends & insights
+          </h2>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-2">
+          {/* Cashflow Trend */}
+          <CashflowTrendChart
+            dailyData={data.dailyData}
+            weeklyData={data.weeklyData}
+            monthlyData={data.monthlyData}
+            title="Cashflow Trend"
+            emptyMessage="No cashflow data"
+          />
 
-      {/* Distribution Charts */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Loan Type Distribution */}
-        <LoanTypePieChart
-          data={data.loanTypeData}
-          title="Loan Type Distribution"
-          emptyMessage="No loans found"
-        />
+          {/* Top Investors by Capital */}
+          <CurrencyBarChart
+            data={data.investorCapitalData}
+            title="Top Investors by Capital"
+            xAxisKey="name"
+            dataKeys={[
+              {
+                key: 'capital',
+                label: 'Capital',
+                color: '#e8850c', // Warm Amber
+              },
+              {
+                key: 'interest',
+                label: 'Interest',
+                color: '#34b39a', // Teal
+              },
+            ]}
+            emptyMessage="No investors found"
+          />
+        </div>
+      </section>
 
-        {/* Loan Status Distribution */}
-        <LoanTypePieChart
-          data={data.loanStatusData}
-          title="Loan Status Distribution"
-          emptyMessage="No loans found"
-        />
-      </div>
+      <section className="space-y-4">
+        <div>
+          <p className="section-eyebrow">Portfolio</p>
+          <h2 className="text-lg font-semibold tracking-tight">Distribution</h2>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-2">
+          {/* Loan Type Distribution */}
+          <LoanTypePieChart
+            data={data.loanTypeData}
+            title="Loan Type Distribution"
+            emptyMessage="No loans found"
+          />
+
+          {/* Loan Status Distribution */}
+          <LoanTypePieChart
+            data={data.loanStatusData}
+            title="Loan Status Distribution"
+            emptyMessage="No loans found"
+          />
+        </div>
+      </section>
     </div>
   );
 }
