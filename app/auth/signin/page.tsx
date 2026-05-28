@@ -5,7 +5,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Logo } from '@/components/common';
 
@@ -23,21 +22,28 @@ export default async function SignInPage({
   const callbackUrl = params?.callbackUrl || '/dashboard';
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-4 text-center">
+    <div className="flex min-h-screen items-center justify-center p-4 relative">
+      {/* Background decorations */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-primary/6 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 h-[400px] w-[400px] rounded-full bg-chart-5/6 blur-3xl" />
+      </div>
+
+      <Card className="w-full max-w-md border-border/40 shadow-[var(--shadow-elevated-lg)]">
+        <CardHeader className="space-y-4 text-center pb-2 pt-8">
           <div className="flex justify-center">
             <Logo size="xl" showIcon={true} gradient={true} />
           </div>
-          <div className="space-y-1">
-            <CardDescription>
-              Sign in to your account to manage loans and investors
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+            <CardDescription className="text-base">
+              Sign in to manage your loans and investors
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5 px-8 pb-8 pt-2">
           <form action={handleGoogleSignIn.bind(null, callbackUrl)}>
-            <Button type="submit" variant="outline" className="w-full">
+            <Button type="submit" variant="outline" className="w-full h-12 rounded-2xl text-sm font-semibold">
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -65,7 +71,7 @@ export default async function SignInPage({
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
+              <span className="bg-card px-2 text-muted-foreground">
                 Secure authentication
               </span>
             </div>
