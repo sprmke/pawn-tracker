@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Plus_Jakarta_Sans, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Nav } from '@/components/layout/nav';
 import { getCachedAuth } from '@/auth';
@@ -7,9 +7,9 @@ import { Toaster } from '@/components/ui/sonner';
 import { Suspense } from 'react';
 import { NavigationProgressProvider } from '@/components/common';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
 });
 
 const geistMono = Geist_Mono({
@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Pawn Business Tracker',
-  description: 'Track pawn business loans and investor transactions',
+  title: 'PawnTracker',
+  description: 'Professional pawn business loan and investor management',
 };
 
 export default async function RootLayout({
@@ -32,19 +32,17 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${plusJakarta.className} ${geistMono.variable} antialiased`}
       >
         <Suspense fallback={null}>
           <NavigationProgressProvider>
             <Nav user={session?.user}>
               {session ? (
-                <main className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-background via-background to-muted/20">
-                  <div className="mx-auto max-w-[1600px]">{children}</div>
+                <main className="app-shell min-h-screen p-4 sm:p-6 lg:p-8 xl:p-10">
+                  <div className="mx-auto max-w-[1680px]">{children}</div>
                 </main>
               ) : (
-                <main className="min-h-screen">
-                  {children}
-                </main>
+                <main className="min-h-screen">{children}</main>
               )}
             </Nav>
           </NavigationProgressProvider>
