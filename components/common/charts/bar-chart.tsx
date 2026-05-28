@@ -10,12 +10,24 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CustomTooltip } from './custom-tooltip';
 import { BarChart3 } from 'lucide-react';
+import {
+  ChartCard,
+  ChartEmptyState,
+  ChartGradientDefs,
+  ChartLegend,
+} from './chart-shell';
+import {
+  CHART_AXIS,
+  CHART_GRID,
+  CHART_HEIGHT,
+  CHART_MARGIN,
+  chartGradientId,
+} from './chart-theme';
 
 interface BarChartProps {
-  data: Array<{ [key: string]: any }>;
+  data: Array<{ [key: string]: unknown }>;
   title: string;
   dataKeys: Array<{
     key: string;
@@ -28,27 +40,6 @@ interface BarChartProps {
   emptyMessage?: string;
 }
 
-const CustomLegend = ({ payload }: any) => {
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-3 pt-4 px-2">
-      {payload.map((entry: any, index: number) => (
-        <div
-          key={`legend-${index}`}
-          className="flex items-center gap-2 px-3 py-1.5 bg-muted/30 rounded-full border border-border/50 hover:bg-muted/50 transition-colors"
-        >
-          <div
-            className="w-3 h-2 rounded-sm flex-shrink-0 ring-2 ring-background"
-            style={{ backgroundColor: entry.color }}
-          />
-          <span className="text-xs font-medium text-foreground">
-            {entry.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
 export function BarChart({
   data,
   title,
@@ -58,7 +49,6 @@ export function BarChart({
   layout = 'horizontal',
   emptyMessage,
 }: BarChartProps) {
-  // Check if data is empty or if all values are zero/null
   const isEmpty =
     !data ||
     data.length == 0 ||
@@ -67,99 +57,83 @@ export function BarChart({
     );
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        {isEmpty ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <BarChart3 className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <p className="text-sm text-muted-foreground">
-              {emptyMessage || 'No data available'}
-            </p>
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={320}>
-            <RechartsBarChart
-              data={data}
-              layout={layout}
-              margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-              barGap={8}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(var(--border))"
-                opacity={0.3}
-                vertical={false}
-              />
-              {layout == 'horizontal' ? (
-                <>
-                  <XAxis
-                    dataKey={xAxisKey}
-                    tick={{
-                      fill: 'hsl(var(--muted-foreground))',
-                      fontSize: 12,
-                    }}
-                    tickLine={false}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
-                    dy={10}
-                  />
-                  <YAxis
-                    tick={{
-                      fill: 'hsl(var(--muted-foreground))',
-                      fontSize: 12,
-                    }}
-                    tickLine={false}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
-                    tickFormatter={formatValue}
-                    width={80}
-                  />
-                </>
-              ) : (
-                <>
-                  <XAxis
-                    type="number"
-                    tick={{
-                      fill: 'hsl(var(--muted-foreground))',
-                      fontSize: 12,
-                    }}
-                    tickLine={false}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
-                    tickFormatter={formatValue}
-                    width={80}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey={xAxisKey}
-                    tick={{
-                      fill: 'hsl(var(--muted-foreground))',
-                      fontSize: 12,
-                    }}
-                    tickLine={false}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
-                  />
-                </>
-              )}
-              <Tooltip
-                content={<CustomTooltip formatValue={formatValue} />}
-                cursor={{ fill: 'hsl(var(--accent))', opacity: 0.2 }}
-              />
-              <Legend content={<CustomLegend />} />
-              {dataKeys.map((dataKey) => (
-                <Bar
-                  key={dataKey.key}
-                  dataKey={dataKey.key}
-                  name={dataKey.label}
-                  fill={dataKey.color}
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={60}
+    <ChartCard title={title}>
+      {isEmpty ? (
+        <ChartEmptyState
+          icon={BarChart3}
+          message={emptyMessage || 'No data available'}
+        />
+      ) : (
+        <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+          <RechartsBarChart
+            data={data}
+            layout={layout}
+            margin={CHART_MARGIN}
+            barGap={6}
+            barCategoryGap="18%"
+          >
+            <ChartGradientDefs
+              keys={dataKeys.map((dk) => ({ id: dk.key, color: dk.color }))}
+            />
+            <CartesianGrid {...CHART_GRID} />
+            {layout == 'horizontal' ? (
+              <>
+                <XAxis
+                  dataKey={xAxisKey}
+                  tick={CHART_AXIS.tick}
+                  tickLine={CHART_AXIS.tickLine}
+                  axisLine={CHART_AXIS.axisLine}
+                  dy={8}
+                  interval={0}
+                  tickFormatter={(value: string) =>
+                    value.length > 12 ? `${value.slice(0, 11)}…` : value
+                  }
                 />
-              ))}
-            </RechartsBarChart>
-          </ResponsiveContainer>
-        )}
-      </CardContent>
-    </Card>
+                <YAxis
+                  tick={CHART_AXIS.tick}
+                  tickLine={CHART_AXIS.tickLine}
+                  axisLine={CHART_AXIS.axisLine}
+                  tickFormatter={formatValue}
+                  width={72}
+                />
+              </>
+            ) : (
+              <>
+                <XAxis
+                  type="number"
+                  tick={CHART_AXIS.tick}
+                  tickLine={CHART_AXIS.tickLine}
+                  axisLine={CHART_AXIS.axisLine}
+                  tickFormatter={formatValue}
+                />
+                <YAxis
+                  type="category"
+                  dataKey={xAxisKey}
+                  tick={CHART_AXIS.tick}
+                  tickLine={CHART_AXIS.tickLine}
+                  axisLine={CHART_AXIS.axisLine}
+                  width={100}
+                />
+              </>
+            )}
+            <Tooltip
+              content={<CustomTooltip formatValue={formatValue} />}
+              cursor={{ fill: '#ebe7e2', opacity: 0.45 }}
+            />
+            <Legend content={<ChartLegend variant="bar" />} />
+            {dataKeys.map((dataKey) => (
+              <Bar
+                key={dataKey.key}
+                dataKey={dataKey.key}
+                name={dataKey.label}
+                fill={`url(#${chartGradientId(dataKey.key)})`}
+                radius={[10, 10, 4, 4]}
+                maxBarSize={48}
+              />
+            ))}
+          </RechartsBarChart>
+        </ResponsiveContainer>
+      )}
+    </ChartCard>
   );
 }

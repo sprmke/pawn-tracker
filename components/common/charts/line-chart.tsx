@@ -10,12 +10,13 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CustomTooltip } from './custom-tooltip';
 import { TrendingUp } from 'lucide-react';
+import { ChartCard, ChartEmptyState, ChartLegend } from './chart-shell';
+import { CHART_AXIS, CHART_GRID, CHART_HEIGHT, CHART_MARGIN } from './chart-theme';
 
 interface LineChartProps {
-  data: Array<{ [key: string]: any }>;
+  data: Array<{ [key: string]: unknown }>;
   title: string;
   dataKeys: Array<{
     key: string;
@@ -27,27 +28,6 @@ interface LineChartProps {
   emptyMessage?: string;
 }
 
-const CustomLegend = ({ payload }: any) => {
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-3 pt-4 px-2">
-      {payload.map((entry: any, index: number) => (
-        <div
-          key={`legend-${index}`}
-          className="flex items-center gap-2 px-3 py-1.5 bg-muted/30 rounded-full border border-border/50 hover:bg-muted/50 transition-colors"
-        >
-          <div
-            className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-background"
-            style={{ backgroundColor: entry.color }}
-          />
-          <span className="text-xs font-medium text-foreground">
-            {entry.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
 export function LineChart({
   data,
   title,
@@ -56,7 +36,6 @@ export function LineChart({
   formatValue = (value) => value.toString(),
   emptyMessage,
 }: LineChartProps) {
-  // Check if data is empty or if all values are zero/null
   const isEmpty =
     !data ||
     data.length == 0 ||
@@ -65,71 +44,59 @@ export function LineChart({
     );
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        {isEmpty ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <TrendingUp className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <p className="text-sm text-muted-foreground">
-              {emptyMessage || 'No data available'}
-            </p>
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={320}>
-            <RechartsLineChart
-              data={data}
-              margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(var(--border))"
-                opacity={0.3}
-                vertical={false}
-              />
-              <XAxis
-                dataKey={xAxisKey}
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                tickLine={false}
-                axisLine={{ stroke: 'hsl(var(--border))' }}
-                dy={10}
-              />
-              <YAxis
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                tickLine={false}
-                axisLine={{ stroke: 'hsl(var(--border))' }}
-                tickFormatter={formatValue}
-                width={80}
-              />
-              <Tooltip
-                content={<CustomTooltip formatValue={formatValue} />}
-                cursor={{
+    <ChartCard title={title}>
+      {isEmpty ? (
+        <ChartEmptyState
+          icon={TrendingUp}
+          message={emptyMessage || 'No data available'}
+        />
+      ) : (
+        <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+          <RechartsLineChart data={data} margin={CHART_MARGIN}>
+            <CartesianGrid {...CHART_GRID} />
+            <XAxis
+              dataKey={xAxisKey}
+              tick={CHART_AXIS.tick}
+              tickLine={CHART_AXIS.tickLine}
+              axisLine={CHART_AXIS.axisLine}
+              dy={8}
+            />
+            <YAxis
+              tick={CHART_AXIS.tick}
+              tickLine={CHART_AXIS.tickLine}
+              axisLine={CHART_AXIS.axisLine}
+              tickFormatter={formatValue}
+              width={72}
+            />
+            <Tooltip
+              content={<CustomTooltip formatValue={formatValue} />}
+              cursor={{
+                stroke: '#e8e4df',
+                strokeWidth: 1,
+                strokeDasharray: '4 4',
+              }}
+            />
+            <Legend content={<ChartLegend />} />
+            {dataKeys.map((dataKey) => (
+              <Line
+                key={dataKey.key}
+                type="monotone"
+                dataKey={dataKey.key}
+                name={dataKey.label}
+                stroke={dataKey.color}
+                strokeWidth={2.5}
+                dot={false}
+                activeDot={{
+                  r: 5,
                   strokeWidth: 2,
+                  fill: '#fff',
+                  stroke: dataKey.color,
                 }}
               />
-              <Legend content={<CustomLegend />} />
-              {dataKeys.map((dataKey) => (
-                <Line
-                  key={dataKey.key}
-                  type="monotone"
-                  dataKey={dataKey.key}
-                  name={dataKey.label}
-                  stroke={dataKey.color}
-                  strokeWidth={2.5}
-                  dot={{
-                    r: 3.5,
-                    strokeWidth: 2,
-                    fill: 'hsl(var(--background))',
-                  }}
-                  activeDot={{ r: 5, strokeWidth: 2 }}
-                />
-              ))}
-            </RechartsLineChart>
-          </ResponsiveContainer>
-        )}
-      </CardContent>
-    </Card>
+            ))}
+          </RechartsLineChart>
+        </ResponsiveContainer>
+      )}
+    </ChartCard>
   );
 }
