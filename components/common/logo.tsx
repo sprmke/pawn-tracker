@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Coins } from 'lucide-react';
+import { Landmark } from 'lucide-react';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -23,6 +23,13 @@ const iconSizeClasses = {
   xl: 'h-7 w-7',
 };
 
+const iconContainerClasses = {
+  sm: 'h-8 w-8 rounded-xl',
+  md: 'h-9 w-9 rounded-xl',
+  lg: 'h-10 w-10 rounded-2xl',
+  xl: 'h-11 w-11 rounded-2xl',
+};
+
 export function Logo({
   size = 'md',
   showIcon = false,
@@ -33,27 +40,33 @@ export function Logo({
   return (
     <span
       className={cn(
-        'font-semibold inline-flex items-center gap-2',
+        'font-extrabold inline-flex items-center gap-2.5 tracking-tight',
         sizeClasses[size],
-        gradient &&
-          'bg-gradient-to-r from-primary to-chart-2 bg-clip-text text-transparent',
+        gradient
+          ? 'text-foreground'
+          : 'text-foreground',
         animated && 'transition-all duration-300',
         className
       )}
     >
       {showIcon && (
-        <Coins
+        <span
           className={cn(
-            iconSizeClasses[size],
-            gradient ? 'text-primary' : 'text-current'
+            'inline-flex items-center justify-center bg-gradient-to-br from-primary to-chart-5 shadow-[var(--shadow-soft)]',
+            iconContainerClasses[size]
           )}
-        />
+        >
+          <Landmark
+            className={cn(
+              iconSizeClasses[size],
+              'text-primary-foreground'
+            )}
+          />
+        </span>
       )}
-      Pawn Tracker
+      <span className={cn(gradient && 'bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent')}>
+        Pawn<span className="text-primary">Tracker</span>
+      </span>
     </span>
   );
 }
-
-
-
-

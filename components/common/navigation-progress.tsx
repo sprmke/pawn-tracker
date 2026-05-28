@@ -138,7 +138,7 @@ export function NavigationProgressProvider({
 
         {/* Progress indicator */}
         <div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary via-primary to-chart-2 transition-all ease-out shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+          className="absolute inset-y-0 left-0 bg-primary transition-all ease-out shadow-[0_0_10px_rgba(var(--primary),0.3)]"
           style={{
             width: `${progress}%`,
             transitionDuration: progress == 100 ? '200ms' : '300ms',

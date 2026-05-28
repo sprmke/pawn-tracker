@@ -14,40 +14,40 @@ interface StatCardProps {
 
 const variantStyles = {
   default: {
-    border: 'border-t-4 border-t-primary',
-    iconBg: 'bg-gradient-to-br from-primary/20 to-primary/10',
+    border: 'border-l-4 border-l-primary',
+    iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
-    gradient: 'bg-gradient-to-br from-primary/5 to-transparent',
+    gradient: '',
   },
   primary: {
-    border: 'border-t-4 border-t-primary',
-    iconBg: 'bg-gradient-to-br from-primary/20 to-primary/10',
+    border: 'border-l-4 border-l-primary',
+    iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
-    gradient: 'bg-gradient-to-br from-primary/5 to-transparent',
+    gradient: '',
   },
   success: {
-    border: 'border-t-4 border-t-chart-2',
-    iconBg: 'bg-gradient-to-br from-chart-2/20 to-chart-2/10',
+    border: 'border-l-4 border-l-chart-2',
+    iconBg: 'bg-chart-2/10',
     iconColor: 'text-chart-2',
-    gradient: 'bg-gradient-to-br from-chart-2/5 to-transparent',
+    gradient: '',
   },
   warning: {
-    border: 'border-t-4 border-t-chart-3',
-    iconBg: 'bg-gradient-to-br from-chart-3/20 to-chart-3/10',
-    iconColor: 'text-chart-3',
-    gradient: 'bg-gradient-to-br from-chart-3/5 to-transparent',
+    border: 'border-l-4 border-l-chart-5',
+    iconBg: 'bg-chart-5/10',
+    iconColor: 'text-chart-5',
+    gradient: '',
   },
   danger: {
-    border: 'border-t-4 border-t-destructive',
-    iconBg: 'bg-gradient-to-br from-destructive/20 to-destructive/10',
+    border: 'border-l-4 border-l-destructive',
+    iconBg: 'bg-destructive/10',
     iconColor: 'text-destructive',
-    gradient: 'bg-gradient-to-br from-destructive/5 to-transparent',
+    gradient: '',
   },
   info: {
-    border: 'border-t-4 border-t-chart-4',
-    iconBg: 'bg-gradient-to-br from-chart-4/20 to-chart-4/10',
+    border: 'border-l-4 border-l-chart-4',
+    iconBg: 'bg-chart-4/10',
     iconColor: 'text-chart-4',
-    gradient: 'bg-gradient-to-br from-chart-4/5 to-transparent',
+    gradient: '',
   },
 };
 
@@ -88,7 +88,7 @@ export function StatCard({
           {Icon && (
             <div
               className={cn(
-                'rounded-xl p-3 transition-transform duration-300 group-hover:scale-110 hidden sm:block',
+                'rounded-xl p-3 transition-transform duration-200 group-hover:scale-105 hidden sm:block',
                 styles.iconBg
               )}
             >

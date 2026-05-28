@@ -1,6 +1,11 @@
 // Common reusable components
 export { StatCard } from './stat-card';
 export { SummaryCard, MetricDisplay } from './summary-card';
+export {
+  getSummaryMetricGridCols,
+  INVESTOR_DETAIL_METRIC_COUNT,
+  INVESTOR_DETAIL_SUMMARY_GRID,
+} from '@/lib/summary-grid';
 export { EmptyState } from './empty-state';
 export { PageHeader } from './page-header';
 export { ViewModeToggle } from './view-mode-toggle';
@@ -46,6 +51,18 @@ export {
   NavigationProgressProvider,
   useNavigationProgress,
 } from './navigation-progress';
+
+export {
+  LoansPageSkeleton,
+  TransactionsPageSkeleton,
+  InvestorDetailPageSkeleton,
+  InvestorLoansFiltersSkeleton,
+  LoansTableSkeleton,
+  TransactionsTableSkeleton,
+  ListPageFiltersSkeleton,
+  SummaryMetricSkeleton,
+  ActivityPanelSkeleton,
+} from './page-skeletons';
 
 // Calendar components
 export * from './calendar';

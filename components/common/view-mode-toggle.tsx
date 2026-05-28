@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { LayoutGrid, Table as TableIcon, CalendarDays } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type ViewMode = 'cards' | 'table' | 'calendar';
 
@@ -16,40 +17,31 @@ export function ViewModeToggle({
   showCalendar = false,
   hasData = true,
 }: ViewModeToggleProps) {
+  const modes: Array<{ id: ViewMode; icon: typeof TableIcon; label: string; hidden?: boolean }> = [
+    { id: 'table', icon: TableIcon, label: 'Table', hidden: true },
+    { id: 'cards', icon: LayoutGrid, label: 'Cards' },
+    ...(showCalendar ? [{ id: 'calendar' as ViewMode, icon: CalendarDays, label: 'Calendar' }] : []),
+  ];
+
   return (
-    <div className="flex items-center border rounded-lg p-1">
-      {/* Table view - hidden on mobile, visible from tablet (md) and up */}
-      <Button
-        variant={viewMode == 'table' ? 'secondary' : 'ghost'}
-        size="sm"
-        onClick={() => onViewModeChange('table')}
-        className="h-8 px-3 hidden md:flex"
-        title="Table View"
-      >
-        <TableIcon className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={viewMode == 'cards' ? 'secondary' : 'ghost'}
-        size="sm"
-        onClick={() => hasData && onViewModeChange('cards')}
-        className="h-8 px-3"
-        title="Card View"
-        disabled={!hasData}
-      >
-        <LayoutGrid className="h-4 w-4" />
-      </Button>
-      {showCalendar && (
+    <div className="pill-segment">
+      {modes.map(({ id, icon: Icon, label, hidden }) => (
         <Button
-          variant={viewMode == 'calendar' ? 'secondary' : 'ghost'}
+          key={id}
+          variant={viewMode == id ? 'secondary' : 'ghost'}
           size="sm"
-          onClick={() => hasData && onViewModeChange('calendar')}
-          className="h-8 px-3"
-          title="Calendar View"
+          onClick={() => hasData && onViewModeChange(id)}
+          className={cn(
+            'h-8 rounded-xl px-3',
+            hidden && 'hidden md:flex',
+            viewMode == id && 'shadow-sm'
+          )}
+          title={`${label} view`}
           disabled={!hasData}
         >
-          <CalendarDays className="h-4 w-4" />
+          <Icon className="h-4 w-4" />
         </Button>
-      )}
+      ))}
     </div>
   );
 }

@@ -1,14 +1,27 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Wallet,
+  Activity,
+  CheckCircle2,
+  TrendingUp,
+  CircleDollarSign,
+  type LucideIcon,
+} from 'lucide-react';
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { getSummaryMetricGridCols } from '@/lib/summary-grid';
+
+export { getSummaryMetricGridCols } from '@/lib/summary-grid';
 
 interface MetricItem {
   label: string;
   value: string | ReactNode;
   subValue?: string;
   valueClassName?: string;
+  icon?: LucideIcon;
+  accentClassName?: string;
 }
 
 interface SummaryCardProps {
@@ -16,55 +29,72 @@ interface SummaryCardProps {
   className?: string;
 }
 
-export function SummaryCard({ metrics, className }: SummaryCardProps) {
-  // Determine grid columns based on number of metrics
-  const getGridCols = (count: number) => {
-    if (count <= 3) return 'grid-cols-3';
-    if (count == 4) return 'grid-cols-2 sm:grid-cols-4';
-    if (count == 5) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5';
-    if (count == 6) return 'grid-cols-3 sm:grid-cols-3 lg:grid-cols-6';
-    return 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-7';
-  };
+const defaultMetricStyles: Array<{
+  icon: LucideIcon;
+  accentClassName: string;
+}> = [
+  { icon: Wallet, accentClassName: 'bg-primary/12 text-primary' },
+  { icon: Activity, accentClassName: 'bg-chart-5/15 text-chart-5' },
+  { icon: CheckCircle2, accentClassName: 'bg-chart-4/12 text-chart-4' },
+  { icon: TrendingUp, accentClassName: 'bg-chart-2/12 text-chart-2' },
+  { icon: CircleDollarSign, accentClassName: 'bg-chart-1/12 text-chart-1' },
+];
 
+export function SummaryCard({ metrics, className }: SummaryCardProps) {
   return (
-    <Card className={cn('overflow-hidden', className)}>
-      <CardContent className="p-0">
-        <div
-          className={cn(
-            'grid divide-x divide-border',
-            getGridCols(metrics.length),
-          )}
-        >
-          {metrics.map((metric, index) => (
-            <div
-              key={index}
-              className="p-3 sm:p-4 text-center hover:bg-muted/30 transition-colors"
-            >
-              <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
-                {metric.label}
-              </p>
+    <div
+      className={cn(
+        'grid gap-4 md:gap-5',
+        className ?? getSummaryMetricGridCols(metrics.length)
+      )}
+    >
+      {metrics.map((metric, index) => {
+        const defaults =
+          defaultMetricStyles[index % defaultMetricStyles.length];
+        const Icon = metric.icon ?? defaults.icon;
+        const accentClassName =
+          metric.accentClassName ?? defaults.accentClassName;
+
+        return (
+          <Card
+            key={index}
+            className="group border-border/40 surface-card-interactive"
+          >
+            <CardContent className="p-4 md:p-5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  {metric.label}
+                </p>
+                <div
+                  className={cn(
+                    'icon-well-sm shrink-0 transition-transform duration-300 group-hover:scale-105',
+                    accentClassName,
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                </div>
+              </div>
               <p
                 className={cn(
-                  'text-sm lg:text-base font-bold truncate',
+                  'text-base font-bold tabular-nums leading-snug break-words sm:text-lg',
                   metric.valueClassName,
                 )}
               >
                 {metric.value}
               </p>
               {metric.subValue && (
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 truncate">
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground break-words">
                   {metric.subValue}
                 </p>
               )}
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 
-// Compact metric display for inline summaries
 interface MetricDisplayProps {
   label: string;
   value: string | ReactNode;
@@ -101,11 +131,13 @@ export function MetricDisplay({
   const styles = sizeStyles[size];
 
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-1">
       <p className={cn('text-muted-foreground font-medium', styles.label)}>
         {label}
       </p>
-      <p className={cn('font-semibold', styles.value, valueClassName)}>
+      <p
+        className={cn('font-bold tracking-tight', styles.value, valueClassName)}
+      >
         {value}
       </p>
       {subValue && (
