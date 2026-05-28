@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu-radix';
 import { CopyPeriodModal } from './copy-period-modal';
+import { formatPercentage } from '@/lib/format';
 
 export interface InterestPeriodData {
   id: string;
@@ -544,7 +545,9 @@ export function MultipleInterestManager({
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Avg. Rate</p>
-                  <p className="font-semibold">{totals.avgRate.toFixed(2)}%</p>
+                  <p className="font-semibold">
+                    {formatPercentage(totals.avgRate)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">

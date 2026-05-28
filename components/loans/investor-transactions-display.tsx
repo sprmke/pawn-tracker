@@ -29,7 +29,13 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { formatCurrency, formatDate } from '@/lib/format';
+import {
+  formatCurrency,
+  formatDate,
+  formatText,
+  formatRateLabel,
+  formatCount,
+} from '@/lib/format';
 import { calculateInterest } from '@/lib/calculations';
 import { getInterestPeriodStatusBadge } from '@/lib/badge-config';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -505,16 +511,12 @@ export function InvestorTransactionsDisplay({
           let rateDisplay: string;
           if (totalCapital > 0) {
             const pct = (totalInterest / totalCapital) * 100;
-            rateDisplay = anyFixed
-              ? `${pct.toFixed(2)}% (Fixed)`
-              : `${pct.toFixed(2)}%`;
+            rateDisplay = formatRateLabel(pct, { fixed: anyFixed });
           } else if (loanTotalPrincipal > 0 && totalInterest > 0) {
             const pct = (totalInterest / loanTotalPrincipal) * 100;
-            rateDisplay = anyFixed
-              ? `${pct.toFixed(2)}% (Fixed)`
-              : `${pct.toFixed(2)}%`;
+            rateDisplay = formatRateLabel(pct, { fixed: anyFixed });
           } else {
-            rateDisplay = '0.00%';
+            rateDisplay = formatRateLabel(0);
           }
 
           const totalReceived = (item.receivedPayments || []).reduce(
@@ -560,11 +562,11 @@ export function InvestorTransactionsDisplay({
               <div className="flex items-center justify-between gap-2 px-4 py-3 bg-muted/50 border-b border-border/60">
                 <div className="min-w-0">
                   <p className="font-semibold text-base leading-tight truncate">
-                    {investor.name}
+                    {formatText(investor.name)}
                   </p>
                   {showEmail && investor.email && (
                     <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      {investor.email}
+                      {formatText(investor.email)}
                     </p>
                   )}
                 </div>
@@ -597,8 +599,8 @@ export function InvestorTransactionsDisplay({
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {principalCount === 1
-                            ? '1 payment'
-                            : `${principalCount} payments`}{' '}
+                            ? `${formatCount(1)} payment`
+                            : `${formatCount(principalCount)} payments`}{' '}
                           · Total {formatCurrency(totalCapital)}
                         </p>
                       </div>
@@ -698,7 +700,7 @@ export function InvestorTransactionsDisplay({
                             Interest periods
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {periodCount} scheduled ·{' '}
+                            {formatCount(periodCount)} scheduled ·{' '}
                             {formatCurrency(totalInterest)} interest
                             {receivedCount > 0
                               ? ` · ${formatCurrency(totalReceived)} received`
@@ -813,7 +815,7 @@ export function InvestorTransactionsDisplay({
                                       Rate
                                     </p>
                                     <p className="font-medium">
-                                      {periodRate.toFixed(2)}%
+                                      {formatRateLabel(periodRate)}
                                     </p>
                                   </div>
                                   <div>

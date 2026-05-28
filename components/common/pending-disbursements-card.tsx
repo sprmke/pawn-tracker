@@ -1,8 +1,12 @@
 import { Badge } from '@/components/ui/badge';
 import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { formatCurrency } from '@/lib/format';
+import {
+  formatCurrency,
+  formatText,
+  formatCount,
+  formatDateShort,
+} from '@/lib/format';
 import { getLoanTypeBadge } from '@/lib/badge-config';
 import {
   ActivityPanelCard,
@@ -92,7 +96,7 @@ export function PendingDisbursementsCard({
                 )}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
-                {typeCounts['Lot Title']} Lot
+                {formatCount(typeCounts['Lot Title'])} Lot
               </button>
             )}
             {typeCounts['OR/CR'] > 0 && (
@@ -105,7 +109,7 @@ export function PendingDisbursementsCard({
                 )}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
-                {typeCounts['OR/CR']} OR/CR
+                {formatCount(typeCounts['OR/CR'])} OR/CR
               </button>
             )}
             {typeCounts['Agent'] > 0 && (
@@ -118,7 +122,7 @@ export function PendingDisbursementsCard({
                 )}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-pink-400" />
-                {typeCounts['Agent']} Agent
+                {formatCount(typeCounts['Agent'])} Agent
               </button>
             )}
           </div>
@@ -127,7 +131,7 @@ export function PendingDisbursementsCard({
             {displayDisbursements.map((item) => {
               const content = (
                 <ActivityListRow
-                  title={item.loanName}
+                  title={formatText(item.loanName)}
                   amount={formatCurrency(parseFloat(item.amount))}
                   amountClassName="text-chart-3"
                   badge={
@@ -135,12 +139,12 @@ export function PendingDisbursementsCard({
                       variant={getLoanTypeBadge(item.loanType).variant}
                       className={`${getLoanTypeBadge(item.loanType).className} text-[10px] px-2 py-0.5`}
                     >
-                      {item.loanType}
+                      {formatText(item.loanType)}
                     </Badge>
                   }
                   footer={
                     <span className="text-[11px] font-medium text-muted-foreground">
-                      {format(new Date(item.sentDate), 'MMM dd, yyyy')}
+                      {formatDateShort(item.sentDate)}
                     </span>
                   }
                 />

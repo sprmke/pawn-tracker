@@ -12,7 +12,7 @@ import {
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { getSummaryMetricGridCols } from '@/lib/summary-grid';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, formatCount } from '@/lib/format';
 import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
 
 export { getSummaryMetricGridCols } from '@/lib/summary-grid';
@@ -24,6 +24,10 @@ export interface MetricItem {
   /** Formatted on the client so price visibility toggle applies (including server-rendered pages). */
   amount?: number;
   subValue?: string;
+  /** Count shown below the main value (e.g. loan count); respects visibility toggle. */
+  subCount?: number;
+  /** Suffix after {@link subCount}, e.g. `" loans"`. */
+  subCountSuffix?: string;
   /** e.g. `"of {amount}"` — `{amount}` is replaced with formatted currency. */
   subValueTemplate?: string;
   subAmount?: number;
@@ -45,6 +49,9 @@ function resolveMetricSubValue(metric: MetricItem): string | undefined {
       '{amount}',
       formatCurrency(metric.subAmount),
     );
+  }
+  if (metric.subCount !== undefined) {
+    return `${formatCount(metric.subCount)}${metric.subCountSuffix ?? ''}`;
   }
   return metric.subValue;
 }

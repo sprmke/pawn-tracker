@@ -35,6 +35,7 @@ import {
 import { DollarSign, Users } from 'lucide-react';
 import { transactionPDFSections } from '@/lib/pdf-sections';
 import { renderTransactionsPDF } from '@/components/pdf/transactions-pdf-document';
+import { formatText } from '@/lib/format';
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -530,7 +531,9 @@ export default function TransactionsPage() {
                                   </svg>
                                 )}
                               </div>
-                              <span className="text-sm">{investor.name}</span>
+                              <span className="text-sm">
+                                {formatText(investor.name)}
+                              </span>
                             </div>
                           ))}
                         </div>

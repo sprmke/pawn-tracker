@@ -558,17 +558,20 @@ export default async function DashboardPage() {
           {
             label: 'Total Principal',
             amount: data.totalPrincipal,
-            subValue: `${data.totalLoans} loans`,
+            subCount: data.totalLoans,
+            subCountSuffix: ' loans',
           },
           {
             label: 'Active',
             amount: activePrincipal,
-            subValue: `${data.activeLoansCount} loans`,
+            subCount: data.activeLoansCount,
+            subCountSuffix: ' loans',
           },
           {
             label: 'Completed',
             amount: data.completedPrincipal,
-            subValue: `${data.completedLoansCount} loans`,
+            subCount: data.completedLoansCount,
+            subCountSuffix: ' loans',
           },
           {
             label: 'Interest Earned',

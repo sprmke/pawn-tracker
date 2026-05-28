@@ -1,8 +1,12 @@
 import { Badge } from '@/components/ui/badge';
 import { TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { formatCurrency } from '@/lib/format';
+import {
+  formatCurrency,
+  formatText,
+  formatCount,
+  formatDateShort,
+} from '@/lib/format';
 import { calculateOverdueAmount } from '@/lib/calculations';
 import { getLoanTypeBadge } from '@/lib/badge-config';
 import {
@@ -114,7 +118,7 @@ export function PastDueLoansCard({
                 )}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
-                {typeCounts['Lot Title']} Lot
+                {formatCount(typeCounts['Lot Title'])} Lot
               </button>
             )}
             {typeCounts['OR/CR'] > 0 && (
@@ -127,7 +131,7 @@ export function PastDueLoansCard({
                 )}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
-                {typeCounts['OR/CR']} OR/CR
+                {formatCount(typeCounts['OR/CR'])} OR/CR
               </button>
             )}
             {typeCounts['Agent'] > 0 && (
@@ -140,7 +144,7 @@ export function PastDueLoansCard({
                 )}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-pink-400" />
-                {typeCounts['Agent']} Agent
+                {formatCount(typeCounts['Agent'])} Agent
               </button>
             )}
           </div>
@@ -174,7 +178,7 @@ export function PastDueLoansCard({
 
               const content = (
                 <ActivityListRow
-                  title={loan.loanName}
+                  title={formatText(loan.loanName)}
                   amount={formatCurrency(amount)}
                   amountClassName="text-chart-5"
                   badge={
@@ -182,12 +186,12 @@ export function PastDueLoansCard({
                       variant={getLoanTypeBadge(loan.type).variant}
                       className={`${getLoanTypeBadge(loan.type).className} text-[10px] px-2 py-0.5`}
                     >
-                      {loan.type}
+                      {formatText(loan.type)}
                     </Badge>
                   }
                   footer={
                     <span className="text-[11px] font-medium text-muted-foreground">
-                      Due {format(new Date(displayDate), 'MMM dd, yyyy')}
+                      Due {formatDateShort(displayDate)}
                     </span>
                   }
                 />

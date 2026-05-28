@@ -22,8 +22,16 @@ export function PriceVisibilityToggle({ className }: PriceVisibilityToggleProps)
       size="icon"
       className={cn('h-9 w-9 shrink-0', className)}
       onClick={togglePricesHidden}
-      title={pricesHidden ? 'Show amounts' : 'Hide amounts'}
-      aria-label={pricesHidden ? 'Show amounts' : 'Hide amounts'}
+      title={
+        pricesHidden
+          ? 'Show sensitive data (names, amounts, dates, rates)'
+          : 'Hide sensitive data (names, amounts, dates, rates)'
+      }
+      aria-label={
+        pricesHidden
+          ? 'Show sensitive data'
+          : 'Hide sensitive data'
+      }
       aria-pressed={pricesHidden}
     >
       {pricesHidden ? (

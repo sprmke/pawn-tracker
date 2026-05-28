@@ -8,7 +8,8 @@ import {
 } from '@/components/ui/dialog';
 import { CalendarEvent, CalendarConfig } from './types';
 import { DailySummary } from './daily-summary';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/format';
+import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
 
 interface CalendarEventsModalProps {
   date: Date;
@@ -25,13 +26,14 @@ export function CalendarEventsModal({
   open,
   onOpenChange,
 }: CalendarEventsModalProps) {
+  usePriceVisibilityStore((state) => state.pricesHidden);
   const { renderEventCard, formatCurrency } = config;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl h-[85vh] p-0 flex flex-col overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
-          <DialogTitle>Events for {format(date, 'MMMM d, yyyy')}</DialogTitle>
+          <DialogTitle>Events for {formatDate(date)}</DialogTitle>
         </DialogHeader>
 
         {/* Daily Summary - Always Visible */}

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import { LoanWithInvestors } from '@/lib/types';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
+import { formatText } from '@/lib/format';
 
 interface LoanEventCardBaseProps {
   loan: LoanWithInvestors;
@@ -84,7 +85,7 @@ export function LoanSentEventCard({
               getLoanTypeBadge(loan.type).className || ''
             }`}
           >
-            {loan.type}
+            {formatText(loan.type)}
           </Badge>
           <Badge
             variant={getLoanStatusBadge(loan.status).variant}
@@ -92,11 +93,11 @@ export function LoanSentEventCard({
               getLoanStatusBadge(loan.status).className
             }`}
           >
-            {loan.status}
+            {formatText(loan.status)}
           </Badge>
         </div>
         <p className={`font-bold text-gray-900 truncate ${classes.title}`}>
-          {loan.loanName}
+          {formatText(loan.loanName)}
         </p>
         <div className={size === 'sm' ? 'space-y-1' : 'pl-8 space-y-1'}>
           <div className={`text-gray-700 space-y-0.5 ${classes.investor}`}>
@@ -110,7 +111,7 @@ export function LoanSentEventCard({
                   •
                 </span>
                 <span className="truncate">
-                  <span className="font-semibold">{inv.name}:</span>{' '}
+                  <span className="font-semibold">{formatText(inv.name)}:</span>{' '}
                   {formatCurrency(inv.amount)}
                 </span>
               </div>
@@ -175,7 +176,7 @@ export function LoanDueEventCard({
               getLoanTypeBadge(loan.type).className || ''
             }`}
           >
-            {loan.type}
+            {formatText(loan.type)}
           </Badge>
           <Badge
             variant={getLoanStatusBadge(loan.status).variant}
@@ -183,11 +184,11 @@ export function LoanDueEventCard({
               getLoanStatusBadge(loan.status).className
             }`}
           >
-            {loan.status}
+            {formatText(loan.status)}
           </Badge>
         </div>
         <p className={`font-bold text-gray-900 truncate ${classes.title}`}>
-          {loan.loanName}
+          {formatText(loan.loanName)}
         </p>
         <div className={size === 'sm' ? 'space-y-1' : 'pl-8 space-y-1'}>
           <div className={`text-gray-700 space-y-0.5 ${classes.detail}`}>
@@ -280,7 +281,7 @@ export function LoanInterestDueEventCard({
                   getLoanTypeBadge(loan.type).className || ''
                 }`}
               >
-                {loan.type}
+                {formatText(loan.type)}
               </Badge>
               <Badge
                 variant={getLoanStatusBadge(loan.status).variant}
@@ -288,17 +289,17 @@ export function LoanInterestDueEventCard({
                   getLoanStatusBadge(loan.status).className
                 }`}
               >
-                {loan.status}
+                {formatText(loan.status)}
               </Badge>
             </div>
             <div className={`font-bold text-gray-900 ${classes.title}`}>
-              {loan.loanName}
+              {formatText(loan.loanName)}
             </div>
           </div>
         </div>
         <div className={size === 'sm' ? 'space-y-1' : 'pl-8 space-y-1'}>
           <div className={`text-gray-700 font-semibold ${classes.detail}`}>
-            {investorName}
+            {formatText(investorName)}
           </div>
           <div
             className={`font-bold text-gray-900 bg-white/60 rounded inline-block ${classes.total}`}

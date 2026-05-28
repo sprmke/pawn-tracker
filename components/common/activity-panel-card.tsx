@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ActivityPanelSkeleton } from './page-skeletons';
 import { cn } from '@/lib/utils';
+import { formatCount } from '@/lib/format';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -66,7 +67,7 @@ export function ActivityPanelCard({
                   )}
                   title={`View all ${title.toLowerCase()}`}
                 >
-                  {count}
+                  {formatCount(count)}
                 </button>
               )}
             </div>

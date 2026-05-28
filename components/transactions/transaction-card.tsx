@@ -4,7 +4,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ActionButtonsGroup } from '@/components/common';
-import { formatCurrency, formatDateShort } from '@/lib/format';
+import {
+  formatCurrency,
+  formatDateShort,
+  formatText,
+} from '@/lib/format';
 import {
   getTransactionDirectionBadge,
   getTransactionTypeBadge,
@@ -28,7 +32,7 @@ export function TransactionCard({
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <CardTitle className="text-sm sm:text-base truncate mb-2">
-              {transaction.name}
+              {formatText(transaction.name)}
             </CardTitle>
           </div>
           <Badge
@@ -37,7 +41,7 @@ export function TransactionCard({
               getTransactionTypeBadge(transaction.type).className || ''
             }`}
           >
-            {transaction.type}
+            {formatText(transaction.type)}
           </Badge>
           <Badge
             variant={
@@ -48,7 +52,7 @@ export function TransactionCard({
               ''
             }`}
           >
-            {transaction.direction}
+            {formatText(transaction.direction)}
           </Badge>
         </div>
       </CardHeader>
@@ -77,7 +81,7 @@ export function TransactionCard({
           <div className="p-2 bg-muted/50 rounded-lg">
             <p className="text-[10px] text-muted-foreground mb-1">Investor</p>
             <p className="text-xs font-medium break-words truncate">
-              {transaction.investor.name}
+              {formatText(transaction.investor.name)}
             </p>
           </div>
         </div>

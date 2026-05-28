@@ -23,6 +23,7 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import { PriceVisibilityToggle } from './price-visibility-toggle';
+import { formatText } from '@/lib/format';
 
 // Common styles for responsive icon buttons
 const btnClass = 'flex-shrink-0 h-8 px-2 md:px-3';
@@ -178,12 +179,14 @@ export function DetailHeader({
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+              <h1 className="text-xl font-semibold tracking-tight">
+                {formatText(title)}
+              </h1>
               {showPriceToggle && <PriceVisibilityToggle />}
             </div>
             {description && (
               <p className="text-sm sm:text-base text-muted-foreground">
-                {description}
+                {formatText(description)}
               </p>
             )}
           </div>
@@ -209,10 +212,14 @@ export function DetailHeader({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-destructive" />
-              {deleteTitle}
+              {formatText(deleteTitle)}
             </DialogTitle>
             <DialogDescription className="mt-2">
-              {canDelete ? deleteDescription : <span>{deleteWarning}</span>}
+              {canDelete ? (
+                formatText(deleteDescription)
+              ) : (
+                <span>{formatText(deleteWarning)}</span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -242,9 +249,11 @@ export function DetailHeader({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-emerald-600" />
-              {completeTitle}
+              {formatText(completeTitle)}
             </DialogTitle>
-            <DialogDescription>{completeDescription}</DialogDescription>
+            <DialogDescription>
+              {formatText(completeDescription)}
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button

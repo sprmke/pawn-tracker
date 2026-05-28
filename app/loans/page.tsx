@@ -65,7 +65,11 @@ import {
   SyncCalendarButton,
 } from '@/components/common';
 import { toLocalDateString } from '@/lib/date-utils';
-import { formatCurrency } from '@/lib/format';
+import {
+  formatCurrency,
+  formatText,
+  formatPercentage,
+} from '@/lib/format';
 
 type SortField =
   | 'loanName'
@@ -847,7 +851,9 @@ export default function LoansPage() {
                                   </svg>
                                 )}
                               </div>
-                              <span className="text-sm">{investor.name}</span>
+                              <span className="text-sm">
+                                {formatText(investor.name)}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -949,7 +955,7 @@ export default function LoansPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="space-y-1 flex-1 min-w-0">
                             <CardTitle className="text-sm sm:text-base truncate">
-                              {loan.loanName}
+                              {formatText(loan.loanName)}
                             </CardTitle>
                           </div>
                           <Badge
@@ -958,7 +964,7 @@ export default function LoansPage() {
                               getLoanTypeBadge(loan.type).className || ''
                             }`}
                           >
-                            {loan.type}
+                            {formatText(loan.type)}
                           </Badge>
                           <Badge
                             variant={getLoanStatusBadge(loan.status).variant}
@@ -966,7 +972,7 @@ export default function LoansPage() {
                               getLoanStatusBadge(loan.status).className || ''
                             }`}
                           >
-                            {loan.status}
+                            {formatText(loan.status)}
                           </Badge>
                         </div>
                       </CardHeader>
@@ -988,7 +994,7 @@ export default function LoansPage() {
                               Avg. Rate
                             </p>
                             <p className="text-sm font-medium">
-                              {getAverageRate(loan).toFixed(2)}%
+                              {formatPercentage(getAverageRate(loan))}
                             </p>
                           </div>
                           <div className="p-2 bg-muted/50 rounded-lg">

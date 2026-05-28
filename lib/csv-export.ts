@@ -3,6 +3,15 @@
  * Handles conversion of data to CSV format and triggers download
  */
 
+import {
+  isSensitiveDataHidden,
+  HIDDEN_CURRENCY_DISPLAY,
+  HIDDEN_TEXT_DISPLAY,
+  HIDDEN_DATE_DISPLAY,
+  HIDDEN_COUNT_DISPLAY,
+  HIDDEN_PERCENTAGE_DISPLAY,
+} from './price-visibility';
+
 export interface CSVColumn<T> {
   header: string;
   accessor: (row: T) => string | number | null | undefined;
@@ -140,6 +149,7 @@ export function downloadCSV(csvContent: string, filename: string): void {
  * Formats a date for CSV export
  */
 export function formatDateForCSV(date: Date | string): string {
+  if (isSensitiveDataHidden()) return HIDDEN_DATE_DISPLAY;
   const d = new Date(date);
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -147,13 +157,34 @@ export function formatDateForCSV(date: Date | string): string {
   return `${year}-${month}-${day}`;
 }
 
+export function formatTextForCSV(
+  value: string | number | null | undefined,
+): string {
+  if (isSensitiveDataHidden()) return HIDDEN_TEXT_DISPLAY;
+  if (value === null || value === undefined) return '';
+  return String(value);
+}
+
+export function formatRateForCSV(value: number | string): string {
+  if (isSensitiveDataHidden()) return HIDDEN_PERCENTAGE_DISPLAY;
+  const n = typeof value === 'number' ? value : parseFloat(String(value));
+  if (Number.isNaN(n)) return '';
+  return n.toFixed(2);
+}
+
+export function formatCountForCSV(value: number | string): string {
+  if (isSensitiveDataHidden()) return HIDDEN_COUNT_DISPLAY;
+  return String(value);
+}
+
 /**
  * Formats currency for CSV export with peso sign and thousand separators
  */
 export function formatCurrencyForCSV(amount: string | number): string {
+  if (isSensitiveDataHidden()) return HIDDEN_CURRENCY_DISPLAY;
+
   const numValue = typeof amount === 'string' ? parseFloat(amount) : amount;
 
-  // Format with thousand separators and 2 decimal places
   const formatted = numValue.toLocaleString('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,

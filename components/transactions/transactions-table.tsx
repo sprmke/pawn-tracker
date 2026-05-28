@@ -4,7 +4,11 @@ import React from 'react';
 import { DataTable, ColumnDef } from '@/components/common/data-table';
 import { Badge } from '@/components/ui/badge';
 import { ActionButtonsGroup } from '@/components/common';
-import { formatCurrency, formatDateShort } from '@/lib/format';
+import {
+  formatCurrency,
+  formatDateShort,
+  formatText,
+} from '@/lib/format';
 import {
   getTransactionDirectionBadge,
   getTransactionTypeBadge,
@@ -45,9 +49,9 @@ export function TransactionsTable({
       cell: (transaction) => (
         <p
           className="font-medium max-w-50 break-words"
-          title={transaction.name}
+          title={formatText(transaction.name)}
         >
-          {transaction.name}
+          {formatText(transaction.name)}
         </p>
       ),
     },
@@ -57,7 +61,7 @@ export function TransactionsTable({
       accessorFn: (transaction) => transaction.investor.name,
       sortable: true,
       cell: (transaction) => (
-        <span className="text-xs">{transaction.investor.name}</span>
+        <span className="text-xs">{formatText(transaction.investor.name)}</span>
       ),
     },
     {
@@ -74,7 +78,7 @@ export function TransactionsTable({
             getTransactionTypeBadge(transaction.type).className
           }`}
         >
-          {transaction.type}
+          {formatText(transaction.type)}
         </Badge>
       ),
     },
@@ -90,7 +94,7 @@ export function TransactionsTable({
             getTransactionDirectionBadge(transaction.direction).className
           }`}
         >
-          {transaction.direction}
+          {formatText(transaction.direction)}
         </Badge>
       ),
     },

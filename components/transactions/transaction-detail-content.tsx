@@ -8,7 +8,7 @@ import {
   getTransactionTypeBadge,
   getTransactionDirectionBadge,
 } from '@/lib/badge-config';
-import { formatDate, formatCurrency } from '@/lib/format';
+import { formatDate, formatCurrency, formatText } from '@/lib/format';
 
 interface TransactionDetailContentProps {
   transaction: TransactionWithInvestor;
@@ -28,7 +28,7 @@ export function TransactionDetailContent({
         <div className="space-y-1">
           <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-xl font-semibold tracking-tight">
-              {transaction.name}
+              {formatText(transaction.name)}
             </h2>
           </div>
         </div>
@@ -69,7 +69,7 @@ export function TransactionDetailContent({
               <Label className="text-sm text-muted-foreground">
                 Name / Label
               </Label>
-              <p className="font-medium">{transaction.name}</p>
+              <p className="font-medium">{formatText(transaction.name)}</p>
             </div>
 
             <div className="space-y-2">
@@ -90,7 +90,7 @@ export function TransactionDetailContent({
                     getTransactionTypeBadge(transaction.type).className
                   }
                 >
-                  {transaction.type}
+                  {formatText(transaction.type)}
                 </Badge>
               </div>
             </div>
@@ -107,7 +107,7 @@ export function TransactionDetailContent({
                       .className
                   }
                 >
-                  {transaction.direction}
+                  {formatText(transaction.direction)}
                 </Badge>
               </div>
             </div>
@@ -115,7 +115,9 @@ export function TransactionDetailContent({
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">Investor</Label>
               <div className="flex items-center gap-2">
-                <span className="font-medium">{transaction.investor.name}</span>
+                <span className="font-medium">
+                  {formatText(transaction.investor.name)}
+                </span>
               </div>
             </div>
           </div>
@@ -125,7 +127,7 @@ export function TransactionDetailContent({
             <div className="space-y-2 pt-4 border-t">
               <Label className="text-sm text-muted-foreground">Notes</Label>
               <p className="font-medium whitespace-pre-wrap">
-                {transaction.notes}
+                {formatText(transaction.notes)}
               </p>
             </div>
           )}

@@ -1,5 +1,6 @@
 'use client';
 
+import { formatText, formatCount, formatPercentage } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -122,11 +123,11 @@ export function LoanInvestorCard({
                 >
                   <div className="flex items-center gap-3">
                     <h4 className="font-semibold text-sm sm:text-base">
-                      {si.investor.name}
+                      {formatText(si.investor.name)}
                     </h4>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="text-[10px] h-5">
-                        {si.transactions.length} payment
+                        {formatCount(si.transactions.length)} payment
                         {si.transactions.length !== 1 ? 's' : ''}
                       </Badge>
                     </div>

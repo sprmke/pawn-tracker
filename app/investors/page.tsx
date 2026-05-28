@@ -41,7 +41,11 @@ import {
   ExportButton,
   useNavigationProgress,
 } from '@/components/common';
-import { formatCurrency } from '@/lib/format';
+import {
+  formatCurrency,
+  formatText,
+  formatPercentage,
+} from '@/lib/format';
 import { getTodayAtMidnight, normalizeToMidnight } from '@/lib/date-utils';
 import {
   calculateInvestorStats,
@@ -628,10 +632,10 @@ export default function InvestorsPage() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <CardTitle className="text-sm sm:text-base truncate">
-                                {investor.name}
+                                {formatText(investor.name)}
                               </CardTitle>
                               <p className="text-xs text-muted-foreground truncate">
-                                {investor.email}
+                                {formatText(investor.email)}
                               </p>
                             </div>
                           </div>
@@ -652,7 +656,7 @@ export default function InvestorsPage() {
                                 Avg. Rate
                               </p>
                               <p className="text-sm font-medium">
-                                {avgRate.toFixed(2)}%
+                                {formatPercentage(avgRate)}
                               </p>
                             </div>
                             <div className="p-3 bg-muted/50 rounded-lg">

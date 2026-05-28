@@ -14,6 +14,9 @@ import {
   PDF_COLORS,
   formatDateForPDF,
   formatCurrencyForPDF,
+  formatTextForPDF,
+  formatRateForPDF,
+  formatCountForPDF,
   downloadBlob,
 } from '@/lib/pdf-export';
 import {
@@ -232,18 +235,18 @@ const InvestorsPDFDocument = ({
     const stats = calculateInvestorStats(investor);
     const avgRate = calculateAverageRate(investor.loanInvestors);
     switch (key) {
-      case 'name': return investor.name;
-      case 'email': return investor.email || '—';
-      case 'phone': return investor.contactNumber || '—';
+      case 'name': return formatTextForPDF(investor.name);
+      case 'email': return formatTextForPDF(investor.email || '—');
+      case 'phone': return formatTextForPDF(investor.contactNumber || '—');
       case 'capital': return formatCurrencyForPDF(stats.totalCapital);
-      case 'rate': return `${avgRate.toFixed(2)}%`;
+      case 'rate': return formatRateForPDF(avgRate);
       case 'interest': return formatCurrencyForPDF(stats.totalInterest);
       case 'balance': return formatCurrencyForPDF(stats.currentBalance);
       case 'gain': return formatCurrencyForPDF(stats.totalGain);
-      case 'active': return String(stats.activeLoans);
-      case 'completed': return String(stats.completedLoans);
-      case 'overdue': return String(stats.overdueLoans);
-      case 'total': return String(stats.totalLoans);
+      case 'active': return formatCountForPDF(stats.activeLoans);
+      case 'completed': return formatCountForPDF(stats.completedLoans);
+      case 'overdue': return formatCountForPDF(stats.overdueLoans);
+      case 'total': return formatCountForPDF(stats.totalLoans);
       default: return '—';
     }
   }

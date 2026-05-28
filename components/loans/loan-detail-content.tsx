@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoanWithInvestors } from '@/lib/types';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatText, formatSqm } from '@/lib/format';
 import {
   calculateTotalPrincipal,
   calculateTotalInterest,
@@ -74,7 +74,7 @@ export function LoanDetailContent({
         <div className="space-y-1">
           <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-xl font-semibold tracking-tight">
-              {loan.loanName}
+              {formatText(loan.loanName)}
             </h2>
           </div>
         </div>
@@ -108,7 +108,7 @@ export function LoanDetailContent({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Loan Name</p>
-              <p className="text-sm font-medium">{loan.loanName}</p>
+              <p className="text-sm font-medium">{formatText(loan.loanName)}</p>
             </div>
 
             <div className="space-y-1">
@@ -117,7 +117,7 @@ export function LoanDetailContent({
                 variant={getLoanTypeBadge(loan.type).variant}
                 className={getLoanTypeBadge(loan.type).className}
               >
-                {loan.type}
+                {formatText(loan.type)}
               </Badge>
             </div>
 
@@ -136,7 +136,7 @@ export function LoanDetailContent({
                 variant={getLoanStatusBadge(loan.status).variant}
                 className={getLoanStatusBadge(loan.status).className}
               >
-                {loan.status}
+                {formatText(loan.status)}
               </Badge>
             </div>
 
@@ -144,21 +144,21 @@ export function LoanDetailContent({
               <p className="text-xs text-muted-foreground">Free Lot (sqm)</p>
               <div className="flex items-center gap-2">
                 <span className="font-sm font-medium">
-                  {loan.freeLotSqm ? `${loan.freeLotSqm} sqm` : '-'}
+                  {loan.freeLotSqm ? formatSqm(loan.freeLotSqm) : '-'}
                 </span>
               </div>
             </div>
 
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Duration</p>
-              <span className="font-sm font-medium">{duration}</span>
+              <span className="font-sm font-medium">{formatText(duration)}</span>
             </div>
           </div>
 
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Notes</p>
             <p className="font-sm font-medium whitespace-pre-wrap">
-              {loan.notes || '-'}
+              {loan.notes ? formatText(loan.notes) : '-'}
             </p>
           </div>
         </CardContent>

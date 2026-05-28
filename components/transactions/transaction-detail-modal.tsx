@@ -13,6 +13,8 @@ import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { TransactionWithInvestor, Investor } from '@/lib/types';
 import { TransactionDetailContent } from './transaction-detail-content';
 import { DetailModalHeader } from '@/components/common';
+import { formatText } from '@/lib/format';
+import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +52,7 @@ export function TransactionDetailModal({
   onOpenChange,
   onUpdate,
 }: TransactionDetailModalProps) {
+  usePriceVisibilityStore((state) => state.pricesHidden);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -194,13 +197,15 @@ export function TransactionDetailModal({
         >
           {isEditing ? (
             <VisuallyHidden>
-              <DialogTitle>Edit Transaction - {transaction.name}</DialogTitle>
+              <DialogTitle>
+                Edit Transaction - {formatText(transaction.name)}
+              </DialogTitle>
             </VisuallyHidden>
           ) : (
             <DialogHeader>
               <div className="flex md:flex-row flex-col items-start justify-between gap-3 md:gap-4">
                 <DialogTitle className="text-lg md:text-xl font-semibold line-clamp-2 md:line-clamp-none">
-                  {transaction.name}
+                  {formatText(transaction.name)}
                 </DialogTitle>
                 <DetailModalHeader
                   onEdit={() => setIsEditing(true)}

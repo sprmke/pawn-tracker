@@ -30,7 +30,12 @@ import {
 import { InvestorWithLoans, LoanWithInvestors, LoanType } from '@/lib/types';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import { InvestorForm } from '@/components/investors/investor-form';
-import { formatCurrency, formatDate } from '@/lib/format';
+import {
+  formatCurrency,
+  formatDate,
+  formatText,
+  formatPercentage,
+} from '@/lib/format';
 import {
   calculateTotalPrincipal,
   calculateTotalInterest,
@@ -625,7 +630,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                 <User className="h-3 w-3" />
                 <span className="text-xs">Full Name</span>
               </div>
-              <p className="font-medium">{investor.name}</p>
+              <p className="font-medium">{formatText(investor.name)}</p>
             </div>
 
             <div className="space-y-1">
@@ -633,7 +638,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                 <Mail className="h-3 w-3" />
                 <span className="text-xs">Email Address</span>
               </div>
-              <p className="font-medium">{investor.email}</p>
+              <p className="font-medium">{formatText(investor.email)}</p>
             </div>
 
             <div className="space-y-1">
@@ -641,7 +646,11 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                 <Phone className="h-3 w-3" />
                 <span className="text-xs">Contact Number</span>
               </div>
-              <p className="font-medium">{investor.contactNumber || '-'}</p>
+              <p className="font-medium">
+                {investor.contactNumber
+                  ? formatText(investor.contactNumber)
+                  : '-'}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -654,17 +663,20 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
           {
             label: 'Total Capital',
             amount: totalCapital,
-            subValue: `${uniqueLoanCount} loans`,
+            subCount: uniqueLoanCount,
+            subCountSuffix: ' loans',
           },
           {
             label: 'Active',
             amount: activeCapital,
-            subValue: `${activeLoansCount} loans`,
+            subCount: activeLoansCount,
+            subCountSuffix: ' loans',
           },
           {
             label: 'Completed',
             amount: completedCapital,
-            subValue: `${completedLoansCount} loans`,
+            subCount: completedLoansCount,
+            subCountSuffix: ' loans',
           },
           {
             label: 'Interest Earned',
@@ -1068,7 +1080,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                               <div className="flex items-start justify-between gap-2">
                                 <div className="space-y-1 flex-1 min-w-0">
                                   <CardTitle className="text-sm sm:text-base truncate">
-                                    {loan.loanName}
+                                    {formatText(loan.loanName)}
                                   </CardTitle>
                                 </div>
                                 <Badge
@@ -1110,7 +1122,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                                     Inv. Rate
                                   </p>
                                   <p className="text-sm font-medium">
-                                    {investorRate.toFixed(2)}%
+                                    {formatPercentage(investorRate)}
                                   </p>
                                 </div>
                                 <div className="p-2 bg-muted/50 rounded-lg">

@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { formatDateShort, formatText, formatCount } from '@/lib/format';
+import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,16 +30,17 @@ export function DateListWithViewMore({
   itemClassName = '',
   dialogTitle = 'All Dates',
   title,
-  formatDate = (date: Date) =>
-    date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }),
+  formatDate: formatDateProp,
   getItemClassName,
   checkUnpaid,
 }: DateListWithViewMoreProps) {
   const [showAllModal, setShowAllModal] = useState(false);
+  usePriceVisibilityStore((state) => state.pricesHidden);
+
+  const formatDate = formatDateProp ?? ((date: Date) => formatDateShort(date));
+  const dialogHeading = title
+    ? formatText(`${dialogTitle} - ${title}`)
+    : formatText(dialogTitle);
 
   const displayedDates = dates.slice(0, limit);
   const hasMore = dates.length > limit;
@@ -77,7 +80,7 @@ export function DateListWithViewMore({
             }}
             className="h-auto p-0 text-[11px] text-primary hover:underline mx-2"
           >
-            View {dates.length - limit} more
+            View {formatCount(dates.length - limit)} more
           </Button>
         )}
       </div>
@@ -86,7 +89,7 @@ export function DateListWithViewMore({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {title ? `${dialogTitle} - ${title}` : dialogTitle}
+              {dialogHeading}
             </DialogTitle>
           </DialogHeader>
           <div className="max-h-[400px] overflow-y-auto">

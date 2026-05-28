@@ -1,6 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/format';
+import {
+  formatCurrency,
+  formatPercentage,
+  formatText,
+  formatCount,
+} from '@/lib/format';
 import { getLoanStatusBadge } from '@/lib/badge-config';
 import { LoanStatus } from '@/lib/types';
 
@@ -33,10 +38,10 @@ export function LoanSummarySection({
 }: LoanSummarySectionProps) {
   const rateDisplay =
     totalPrincipal > 0
-      ? `${averageRate.toFixed(2)}%`
+      ? formatPercentage(averageRate)
       : totalInterest > 0
-        ? 'Fixed'
-        : '0.00%';
+        ? formatText('Fixed')
+        : formatPercentage(0);
 
   return (
     <Card>
@@ -117,7 +122,7 @@ export function LoanSummarySection({
                   variant={getLoanStatusBadge(status).variant}
                   className={getLoanStatusBadge(status).className}
                 >
-                  {status}
+                  {formatText(status)}
                 </Badge>
               </div>
             </div>
@@ -132,7 +137,9 @@ export function LoanSummarySection({
                 <p className="text-xs sm:text-sm text-muted-foreground mb-1">
                   Investors
                 </p>
-                <p className="text-base font-semibold">{uniqueInvestors}</p>
+                <p className="text-base font-semibold">
+                  {formatCount(uniqueInvestors)}
+                </p>
               </div>
             )}
         </div>

@@ -14,6 +14,9 @@ import {
   PDF_COLORS,
   formatDateForPDF,
   formatCurrencyForPDF,
+  formatTextForPDF,
+  formatRateForPDF,
+  formatCountForPDF,
   downloadBlob,
 } from '@/lib/pdf-export';
 import {
@@ -487,7 +490,7 @@ const LoanCard = ({
       {/* Loan Header — keep on one line, never split */}
       <View style={styles.loanHeader} wrap={false}>
         <View style={styles.loanHeaderLeft}>
-          <Text style={styles.loanName}>{loan.loanName}</Text>
+          <Text style={styles.loanName}>{formatTextForPDF(loan.loanName)}</Text>
         </View>
         <View style={styles.loanHeaderRight}>
           <TypeBadge type={loan.type} />
@@ -527,7 +530,9 @@ const LoanCard = ({
               </View>
               <View style={styles.financialCell}>
                 <Text style={styles.financialCellLabel}>Avg Rate</Text>
-                <Text style={styles.financialCellValueSmall}>{stats.avgRate.toFixed(2)}%</Text>
+                <Text style={styles.financialCellValueSmall}>
+                  {formatRateForPDF(stats.avgRate)}
+                </Text>
               </View>
               <View style={styles.financialCell}>
                 <Text style={styles.financialCellLabel}>Total Interest</Text>
@@ -599,7 +604,9 @@ const LoanCard = ({
                 {/* Investor header + key figures — keep together, never split these two rows */}
                 <View wrap={false}>
                   <View style={styles.investorHeader}>
-                    <Text style={styles.investorName}>{li.investor.name}</Text>
+                    <Text style={styles.investorName}>
+                      {formatTextForPDF(li.investor.name)}
+                    </Text>
                   </View>
 
                   {/* Investor financial details — includes Sent Date as a proper field */}
@@ -615,7 +622,9 @@ const LoanCard = ({
                     <View style={styles.investorDetailItem}>
                       <Text style={styles.investorDetailLabel}>Rate</Text>
                       <Text style={styles.investorDetailValue}>
-                        {isFixed ? 'Fixed' : `${parseFloat(li.interestRate).toFixed(2)}%`}
+                        {isFixed
+                          ? formatTextForPDF('Fixed')
+                          : formatRateForPDF(parseFloat(li.interestRate))}
                       </Text>
                     </View>
                     <View style={styles.investorDetailItem}>
@@ -654,7 +663,7 @@ const LoanCard = ({
                           : periodPrincipal * (periodRate / 100);
                         const rateDisplay = periodIsFixed
                           ? formatCurrencyForPDF(periodInterest)
-                          : `${periodRate.toFixed(2)}% (${formatCurrencyForPDF(periodInterest)})`;
+                          : `${formatRateForPDF(periodRate)} (${formatCurrencyForPDF(periodInterest)})`;
 
                         return (
                           <View

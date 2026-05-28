@@ -1,6 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/format';
+import {
+  formatCurrency,
+  formatPercentage,
+  formatText,
+  formatCount,
+} from '@/lib/format';
 import { getLoanStatusBadge } from '@/lib/badge-config';
 import { LoanStatus } from '@/lib/types';
 
@@ -44,7 +49,9 @@ export function LoanSummary({
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               Avg. Rate
             </p>
-            <p className="text-base font-semibold">{averageRate.toFixed(2)}%</p>
+            <p className="text-base font-semibold">
+              {formatPercentage(averageRate)}
+            </p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
@@ -84,7 +91,7 @@ export function LoanSummary({
                   variant={getLoanStatusBadge(status).variant}
                   className={getLoanStatusBadge(status).className}
                 >
-                  {status}
+                  {formatText(status)}
                 </Badge>
               </div>
             </div>
@@ -98,7 +105,9 @@ export function LoanSummary({
               <p className="text-xs sm:text-sm text-muted-foreground mb-1">
                 Investors
               </p>
-              <p className="text-base font-semibold">{uniqueInvestors}</p>
+              <p className="text-base font-semibold">
+                {formatCount(uniqueInvestors)}
+              </p>
             </div>
           )}
         </div>

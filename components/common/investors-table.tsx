@@ -3,7 +3,7 @@
 import { InvestorWithLoans, LoanWithInvestors, LoanType } from '@/lib/types';
 import { DataTable, ColumnDef } from './data-table';
 import { ActionButtonsGroup } from './action-buttons';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, formatText, formatPercentage } from '@/lib/format';
 import { getTodayAtMidnight, normalizeToMidnight } from '@/lib/date-utils';
 import {
   calculateInvestorStats,
@@ -43,7 +43,9 @@ export function InvestorsTable({
       header: 'Name',
       accessorKey: 'name',
       sortable: true,
-      cell: (investor) => <span className="font-medium">{investor.name}</span>,
+      cell: (investor) => (
+        <span className="font-medium">{formatText(investor.name)}</span>
+      ),
     },
     {
       id: 'totalCapital',
@@ -72,7 +74,9 @@ export function InvestorsTable({
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (investor) => (
-        <span>{calculateAverageRate(investor.loanInvestors).toFixed(2)}%</span>
+        <span>
+          {formatPercentage(calculateAverageRate(investor.loanInvestors))}
+        </span>
       ),
     },
     {

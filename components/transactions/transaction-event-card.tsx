@@ -8,6 +8,7 @@ import {
   getTransactionTypeBadge,
 } from '@/lib/badge-config';
 import type { TransactionWithInvestor } from '@/lib/types';
+import { formatText } from '@/lib/format';
 
 interface TransactionEventCardProps {
   transaction: TransactionWithInvestor;
@@ -61,12 +62,12 @@ export function TransactionEventCard({
           </div>
           <div className="flex-1 min-w-0">
             <p className={`${sizeClasses[size]} font-semibold truncate`}>
-              {transaction.name}
+              {formatText(transaction.name)}
             </p>
             <p
               className={`${sizeClasses[size]} text-muted-foreground truncate`}
             >
-              {transaction.investor.name}
+              {formatText(transaction.investor.name)}
             </p>
           </div>
         </div>

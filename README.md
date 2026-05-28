@@ -1,252 +1,274 @@
-# Pawn Business Tracker
+# PawnTracker
 
-A comprehensive web application for tracking pawn business loans and investor transactions, built with Next.js 15, React 19, Tailwind CSS, and shadcn/ui.
+**A modern web app for pawn businesses to manage loans, investors, and cashflow in one place.**
+
+Built with Next.js 15, React 19, and a polished UI for day-to-day operations — from recording Lot Title / OR/CR / Agent loans to tracking investor participation, interest periods, and collections. Hosted on **Vercel**, backed by **Neon** serverless Postgres, with **Google sign-in** for access and optional **Google Calendar** sync for disbursements, due dates, and daily summaries.
+
+<p align="center">
+  <img src="./docs/screenshots/landing-hero.png" alt="PawnTracker marketing landing page" width="900" />
+</p>
+
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#tech-stack">Tech Stack</a> ·
+  <a href="#getting-started">Getting Started</a> ·
+  <a href="#deployment">Deployment</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind-4-38bdf8?style=flat-square&logo=tailwindcss" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/Drizzle-ORM-000?style=flat-square" alt="Drizzle" />
+  <img src="https://img.shields.io/badge/Neon-Postgres-00e599?style=flat-square&logo=neon" alt="Neon" />
+  <img src="https://img.shields.io/badge/Vercel-000?style=flat-square&logo=vercel" alt="Vercel" />
+  <img src="https://img.shields.io/badge/Google-OAuth-4285F4?style=flat-square&logo=google" alt="Google OAuth" />
+  <img src="https://img.shields.io/badge/Google-Calendar-4285F4?style=flat-square&logo=googlecalendar" alt="Google Calendar" />
+</p>
+
+---
 
 ## Features
 
-### Google Calendar Integration
+### Loans
 
-- **Automatic calendar event creation** for all loan events:
-  - 📤 **Disbursement events** (sent dates) with investor details
-  - 📅 **Due date events** with principal and interest breakdown
-  - 💰 **Interest due events** for loans with multiple interest periods
-- **Investor notifications**: All investors are automatically added as attendees and receive email notifications
-- **Complete loan information**: Events include detailed loan data, amounts, and investor breakdowns
-- **Automatic synchronization**: Events are created, updated, and deleted automatically with loan changes
+- Create and manage **Lot Title**, **OR/CR**, and **Agent** loans
+- Multi-investor allocation with per-investor principal, rates, and schedules
+- **Multiple interest periods**, received payments, and overdue handling
+- In-app calendar, table, and card views with filters and sorting
+- Duplicate loans, PDF/CSV export, and manual Google Calendar sync from settings
 
-### Module 1: Pawn Tracker
+### Investors
 
-- **Create and manage loans** with detailed information:
+- Investor directory with capital, returns, and active loan counts
+- **Investor portal**: share loans via investor email (Google sign-in)
+- Role-based access (`admin` vs `investor`)
 
-  - Loan name/label
-  - Type (Lot Title, OR/CR, Agent)
-  - Principal amount
-  - Interest rates (default and per-investor)
-  - Due dates with monthly or total interest options
-  - Status tracking (Active, Done, Overdue)
-  - Free lot tracking (in sqm)
-  - Notes and additional details
+### Transactions & dashboard
 
-- **Multi-investor allocation**:
+- Transaction ledger (collections, disbursements, returns)
+- Dashboard with summary metrics, cashflow charts, and activity cards
+- Past due, maturing, pending disbursement, and completed loan panels
+- **Privacy toggle** to hide sensitive data (names, amounts, dates, rates, counts) across the app
 
-  - Select multiple investors per loan
-  - Individual amount allocation per investor
-  - Custom interest rates per investor
-  - Multiple sent dates support
+### Google sign-in (OAuth)
 
-- **Real-time preview**:
-  - Calculate capital, interest, and total per investor
-  - Loan summary with total principal, interest, and amount due
-  - Visual breakdown before submission
+- **Sign in with Google** via [NextAuth.js v5](https://authjs.dev/) — no passwords stored in the app
+- Sessions persisted with the Drizzle adapter (`users`, `accounts`, `sessions`)
+- **Role-based access**: `admin` (full workspace) and `investor` (shared loans & transactions)
+- **Investor portal**: link investors by email so they sign in with the same Google account and see assigned loans
 
-### Module 2: Investor In & Outs
+### Google Calendar integration
 
-- **Investor dashboard** showing:
+Optional sync powered by a **Google Cloud service account** and the Calendar API (`googleapis`):
 
-  - Total capital invested
-  - Total interest earned
-  - Current balance with status indicators
-  - Active and total loans
+- **Disbursement events** on principal sent dates, with investor breakdown
+- **Due date events** with principal and interest totals
+- **Interest due events** for loans with multiple interest periods
+- **Daily summary events** aggregating in/out flows per day, with links back to filtered loans in the app
+- **Manual sync** from the app (bulk sync / cleanup) — calendar updates are not forced on every loan save
+- Investor emails can be added as attendees on events (when configured)
 
-- **Investor detail page** with two tabs:
+Requires `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`, and `GOOGLE_CALENDAR_ID` in `env.example`.
 
-  - **Tab 1: Loans & Gains**
+### Neon (database)
 
-    - All loans joined by the investor
-    - Capital, interest rate, and earnings per loan
-    - Total gains calculation
+- **[Neon](https://neon.tech/)** serverless PostgreSQL — scales with traffic and works well on serverless platforms
+- **[Drizzle ORM](https://orm.drizzle.team/)** with the [`@neondatabase/serverless`](https://neon.tech/docs/serverless/serverless-driver) HTTP driver ([`db/index.ts`](./db/index.ts)) for low-latency queries from Next.js
+- Schema managed via `bun run db:push` / migrations under `db/`
+- SQL migrations and Neon SQL Editor supported for production upgrades
 
-  - **Tab 2: Transactions & Balance**
-    - Complete transaction history
-    - Running balance after each transaction
-    - Date, type, amount, and notes
-    - Color-coded balance status (Green: Can invest, Yellow: Low funds, Red: No funds)
+### Vercel (hosting)
 
-### Dashboard
+- Production deployment on **[Vercel](https://vercel.com/)** with the Next.js App Router
+- Environment variables for Neon, Google OAuth, Calendar, and optional backups configured in the Vercel dashboard
+- **Cron jobs** via [`vercel.json`](./vercel.json) — daily automated backup endpoint (`/api/cron/backup` at 06:00 UTC)
+- Preview deployments on every push; production URL used for OAuth redirects and calendar event links (`NEXT_PUBLIC_APP_URL`)
 
-- Overview statistics:
-  - Total principal amount
-  - Total interest earned
-  - Active loans count
-  - Overdue loans alert
-- Recent loans with quick status view
+### Operations & data
+
+- JSON backup download and optional daily email backups (Resend + cron)
+- Maintenance tools: sync due dates, fix received-payment totals
+
+---
+
+## Screenshots
+
+| Landing | Sign in |
+|:---:|:---:|
+| ![Landing page](./docs/screenshots/landing-hero.png) | ![Sign in](./docs/screenshots/sign-in.png) |
+
+### App previews
+
+Screenshots from the live app. Several views show the **privacy toggle** (eye icon) hiding names, amounts, dates, and rates.
+
+| Dashboard | Loans (table) |
+|:---:|:---:|
+| ![Dashboard](./docs/screenshots/dashboard.png) | ![Loans table](./docs/screenshots/loans.png) |
+
+| Loans (calendar) | Loan detail |
+|:---:|:---:|
+| ![Loans calendar](./docs/screenshots/loans-calendar.png) | ![Loan detail modal](./docs/screenshots/loan-detail.png) |
+
+| Create loan | Investors |
+|:---:|:---:|
+| ![Create loan](./docs/screenshots/loan-create.png) | ![Investors](./docs/screenshots/investors.png) |
+
+| Transactions |
+|:---:|
+| ![Transactions](./docs/screenshots/transactions.png) |
+
+---
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 with App Router
-- **UI Library**: React 19
-- **Styling**: Tailwind CSS
-- **UI Components**: shadcn/ui
-- **Database ORM**: Drizzle ORM
-- **Database**: Neon PostgreSQL (serverless)
-- **Form Handling**: React Hook Form + Zod validation
-- **Type Safety**: TypeScript
+| Layer | Technology |
+|--------|------------|
+| Framework | [Next.js 15](https://nextjs.org/) (App Router) |
+| UI | [React 19](https://react.dev/), [Tailwind CSS 4](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/) |
+| **Authentication** | [NextAuth.js v5](https://authjs.dev/) + **Google OAuth** ([`auth.ts`](./auth.ts)) |
+| **Calendar** | [Google Calendar API](https://developers.google.com/calendar) via [`googleapis`](https://www.npmjs.com/package/googleapis) + service account ([`lib/google-calendar.ts`](./lib/google-calendar.ts)) |
+| **Database** | [Neon](https://neon.tech/) PostgreSQL (serverless) + [`@neondatabase/serverless`](https://www.npmjs.com/package/@neondatabase/serverless) |
+| **Hosting** | [Vercel](https://vercel.com/) (serverless Next.js, cron, env config) |
+| ORM | [Drizzle ORM](https://orm.drizzle.team/) |
+| Forms | React Hook Form + Zod |
+| Charts | Recharts |
+| PDF export | `@react-pdf/renderer` |
+| Email (optional) | Resend |
+
+---
 
 ## Getting Started
 
 ### Prerequisites
 
-- Bun installed ([bun.sh](https://bun.sh))
-- A Neon PostgreSQL database (free tier available at [neon.tech](https://neon.tech))
+- [Bun](https://bun.sh) or Node.js 20+
+- A [Neon](https://neon.tech) PostgreSQL database
+- [Google Cloud](https://console.cloud.google.com/) project with:
+  - **OAuth 2.0** credentials (Web application) for sign-in
+  - **Calendar API** enabled + **service account** (optional, for calendar sync)
 
-### Installation
-
-1. Clone the repository:
+### 1. Clone and install
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/sprmke/pawn-tracker.git
 cd pawn-tracker
+bun install   # or: npm install
 ```
 
-2. Install dependencies:
+### 2. Environment variables
 
 ```bash
-bun install
+cp env.example .env.local
 ```
 
-3. Set up environment variables:
+Fill in at minimum:
 
-```bash
-cp .env.example .env.local
-```
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Neon connection string (`?sslmode=require`) |
+| `AUTH_SECRET` | Random secret — `openssl rand -base64 32` |
+| `AUTH_GOOGLE_ID` | Google OAuth client ID |
+| `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 
-Edit `.env.local` and add your Neon database URL:
+**Google Calendar (optional)**
 
-```env
-DATABASE_URL=your_neon_database_url_here
-```
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | Service account email from Google Cloud |
+| `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | Service account private key (JSON key file) |
+| `GOOGLE_CALENDAR_ID` | Target calendar ID (`primary` or shared calendar ID) |
+| `NEXT_PUBLIC_APP_URL` | App URL for links inside calendar event descriptions |
 
-4. Push the database schema:
+**Other optional:** backups (`RESEND_API_KEY`, `BACKUP_EMAIL`, `CRON_SECRET`). See `env.example` for the full list.
+
+### 3. Database
 
 ```bash
 bun run db:push
 ```
 
-   If you already had a database from an older deploy and see **`column ... interest_period_id does not exist`** (or **`interest_period_status`** errors), apply the pending migration:
+If you upgrade an older database and see missing column errors, run `db/migrations/0001_interest_incomplete_and_period_link.sql` in the Neon SQL editor (see comments in that file for Postgres version notes).
 
-   - **Option A (recommended):** run `bun run db:push` again so Drizzle adds missing columns/enums from `db/schema.ts`.
-   - **Option B:** in the Neon **SQL Editor**, run the file `db/migrations/0001_interest_incomplete_and_period_link.sql` (adds `Incomplete` enum value + `interest_period_id` + index).  
-     On PostgreSQL before version 15, replace the first line with `ALTER TYPE interest_period_status ADD VALUE 'Incomplete';` (no `IF NOT EXISTS`).
-
-5. Seed the database with default investors:
-
-```bash
-bun run db:seed
-```
-
-6. Run the development server:
+### 4. Run locally
 
 ```bash
 bun run dev
 ```
 
-7. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Database Schema
-
-The application uses the following main tables:
-
-- **investors**: Store investor information
-- **loans**: Store loan details
-- **loan_investors**: Junction table linking loans and investors with allocation details
-- **transactions**: Store investor transactions for balance tracking
-
-## Available Scripts
-
-- `bun run dev` - Start development server
-- `bun run build` - Build for production
-- `bun run start` - Start production server
-- `bun run db:generate` - Generate database migrations
-- `bun run db:migrate` - Run database migrations
-- `bun run db:push` - Push schema changes to database
-- `bun run db:studio` - Open Drizzle Studio (database GUI)
-
-## Code Architecture & DRY Principles
-
-This project follows **DRY (Don't Repeat Yourself)** principles with a well-organized component architecture:
-
-### Shared Utilities (`/lib/`)
-
-- **format.ts**: Centralized formatting functions (currency, dates, percentages)
-- **calculations.ts**: Business logic for loan calculations, investor stats, and aggregations
-- **badge-config.ts**: Consistent badge styling across the app
-
-### Custom Hooks (`/hooks/`)
-
-Encapsulated logic for common patterns:
-
-- `usePagination`: Handle pagination state and logic
-- `useSorting`: Handle sorting state and logic
-- `useFilters`: Handle filtering state and logic
-
-See `/hooks/README.md` for detailed documentation.
-
-### Benefits
-
-✅ **~500+ lines of duplicate code eliminated**  
-✅ **Consistent formatting and calculations across the app**  
-✅ **Easy to maintain and test**  
-✅ **Type-safe with TypeScript**  
-✅ **Composable and reusable**
-
-See `REFACTORING_SUMMARY.md` for complete refactoring details.
-
-## Key Features Explained
-
-### Multi-Investor Loan Creation
-
-The loan form allows you to:
-
-1. Select multiple investors from a dropdown
-2. Allocate specific amounts to each investor
-3. Set custom interest rates per investor
-4. Specify different sent dates for each investor
-5. Preview calculations before creating the loan
-
-### Balance Tracking
-
-The transaction system tracks:
-
-- All money IN/OUT for each investor
-- Running balance after each transaction
-- Visual indicators for investment capacity
-- Complete audit trail with dates and notes
-
-### Responsive Design
-
-The application is fully responsive and works on:
-
-- Desktop computers
-- Tablets
-- Mobile phones
-
-## Deployment
-
-### Deploy to Vercel
-
-1. Push your code to GitHub
-2. Import your repository on [Vercel](https://vercel.com)
-3. Add your `DATABASE_URL` environment variable
-4. Deploy!
-
-Vercel will automatically:
-
-- Build your Next.js application
-- Set up automatic deployments on push
-- Provide a production URL
-
-## Contributing
-
-This is a private business application. For modifications or feature requests, please contact the development team.
-
-## License
-
-Private and Confidential - All Rights Reserved
-
-## Support
-
-For issues or questions, please contact the system administrator.
+Open [http://localhost:3000](http://localhost:3000). Sign in with Google to access the dashboard.
 
 ---
 
-Built with ❤️ for efficient pawn business management
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `bun run dev` | Development server (Turbopack) |
+| `bun run build` | Production build |
+| `bun run start` | Start production server |
+| `bun run db:push` | Push schema to Neon |
+| `bun run db:generate` | Generate Drizzle migrations |
+| `bun run db:migrate` | Run migrations |
+| `bun run db:studio` | Open Drizzle Studio |
+
+---
+
+## Project structure
+
+```text
+app/                 # Routes (dashboard, loans, investors, transactions, API)
+components/          # UI, feature modules, landing page
+db/                  # Drizzle schema and SQL migrations
+hooks/               # Shared React hooks (filters, pagination, sorting)
+lib/                 # Calculations, formatting, calendar, PDF/CSV export
+docs/screenshots/    # README and portfolio images
+```
+
+---
+
+## Deployment
+
+### Neon
+
+1. Create a project at [neon.tech](https://neon.tech)
+2. Copy the **connection string** (`postgresql://...?sslmode=require`)
+3. Set `DATABASE_URL` locally and in Vercel
+4. Run `bun run db:push` (or apply `db/migrations/*.sql` in the Neon SQL Editor)
+
+### Vercel
+
+1. Import this repository on [Vercel](https://vercel.com)
+2. Add all variables from `env.example` in **Project → Settings → Environment Variables**
+3. Deploy — Vercel builds Next.js and connects to Neon via `DATABASE_URL`
+4. Set `NEXT_PUBLIC_APP_URL` to your production domain (e.g. `https://pawn-tracker.vercel.app`)
+
+**Google OAuth:** add `https://your-app.vercel.app/api/auth/callback/google` to **Authorized redirect URIs** in Google Cloud Console.
+
+**Google Calendar:** share the target calendar with the service account email (Editor access) so sync can create and update events.
+
+**Cron backups (optional):** enable Vercel Cron and set `CRON_SECRET` + `RESEND_API_KEY` for the daily backup job defined in `vercel.json`.
+
+---
+
+## Security note
+
+This app is designed for **private business use**. Before going public:
+
+- Never commit `.env.local` or production secrets
+- Restrict Google OAuth to trusted users if needed
+- Rotate API keys if the repository was ever shared
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE) if present, or use this project as a portfolio reference with attribution.
+
+---
+
+<p align="center">
+  Built for pawn operators who want clarity on loans, investors, and cashflow — without spreadsheets.
+</p>

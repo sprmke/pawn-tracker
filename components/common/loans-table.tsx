@@ -5,7 +5,12 @@ import { LoanWithInvestors } from '@/lib/types';
 import { DataTable, ColumnDef } from './data-table';
 import { Badge } from '@/components/ui/badge';
 import { ActionButtonsGroup } from './action-buttons';
-import { formatCurrency } from '@/lib/format';
+import {
+  formatCurrency,
+  formatText,
+  formatPercentage,
+  formatSqm,
+} from '@/lib/format';
 import { calculateTransactionStats } from '@/lib/calculations';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import { DateListWithViewMore } from './date-list-with-view-more';
@@ -47,7 +52,9 @@ export function LoansTable({
       hidden: hideFields.includes('loanName'),
       accessorKey: 'loanName',
       sortable: true,
-      cell: (loan) => <span className="font-medium">{loan.loanName}</span>,
+      cell: (loan) => (
+        <span className="font-medium">{formatText(loan.loanName)}</span>
+      ),
     },
     {
       id: 'type',
@@ -64,7 +71,7 @@ export function LoansTable({
             getLoanTypeBadge(loan.type).className
           }`}
         >
-          {loan.type}
+          {formatText(loan.type)}
         </Badge>
       ),
     },
@@ -83,7 +90,7 @@ export function LoansTable({
             getLoanStatusBadge(loan.status).className
           }`}
         >
-          {loan.status}
+          {formatText(loan.status)}
         </Badge>
       ),
     },
@@ -226,7 +233,9 @@ export function LoansTable({
         const bValue = getStats(b).averageRate;
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
-      cell: (loan) => <span>{getStats(loan).averageRate.toFixed(2)}%</span>,
+      cell: (loan) => (
+        <span>{formatPercentage(getStats(loan).averageRate)}</span>
+      ),
     },
     {
       id: 'totalInterest',
@@ -276,7 +285,7 @@ export function LoansTable({
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
-        <span>{loan.freeLotSqm ? `${loan.freeLotSqm} sqm` : '-'}</span>
+        <span>{loan.freeLotSqm ? formatSqm(loan.freeLotSqm) : '—'}</span>
       ),
     },
     {

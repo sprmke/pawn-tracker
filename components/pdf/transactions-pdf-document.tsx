@@ -14,6 +14,7 @@ import {
   PDF_COLORS,
   formatDateForPDF,
   formatCurrencyForPDF,
+  formatTextForPDF,
   downloadBlob,
 } from '@/lib/pdf-export';
 import { TransactionWithInvestor, TransactionDirection } from '@/lib/types';
@@ -257,9 +258,9 @@ const TransactionsPDFDocument = ({
   function getCellValue(tx: TransactionWithInvestor, key: string) {
     switch (key) {
       case 'date': return formatDateForPDF(tx.date);
-      case 'name': return tx.name;
-      case 'investor': return tx.investor.name;
-      case 'type': return tx.type;
+      case 'name': return formatTextForPDF(tx.name);
+      case 'investor': return formatTextForPDF(tx.investor.name);
+      case 'type': return formatTextForPDF(tx.type);
       case 'amount': return formatCurrencyForPDF(tx.amount);
       case 'notes': return tx.notes || '—';
       default: return '—';

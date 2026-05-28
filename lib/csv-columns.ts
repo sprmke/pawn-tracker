@@ -10,6 +10,9 @@ import {
 import {
   formatDateForCSV,
   formatCurrencyForCSV,
+  formatTextForCSV,
+  formatRateForCSV,
+  formatCountForCSV,
   CSVColumn,
 } from './csv-export';
 import {
@@ -24,15 +27,15 @@ import {
 export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
   {
     header: 'Loan Name',
-    accessor: (loan) => loan.loanName,
+    accessor: (loan) => formatTextForCSV(loan.loanName),
   },
   {
     header: 'Type',
-    accessor: (loan) => loan.type,
+    accessor: (loan) => formatTextForCSV(loan.type),
   },
   {
     header: 'Status',
-    accessor: (loan) => loan.status,
+    accessor: (loan) => formatTextForCSV(loan.status),
   },
   {
     header: 'Due Date',
@@ -50,7 +53,7 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
     header: 'Average Rate (%)',
     accessor: (loan) => {
       const stats = calculateLoanStats(loan);
-      return stats.avgRate.toFixed(2);
+      return formatRateForCSV(stats.avgRate);
     },
   },
   {
@@ -71,7 +74,8 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
   },
   {
     header: 'Free Lot (sqm)',
-    accessor: (loan) => loan.freeLotSqm || '',
+    accessor: (loan) =>
+      loan.freeLotSqm != null ? formatCountForCSV(loan.freeLotSqm) : '',
     summable: true,
   },
   {
@@ -81,7 +85,7 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
       const uniqueInvestors = Array.from(
         new Set(loan.loanInvestors.map((li) => li.investor.name)),
       ).sort();
-      return uniqueInvestors.join(', ');
+      return formatTextForCSV(uniqueInvestors.join(', '));
     },
   },
   {
@@ -115,7 +119,7 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
   },
   {
     header: 'Notes',
-    accessor: (loan) => loan.notes || '',
+    accessor: (loan) => formatTextForCSV(loan.notes || ''),
   },
 ];
 
@@ -125,15 +129,15 @@ export const loansCSVColumns: CSVColumn<LoanWithInvestors>[] = [
 export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
   {
     header: 'Name',
-    accessor: (investor) => investor.name,
+    accessor: (investor) => formatTextForCSV(investor.name),
   },
   {
     header: 'Email',
-    accessor: (investor) => investor.email,
+    accessor: (investor) => formatTextForCSV(investor.email),
   },
   {
     header: 'Contact Number',
-    accessor: (investor) => investor.contactNumber || '',
+    accessor: (investor) => formatTextForCSV(investor.contactNumber || ''),
   },
   {
     header: 'Total Capital',
@@ -147,7 +151,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
     header: 'Average Rate (%)',
     accessor: (investor) => {
       const avgRate = calculateAverageRate(investor.loanInvestors);
-      return avgRate.toFixed(2);
+      return formatRateForCSV(avgRate);
     },
   },
   {
@@ -186,7 +190,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
     header: 'Active Loans',
     accessor: (investor) => {
       const stats = calculateInvestorStats(investor);
-      return stats.activeLoans;
+      return formatCountForCSV(stats.activeLoans);
     },
     summable: true,
   },
@@ -194,7 +198,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
     header: 'Completed Loans',
     accessor: (investor) => {
       const stats = calculateInvestorStats(investor);
-      return stats.completedLoans;
+      return formatCountForCSV(stats.completedLoans);
     },
     summable: true,
   },
@@ -202,7 +206,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
     header: 'Overdue Loans',
     accessor: (investor) => {
       const stats = calculateInvestorStats(investor);
-      return stats.overdueLoans;
+      return formatCountForCSV(stats.overdueLoans);
     },
     summable: true,
   },
@@ -210,7 +214,7 @@ export const investorsCSVColumns: CSVColumn<InvestorWithLoans>[] = [
     header: 'Total Loans',
     accessor: (investor) => {
       const stats = calculateInvestorStats(investor);
-      return stats.totalLoans;
+      return formatCountForCSV(stats.totalLoans);
     },
     summable: true,
   },
@@ -226,19 +230,19 @@ export const transactionsCSVColumns: CSVColumn<TransactionWithInvestor>[] = [
   },
   {
     header: 'Name',
-    accessor: (transaction) => transaction.name,
+    accessor: (transaction) => formatTextForCSV(transaction.name),
   },
   {
     header: 'Investor',
-    accessor: (transaction) => transaction.investor.name,
+    accessor: (transaction) => formatTextForCSV(transaction.investor.name),
   },
   {
     header: 'Type',
-    accessor: (transaction) => transaction.type,
+    accessor: (transaction) => formatTextForCSV(transaction.type),
   },
   {
     header: 'Direction',
-    accessor: (transaction) => transaction.direction,
+    accessor: (transaction) => formatTextForCSV(transaction.direction),
   },
   {
     header: 'Amount',
@@ -247,6 +251,6 @@ export const transactionsCSVColumns: CSVColumn<TransactionWithInvestor>[] = [
   },
   {
     header: 'Notes',
-    accessor: (transaction) => transaction.notes || '',
+    accessor: (transaction) => formatTextForCSV(transaction.notes || ''),
   },
 ];

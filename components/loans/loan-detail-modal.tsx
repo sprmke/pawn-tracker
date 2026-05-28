@@ -13,6 +13,8 @@ import { LoanWithInvestors } from '@/lib/types';
 import { LoanDetailContent } from './loan-detail-content';
 import { LoanForm } from './loan-form';
 import { DetailModalHeader } from '@/components/common';
+import { formatText } from '@/lib/format';
+import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +43,7 @@ export function LoanDetailModal({
   onOpenChange,
   onUpdate,
 }: LoanDetailModalProps) {
+  usePriceVisibilityStore((state) => state.pricesHidden);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
@@ -167,13 +170,15 @@ export function LoanDetailModal({
         >
           {isEditing ? (
             <VisuallyHidden>
-              <DialogTitle>Edit Loan - {loan.loanName}</DialogTitle>
+              <DialogTitle>
+                Edit Loan - {formatText(loan.loanName)}
+              </DialogTitle>
             </VisuallyHidden>
           ) : (
             <DialogHeader>
               <div className="flex md:flex-row flex-col items-start justify-between gap-3 md:gap-4">
                 <DialogTitle className="text-lg md:text-xl font-semibold line-clamp-2 md:line-clamp-none">
-                  {loan.loanName}
+                  {formatText(loan.loanName)}
                 </DialogTitle>
                 <DetailModalHeader
                   onEdit={() => {
