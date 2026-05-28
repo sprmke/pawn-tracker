@@ -31,8 +31,8 @@ export function formatDateForPDF(date: Date | string | null | undefined): string
  * Formats a number as Philippine Peso currency for PDF output
  */
 export function formatCurrencyForPDF(amount: string | number | null | undefined): string {
-  if (amount == null || amount == undefined) return 'P0.00';
-  const numValue = typeof amount == 'string' ? parseFloat(amount) : amount;
+  if (amount === null || amount === undefined) return 'P0.00';
+  const numValue = typeof amount === 'string' ? parseFloat(amount) : amount;
   if (isNaN(numValue)) return 'P0.00';
   const formatted = numValue.toLocaleString('en-PH', {
     minimumFractionDigits: 2,

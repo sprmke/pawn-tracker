@@ -165,8 +165,8 @@ export function LoanForm({
         // If type is 'fixed', interestRate contains the fixed amount
         // If type is 'rate', interestRate contains the percentage
         const interestAmount =
-          li.interestType == 'fixed' ? li.interestRate : '';
-        const interestRate = li.interestType == 'rate' ? li.interestRate : '';
+          li.interestType === 'fixed' ? li.interestRate : '';
+        const interestRate = li.interestType === 'rate' ? li.interestRate : '';
 
         transactions.push({
           id: li.id.toString(),
@@ -184,12 +184,12 @@ export function LoanForm({
       const result: InvestorAllocation[] = [];
       investorMap.forEach((transactions, investorId) => {
         const investor = existingLoan.loanInvestors.find(
-          (li) => li.investor.id == investorId,
+          (li) => li.investor.id === investorId,
         )?.investor;
 
         // Get the first loan investor record for this investor to check hasMultipleInterest
         const firstLoanInvestor = existingLoan.loanInvestors.find(
-          (li) => li.investor.id == investorId,
+          (li) => li.investor.id === investorId,
         );
 
         // Convert interest periods if they exist (from the first transaction)
@@ -198,9 +198,9 @@ export function LoanForm({
             ? firstLoanInvestor.interestPeriods.map((ip) => ({
                 id: ip.id.toString(),
                 dueDate: toLocalDateString(ip.dueDate),
-                interestRate: ip.interestType == 'rate' ? ip.interestRate : '',
+                interestRate: ip.interestType === 'rate' ? ip.interestRate : '',
                 interestAmount:
-                  ip.interestType == 'fixed' ? ip.interestRate : '',
+                  ip.interestType === 'fixed' ? ip.interestRate : '',
                 interestType: ip.interestType,
                 status: ip.status,
               }))
@@ -209,7 +209,7 @@ export function LoanForm({
         // Collect all received payments for this investor from any of their loan_investor rows
         const receivedPayments: ReceivedPaymentForm[] = [];
         existingLoan.loanInvestors
-          .filter((li) => li.investor.id == investorId)
+          .filter((li) => li.investor.id === investorId)
           .forEach((li) => {
             (li.receivedPayments || []).forEach((rp) => {
               receivedPayments.push({
@@ -247,8 +247,8 @@ export function LoanForm({
         // If type is 'fixed', interestRate contains the fixed amount
         // If type is 'rate', interestRate contains the percentage
         const interestAmount =
-          li.interestType == 'fixed' ? li.interestRate : '';
-        const interestRate = li.interestType == 'rate' ? li.interestRate : '';
+          li.interestType === 'fixed' ? li.interestRate : '';
+        const interestRate = li.interestType === 'rate' ? li.interestRate : '';
 
         transactions.push({
           id: `temp-${Date.now()}-${Math.random()}`,
@@ -265,11 +265,11 @@ export function LoanForm({
       // Convert map to array of InvestorAllocation
       const result: InvestorAllocation[] = [];
       investorMap.forEach((transactions, investorId) => {
-        const investor = initialInvestors.find((inv) => inv.id == investorId);
+        const investor = initialInvestors.find((inv) => inv.id === investorId);
 
         // Get the first loan investor record for this investor to check hasMultipleInterest
         const firstLoanInvestor = duplicateData.loanInvestors.find(
-          (li) => li.investorId == investorId,
+          (li) => li.investorId === investorId,
         );
 
         // Convert interest periods if they exist
@@ -278,9 +278,9 @@ export function LoanForm({
             ? firstLoanInvestor.interestPeriods.map((ip) => ({
                 id: `temp-${Date.now()}-${Math.random()}`,
                 dueDate: toLocalDateString(ip.dueDate),
-                interestRate: ip.interestType == 'rate' ? ip.interestRate : '',
+                interestRate: ip.interestType === 'rate' ? ip.interestRate : '',
                 interestAmount:
-                  ip.interestType == 'fixed' ? ip.interestRate : '',
+                  ip.interestType === 'fixed' ? ip.interestRate : '',
                 interestType: ip.interestType,
                 status: ip.status,
               }))
@@ -304,7 +304,7 @@ export function LoanForm({
     // If preselectedInvestorId is provided, add that investor
     if (preselectedInvestorId) {
       const preselectedInvestor = initialInvestors.find(
-        (inv) => inv.id == preselectedInvestorId,
+        (inv) => inv.id === preselectedInvestorId,
       );
       if (preselectedInvestor) {
         return [
@@ -417,16 +417,16 @@ export function LoanForm({
 
   const addInvestor = (investorId: string) => {
     // Check if user wants to create new investor
-    if (investorId == 'new') {
+    if (investorId === 'new') {
       setShowInvestorModal(true);
       setInvestorSelectValue('');
       return;
     }
 
-    const investor = investors.find((inv) => inv.id.toString() == investorId);
+    const investor = investors.find((inv) => inv.id.toString() === investorId);
     if (
       investor &&
-      !selectedInvestors.find((si) => si.investor.id == investor.id)
+      !selectedInvestors.find((si) => si.investor.id === investor.id)
     ) {
       setSelectedInvestors([
         ...selectedInvestors,
@@ -494,14 +494,14 @@ export function LoanForm({
 
   const removeInvestor = (investorId: number) => {
     setSelectedInvestors(
-      selectedInvestors.filter((si) => si.investor.id !==investorId),
+      selectedInvestors.filter((si) => si.investor.id !== investorId),
     );
   };
 
   const addTransaction = (investorId: number) => {
     setSelectedInvestors(
       selectedInvestors.map((si) =>
-        si.investor.id == investorId
+        si.investor.id === investorId
           ? {
               ...si,
               transactions: [
@@ -525,11 +525,11 @@ export function LoanForm({
   const removeTransaction = (investorId: number, transactionId: string) => {
     setSelectedInvestors(
       selectedInvestors.map((si) =>
-        si.investor.id == investorId
+        si.investor.id === investorId
           ? {
               ...si,
               transactions: si.transactions.filter(
-                (t) => t.id !==transactionId,
+                (t) => t.id !== transactionId,
               ),
             }
           : si,
@@ -540,7 +540,7 @@ export function LoanForm({
   const addReceivedPayment = (investorId: number) => {
     setSelectedInvestors(
       selectedInvestors.map((si) =>
-        si.investor.id == investorId
+        si.investor.id === investorId
           ? {
               ...si,
               receivedPayments: [
@@ -563,11 +563,11 @@ export function LoanForm({
   ) => {
     setSelectedInvestors(
       selectedInvestors.map((si) =>
-        si.investor.id == investorId
+        si.investor.id === investorId
           ? {
               ...si,
               receivedPayments: si.receivedPayments.filter(
-                (rp) => rp.id !==receivedPaymentId,
+                (rp) => rp.id !== receivedPaymentId,
               ),
             }
           : si,
@@ -583,11 +583,11 @@ export function LoanForm({
   ) => {
     setSelectedInvestors(
       selectedInvestors.map((si) =>
-        si.investor.id == investorId
+        si.investor.id === investorId
           ? {
               ...si,
               receivedPayments: si.receivedPayments.map((rp) =>
-                rp.id == receivedPaymentId ? { ...rp, [field]: value } : rp,
+                rp.id === receivedPaymentId ? { ...rp, [field]: value } : rp,
               ),
             }
           : si,
@@ -613,13 +613,13 @@ export function LoanForm({
           total +
           si.transactions.reduce((sum, t) => {
             if (
-              si.investor.id == excludeInvestorId &&
-              t.id == excludeTransactionId
+              si.investor.id === excludeInvestorId &&
+              t.id === excludeTransactionId
             ) {
               // Use the new amount if provided, otherwise include current amount
               return (
                 sum +
-                (newAmount !==undefined
+                (newAmount !== undefined
                   ? newAmount
                   : parseFloat(t.amount) || 0)
               );
@@ -632,16 +632,16 @@ export function LoanForm({
 
     setSelectedInvestors(
       selectedInvestors.map((si) =>
-        si.investor.id == investorId
+        si.investor.id === investorId
           ? {
               ...si,
               transactions: si.transactions.map((t) => {
-                if (t.id !==transactionId) return t;
+                if (t.id !== transactionId) return t;
 
                 const updatedTransaction = { ...t, [field]: value };
 
                 // When sentDate changes, update isPaid automatically
-                if (field == 'sentDate') {
+                if (field === 'sentDate') {
                   const today = getTodayAtMidnight();
                   const sentDate = normalizeToMidnight(value);
                   updatedTransaction.isPaid = sentDate <= today;
@@ -649,13 +649,13 @@ export function LoanForm({
 
                 // When amount, interestRate, or interestAmount changes, update the corresponding field
                 const amount =
-                  parseFloat(field == 'amount' ? value : t.amount) || 0;
+                  parseFloat(field === 'amount' ? value : t.amount) || 0;
 
-                if (field == 'interestRate') {
+                if (field === 'interestRate') {
                   // When rate changes, calculate and update fixed amount
                   const rate = parseFloat(value) || 0;
                   // If amount is 0, use total principal from all investors
-                  if (amount == 0) {
+                  if (amount === 0) {
                     const totalPrincipal = calculateTotalPrincipalForSync(
                       investorId,
                       transactionId,
@@ -667,11 +667,11 @@ export function LoanForm({
                     const fixedAmount = amount * (rate / 100);
                     updatedTransaction.interestAmount = fixedAmount.toFixed(2);
                   }
-                } else if (field == 'interestAmount') {
+                } else if (field === 'interestAmount') {
                   // When fixed amount changes, calculate and update rate
                   const fixedAmount = parseFloat(value) || 0;
                   // If amount is 0, calculate rate based on total principal
-                  if (amount == 0) {
+                  if (amount === 0) {
                     const totalPrincipal = calculateTotalPrincipalForSync(
                       investorId,
                       transactionId,
@@ -686,12 +686,12 @@ export function LoanForm({
                     const rate = amount > 0 ? (fixedAmount / amount) * 100 : 0;
                     updatedTransaction.interestRate = rate.toFixed(2);
                   }
-                } else if (field == 'amount') {
+                } else if (field === 'amount') {
                   // When amount changes, recalculate based on current interest type
-                  if (t.interestType == 'rate') {
+                  if (t.interestType === 'rate') {
                     const rate = parseFloat(t.interestRate) || 0;
                     // If new amount is 0, use total principal from all investors
-                    if (amount == 0) {
+                    if (amount === 0) {
                       const totalPrincipal = calculateTotalPrincipalForSync(
                         investorId,
                         transactionId,
@@ -756,10 +756,10 @@ export function LoanForm({
         if (si.hasMultipleInterest && si.interestPeriods.length > 0) {
           // Calculate total interest from all periods for this transaction
           si.interestPeriods.forEach((period) => {
-            if (period.interestType == 'rate') {
+            if (period.interestType === 'rate') {
               const rate = parseFloat(period.interestRate) || 0;
               // If capital is 0, use total principal from all investors
-              const baseAmount = capital == 0 ? totalPrincipal : capital;
+              const baseAmount = capital === 0 ? totalPrincipal : capital;
               interest += baseAmount * (rate / 100);
             } else {
               interest += parseFloat(period.interestAmount) || 0;
@@ -775,10 +775,10 @@ export function LoanForm({
           }
         } else {
           // Single interest calculation
-          if (transaction.interestType == 'rate') {
+          if (transaction.interestType === 'rate') {
             interestRate = parseFloat(transaction.interestRate) || 0;
             // If capital is 0, use total principal from all investors
-            const baseAmount = capital == 0 ? totalPrincipal : capital;
+            const baseAmount = capital === 0 ? totalPrincipal : capital;
             interest = baseAmount * (interestRate / 100);
           } else {
             interest = parseFloat(transaction.interestAmount) || 0;
@@ -857,7 +857,7 @@ export function LoanForm({
   };
 
   const onSubmit = async (data: z.infer<typeof loanSchema>) => {
-    if (selectedInvestors.length == 0) {
+    if (selectedInvestors.length === 0) {
       toast.error('Please add at least one investor');
       return;
     }
@@ -873,12 +873,12 @@ export function LoanForm({
         const isValidAmount = !isNaN(amount) && amount >= 0;
 
         // If amount is 0, must have interest configured
-        if (amount == 0) {
+        if (amount === 0) {
           // Check if using multiple interest periods
           if (si.hasMultipleInterest) {
             // Must have at least one interest period with a valid amount
             const hasValidInterestPeriod = si.interestPeriods.some((period) => {
-              if (period.interestType == 'fixed') {
+              if (period.interestType === 'fixed') {
                 const fixedAmount = parseFloat(period.interestAmount);
                 return !isNaN(fixedAmount) && fixedAmount > 0;
               } else {
@@ -892,7 +892,7 @@ export function LoanForm({
             return !hasValidInterestPeriod;
           } else {
             // Single interest - allow fixed type with value OR rate % with total principal available
-            if (t.interestType == 'fixed') {
+            if (t.interestType === 'fixed') {
               return !t.interestAmount || parseFloat(t.interestAmount) <= 0;
             } else {
               // Rate % type - valid if rate > 0 and there's total principal from other investors
@@ -920,7 +920,7 @@ export function LoanForm({
     const previewForValidation = calculatePreview();
     const hasInvalidReceivedPayments = selectedInvestors.some((si) => {
       const investorPreviewItems = previewForValidation.filter(
-        (p) => p.investor.id == si.investor.id,
+        (p) => p.investor.id === si.investor.id,
       );
       const totalDue = investorPreviewItems.reduce(
         (s, p) => s + p.total,
@@ -986,7 +986,7 @@ export function LoanForm({
           ? si.interestPeriods.map((period) => {
               // For 0-capital rate%, convert to fixed with calculated interest
               const isZeroPeriodCapitalWithRate =
-                investorTotalCapital == 0 && period.interestType == 'rate';
+                investorTotalCapital === 0 && period.interestType === 'rate';
 
               if (isZeroPeriodCapitalWithRate) {
                 const rate = parseFloat(period.interestRate) || 0;
@@ -1002,7 +1002,7 @@ export function LoanForm({
               return {
                 dueDate: new Date(period.dueDate),
                 interestRate:
-                  period.interestType == 'fixed'
+                  period.interestType === 'fixed'
                     ? period.interestAmount
                     : period.interestRate,
                 interestType: period.interestType,
@@ -1017,10 +1017,10 @@ export function LoanForm({
           let interestType: 'rate' | 'fixed' = 'rate';
 
           // If user chose fixed amount, store the fixed amount directly in interestRate
-          if (transaction.interestType == 'fixed') {
+          if (transaction.interestType === 'fixed') {
             interestRate = transaction.interestAmount;
             interestType = 'fixed';
-          } else if (amount == 0 && transaction.interestType == 'rate') {
+          } else if (amount === 0 && transaction.interestType === 'rate') {
             // For 0-amount with rate%, calculate interest based on total principal and save as fixed
             const rate = parseFloat(transaction.interestRate) || 0;
             const calculatedInterest = totalPrincipalForSave * (rate / 100);
@@ -1085,7 +1085,7 @@ export function LoanForm({
   };
 
   const availableInvestors = investors.filter(
-    (inv) => !selectedInvestors.find((si) => si.investor.id == inv.id),
+    (inv) => !selectedInvestors.find((si) => si.investor.id === inv.id),
   );
 
   const preview = calculatePreview();
@@ -1110,7 +1110,7 @@ export function LoanForm({
 
   const handleCopyConfirm = (targetInvestorIds: number[]) => {
     const sourceInvestor = selectedInvestors.find(
-      (si) => si.investor.id == copySourceInvestorId,
+      (si) => si.investor.id === copySourceInvestorId,
     );
 
     if (!sourceInvestor) {
@@ -1123,9 +1123,9 @@ export function LoanForm({
     // Separate target investors into new and existing
     targetInvestorIds.forEach((targetId) => {
       const isAlreadySelected = selectedInvestors.some(
-        (si) => si.investor.id == targetId,
+        (si) => si.investor.id === targetId,
       );
-      const investor = investors.find((inv) => inv.id == targetId);
+      const investor = investors.find((inv) => inv.id === targetId);
       if (isAlreadySelected) {
         existingInvestorsToUpdate.push(targetId);
       } else {
@@ -1225,7 +1225,7 @@ export function LoanForm({
 
     toast.success(
       `Configuration copied to ${targetInvestorIds.length} investor${
-        targetInvestorIds.length !==1 ? 's' : ''
+        targetInvestorIds.length !== 1 ? 's' : ''
       }`,
     );
   };
@@ -1310,7 +1310,7 @@ export function LoanForm({
               )}
             </div>
 
-            {watchType == 'Lot Title' && (
+            {watchType === 'Lot Title' && (
               <div className="space-y-2">
                 <Label htmlFor="freeLotSqm">Free Lot (sqm)</Label>
                 <Input
@@ -1390,7 +1390,7 @@ export function LoanForm({
             </Select>
           </div>
 
-          {selectedInvestors.length == 0 ? (
+          {selectedInvestors.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">
               No investors added yet
             </p>
@@ -1398,7 +1398,7 @@ export function LoanForm({
             <div className="space-y-4">
               {selectedInvestors.map((si) => {
                 const investorPreviewItems = preview.filter(
-                  (p) => p.investor.id == si.investor.id,
+                  (p) => p.investor.id === si.investor.id,
                 );
                 const investorTotalDue = investorPreviewItems.reduce(
                   (s, p) => s + p.total,
@@ -1420,7 +1420,7 @@ export function LoanForm({
                   onPeriodsChange={(periods) => {
                     setSelectedInvestors((prev) =>
                       prev.map((inv) =>
-                        inv.investor.id == si.investor.id
+                        inv.investor.id === si.investor.id
                           ? { ...inv, interestPeriods: periods }
                           : inv,
                       ),
@@ -1429,10 +1429,10 @@ export function LoanForm({
                   onModeChange={(mode) => {
                     setSelectedInvestors((prev) =>
                       prev.map((inv) =>
-                        inv.investor.id == si.investor.id
+                        inv.investor.id === si.investor.id
                           ? {
                               ...inv,
-                              hasMultipleInterest: mode == 'multiple',
+                              hasMultipleInterest: mode === 'multiple',
                             }
                           : inv,
                       ),
@@ -1485,7 +1485,7 @@ export function LoanForm({
                       (transactions) => {
                         const investorId = transactions[0].investor.id;
                         const investorData = selectedInvestors.find(
-                          (si) => si.investor.id == investorId,
+                          (si) => si.investor.id === investorId,
                         );
 
                         return {
@@ -1503,21 +1503,21 @@ export function LoanForm({
                             // Find the original transaction to get the actual interestType
                             const originalTransaction =
                               investorData?.transactions.find(
-                                (ot) => ot.sentDate == t.sentDate,
+                                (ot) => ot.sentDate === t.sentDate,
                               );
 
                             // For 0-capital with rate %, pass the calculated interest as fixed amount
                             // so the display component shows the correct pre-calculated value
                             const isZeroCapitalWithRate =
-                              t.capital == 0 &&
-                              originalTransaction?.interestType == 'rate';
+                              t.capital === 0 &&
+                              originalTransaction?.interestType === 'rate';
 
                             return {
                               id: `preview-${t.investor.id}-${index}`,
                               amount: t.capital.toString(),
                               interestRate: isZeroCapitalWithRate
                                 ? t.interest.toString() // Pass calculated interest as fixed amount
-                                : originalTransaction?.interestType == 'fixed'
+                                : originalTransaction?.interestType === 'fixed'
                                   ? originalTransaction.interestAmount
                                   : t.interestRate.toString(),
                               interestType: isZeroCapitalWithRate
@@ -1539,8 +1539,8 @@ export function LoanForm({
                                     0,
                                   );
                                 const isZeroPeriodCapitalWithRate =
-                                  investorTotalCapital == 0 &&
-                                  period.interestType == 'rate';
+                                  investorTotalCapital === 0 &&
+                                  period.interestType === 'rate';
 
                                 if (isZeroPeriodCapitalWithRate) {
                                   const totalPrincipal = getTotalPrincipal();
@@ -1561,7 +1561,7 @@ export function LoanForm({
                                   dueDate: period.dueDate,
                                   // For fixed type, use interestAmount; for rate type, use interestRate
                                   interestRate:
-                                    period.interestType == 'fixed'
+                                    period.interestType === 'fixed'
                                       ? period.interestAmount
                                       : period.interestRate,
                                   interestType: period.interestType,
@@ -1627,7 +1627,7 @@ export function LoanForm({
       {copySourceInvestorId &&
         (() => {
           const sourceInvestorData = selectedInvestors.find(
-            (si) => si.investor.id == copySourceInvestorId,
+            (si) => si.investor.id === copySourceInvestorId,
           )!;
           const configsMap = new Map(
             selectedInvestors.map((si) => [
@@ -1642,7 +1642,7 @@ export function LoanForm({
           );
           return (
             <CopyInvestorModal
-              open={copySourceInvestorId !==null}
+              open={copySourceInvestorId !== null}
               onOpenChange={(open) => {
                 if (!open) setCopySourceInvestorId(null);
               }}
@@ -1654,7 +1654,7 @@ export function LoanForm({
                 interestPeriods: sourceInvestorData.interestPeriods,
               }}
               availableInvestors={investors.filter(
-                (inv) => inv.id !==copySourceInvestorId,
+                (inv) => inv.id !== copySourceInvestorId,
               )}
               selectedInvestorIds={selectedInvestors.map(
                 (si) => si.investor.id,

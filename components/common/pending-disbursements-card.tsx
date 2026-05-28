@@ -68,7 +68,7 @@ export function PendingDisbursementsCard({
       loadingVariant={loadingVariant}
       onViewAllClick={onViewAllClick}
     >
-      {displayDisbursements.length == 0 ? (
+      {displayDisbursements.length === 0 ? (
         <ActivityEmptyState message="No pending payments" />
       ) : (
         <div className="space-y-3">

@@ -118,17 +118,17 @@ export function Pagination({
             variant="outline"
             size="sm"
             onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage == 1}
+            disabled={currentPage === 1}
           >
             <ChevronLeft className="h-4 w-4" />
             Previous
           </Button>
           <div className="flex items-center gap-1">
             {pageItems.map((item, index) =>
-              typeof item == 'number' ? (
+              typeof item === 'number' ? (
                 <Button
                   key={item}
-                  variant={currentPage == item ? 'default' : 'outline'}
+                  variant={currentPage === item ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => onPageChange(item)}
                   className="w-8 h-8 p-0"
@@ -149,7 +149,7 @@ export function Pagination({
             variant="outline"
             size="sm"
             onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage == totalPages}
+            disabled={currentPage === totalPages}
           >
             Next
             <ChevronRight className="h-4 w-4" />

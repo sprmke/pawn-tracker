@@ -66,12 +66,12 @@ export function CopyInvestorModal({
     config2: InvestorConfiguration
   ): boolean => {
     // Compare hasMultipleInterest
-    if (config1.hasMultipleInterest !==config2.hasMultipleInterest) {
+    if (config1.hasMultipleInterest !== config2.hasMultipleInterest) {
       return false;
     }
 
     // Compare transactions (ignore IDs and isPaid, compare structure and values)
-    if (config1.transactions.length !==config2.transactions.length) {
+    if (config1.transactions.length !== config2.transactions.length) {
       return false;
     }
 
@@ -88,29 +88,29 @@ export function CopyInvestorModal({
 
       // Compare basic fields
       if (
-        t1.amount !==t2.amount ||
-        t1.interestType !==t2.interestType ||
-        t1.sentDate !==t2.sentDate
+        t1.amount !== t2.amount ||
+        t1.interestType !== t2.interestType ||
+        t1.sentDate !== t2.sentDate
       ) {
         return false;
       }
 
       // Compare interest fields based on type
-      if (t1.interestType == 'rate') {
+      if (t1.interestType === 'rate') {
         // For rate type, only compare interestRate
-        if (t1.interestRate !==t2.interestRate) {
+        if (t1.interestRate !== t2.interestRate) {
           return false;
         }
       } else {
         // For fixed type, only compare interestAmount
-        if (t1.interestAmount !==t2.interestAmount) {
+        if (t1.interestAmount !== t2.interestAmount) {
           return false;
         }
       }
     }
 
     // Compare received payments
-    if (config1.receivedPayments.length !==config2.receivedPayments.length) {
+    if (config1.receivedPayments.length !== config2.receivedPayments.length) {
       return false;
     }
     const sortReceived = (rps: ReceivedPaymentForm[]) =>
@@ -119,8 +119,8 @@ export function CopyInvestorModal({
     const sortedRp2 = sortReceived(config2.receivedPayments);
     for (let i = 0; i < sortedRp1.length; i++) {
       if (
-        sortedRp1[i].amount !==sortedRp2[i].amount ||
-        sortedRp1[i].receivedDate !==sortedRp2[i].receivedDate
+        sortedRp1[i].amount !== sortedRp2[i].amount ||
+        sortedRp1[i].receivedDate !== sortedRp2[i].receivedDate
       ) {
         return false;
       }
@@ -128,7 +128,7 @@ export function CopyInvestorModal({
 
     // Compare interest periods if using multiple interest
     if (config1.hasMultipleInterest) {
-      if (config1.interestPeriods.length !==config2.interestPeriods.length) {
+      if (config1.interestPeriods.length !== config2.interestPeriods.length) {
         return false;
       }
 
@@ -144,19 +144,19 @@ export function CopyInvestorModal({
         const p2 = sortedPeriods2[i];
 
         // Compare basic fields
-        if (p1.dueDate !==p2.dueDate || p1.interestType !==p2.interestType) {
+        if (p1.dueDate !== p2.dueDate || p1.interestType !== p2.interestType) {
           return false;
         }
 
         // Compare interest fields based on type
-        if (p1.interestType == 'rate') {
+        if (p1.interestType === 'rate') {
           // For rate type, only compare interestRate
-          if (p1.interestRate !==p2.interestRate) {
+          if (p1.interestRate !== p2.interestRate) {
             return false;
           }
         } else {
           // For fixed type, only compare interestAmount
-          if (p1.interestAmount !==p2.interestAmount) {
+          if (p1.interestAmount !== p2.interestAmount) {
             return false;
           }
         }
@@ -227,7 +227,7 @@ export function CopyInvestorModal({
       .join(',');
 
     // Only re-evaluate if configs actually changed
-    if (prevConfigsRef.current !==configsKey) {
+    if (prevConfigsRef.current !== configsKey) {
       prevConfigsRef.current = configsKey;
 
       // Find all investors with the same configuration as the source investor
@@ -273,7 +273,7 @@ export function CopyInvestorModal({
 
     if (isCurrentlyChecked) {
       // Unchecking investor - only allowed if config no longer matches
-      setCheckedInvestorIds((prev) => prev.filter((id) => id !==investorId));
+      setCheckedInvestorIds((prev) => prev.filter((id) => id !== investorId));
       // Remove from auto-checked set if it was there
       setAutoCheckedInvestorIds((prev) => {
         const newSet = new Set(prev);
@@ -311,7 +311,7 @@ export function CopyInvestorModal({
   };
 
   const handleCopy = () => {
-    if (checkedInvestorIds.length == 0) return;
+    if (checkedInvestorIds.length === 0) return;
     onCopy(checkedInvestorIds);
     setCheckedInvestorIds([]);
     onOpenChange(false);
@@ -338,7 +338,7 @@ export function CopyInvestorModal({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label className="text-sm font-semibold">Select Investors</Label>
-            {availableInvestors.length == 0 ? (
+            {availableInvestors.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
                 No other investors available to copy to
               </p>
@@ -406,11 +406,11 @@ export function CopyInvestorModal({
             <Button
               type="button"
               onClick={handleCopy}
-              disabled={checkedInvestorIds.length == 0}
+              disabled={checkedInvestorIds.length === 0}
             >
               <Copy className="mr-2 h-4 w-4" />
               Copy to {checkedInvestorIds.length} investor
-              {checkedInvestorIds.length !==1 ? 's' : ''}
+              {checkedInvestorIds.length !== 1 ? 's' : ''}
             </Button>
           </div>
         </div>

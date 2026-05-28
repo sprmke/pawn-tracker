@@ -27,7 +27,7 @@ function ActivityPanelSkeleton({ variant }: { variant: 'empty' | 'list' }) {
         </div>
       </CardHeader>
       <CardContent className="min-w-0 px-5 pb-5 pt-0">
-        {variant == 'empty' ? (
+        {variant === 'empty' ? (
           <Skeleton className="h-[88px] w-full rounded-2xl" />
         ) : (
           <div className="space-y-3">

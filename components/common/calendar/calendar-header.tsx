@@ -67,7 +67,7 @@ export function CalendarHeader({
                 {/* View Mode Selector */}
                 <div className="flex items-center border rounded-lg p-1">
                   <Button
-                    variant={viewMode == 'day' ? 'secondary' : 'ghost'}
+                    variant={viewMode === 'day' ? 'secondary' : 'ghost'}
                     size="sm"
                     onClick={() => onViewModeChange('day')}
                     className="h-7 px-2 text-xs"
@@ -75,7 +75,7 @@ export function CalendarHeader({
                     Day
                   </Button>
                   <Button
-                    variant={viewMode == 'week' ? 'secondary' : 'ghost'}
+                    variant={viewMode === 'week' ? 'secondary' : 'ghost'}
                     size="sm"
                     onClick={() => onViewModeChange('week')}
                     className="h-7 px-2 text-xs"
@@ -83,7 +83,7 @@ export function CalendarHeader({
                     Week
                   </Button>
                   <Button
-                    variant={viewMode == 'month' ? 'secondary' : 'ghost'}
+                    variant={viewMode === 'month' ? 'secondary' : 'ghost'}
                     size="sm"
                     onClick={() => onViewModeChange('month')}
                     className="h-7 px-2 text-xs"

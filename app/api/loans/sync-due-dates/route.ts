@@ -43,7 +43,7 @@ export async function POST() {
         }
       }
 
-      if (allDueDates.length == 0) {
+      if (allDueDates.length === 0) {
         // No interest periods found — skip
         skippedLoans.push(loan.loanName);
         continue;
@@ -58,7 +58,7 @@ export async function POST() {
 
       // Compare at day precision (ignore time)
       const isSameDay =
-        latestDueDate.toISOString().slice(0, 10) ==
+        latestDueDate.toISOString().slice(0, 10) ===
         currentDueDate.toISOString().slice(0, 10);
 
       if (isSameDay) {
@@ -77,7 +77,7 @@ export async function POST() {
     }
 
     const message =
-      updatedLoans.length == 0
+      updatedLoans.length === 0
         ? 'All loan due dates are already up to date.'
         : `Updated ${updatedLoans.length} loan(s): ${updatedLoans.join(', ')}`;
 

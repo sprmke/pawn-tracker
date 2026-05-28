@@ -4,7 +4,7 @@
  * This prevents timezone-related date shifts when converting dates for form inputs
  */
 export function toLocalDateString(date: Date | string): string {
-  const d = typeof date == 'string' ? new Date(date) : date;
+  const d = typeof date === 'string' ? new Date(date) : date;
   // Use UTC methods to extract the date since dates are stored as midnight UTC
   const year = d.getUTCFullYear();
   const month = String(d.getUTCMonth() + 1).padStart(2, '0');
@@ -29,8 +29,8 @@ export function getMonthsBetweenDates(
   startDate: Date | string,
   endDate: Date | string,
 ): number {
-  const start = typeof startDate == 'string' ? new Date(startDate) : startDate;
-  const end = typeof endDate == 'string' ? new Date(endDate) : endDate;
+  const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
+  const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
 
   const yearDiff = end.getFullYear() - start.getFullYear();
   const monthDiff = end.getMonth() - start.getMonth();
@@ -65,8 +65,8 @@ export function isMoreThanOneMonthAndFifteenDays(
   startDate: Date | string,
   endDate: Date | string,
 ): boolean {
-  const start = typeof startDate == 'string' ? new Date(startDate) : startDate;
-  const end = typeof endDate == 'string' ? new Date(endDate) : endDate;
+  const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
+  const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
 
   // Calculate the difference in milliseconds
   const diffMs = end.getTime() - start.getTime();
@@ -82,7 +82,7 @@ export function isMoreThanOneMonthAndFifteenDays(
  * If the target month has fewer days than the source day, it will use the last day of that month
  */
 export function addMonths(date: Date | string, months: number): Date {
-  const d = typeof date == 'string' ? new Date(date) : new Date(date);
+  const d = typeof date === 'string' ? new Date(date) : new Date(date);
   const originalDay = d.getDate();
 
   // Set to the first day to avoid issues with month boundaries
@@ -132,7 +132,7 @@ function calculatePeriodDay(
   const lastDayOfTargetMonth = getLastDayOfMonth(targetYear, targetMonth);
 
   // If sent date is the 1st, use last day of the month
-  if (sentDay == 1) {
+  if (sentDay === 1) {
     return lastDayOfTargetMonth;
   }
 
@@ -152,11 +152,11 @@ export function generateDefaultInterestPeriods(
   dueDate: Date | string,
 ): Array<{ dueDate: Date; monthNumber: number }> {
   const start =
-    typeof sentDate == 'string'
+    typeof sentDate === 'string'
       ? fromLocalDateString(sentDate)
       : normalizeToMidnight(sentDate);
   const end =
-    typeof dueDate == 'string'
+    typeof dueDate === 'string'
       ? fromLocalDateString(dueDate)
       : normalizeToMidnight(dueDate);
 
@@ -166,7 +166,7 @@ export function generateDefaultInterestPeriods(
   const months = getMonthsBetweenDates(start, end);
 
   // If there are no full months, just return the final due date
-  if (months == 0) {
+  if (months === 0) {
     periods.push({
       dueDate: end,
       monthNumber: 1,
@@ -227,7 +227,7 @@ export function generateDefaultInterestPeriods(
  * This creates a new Date object to avoid mutating the original
  */
 export function normalizeToMidnight(date: Date | string): Date {
-  const d = typeof date == 'string' ? new Date(date) : new Date(date);
+  const d = typeof date === 'string' ? new Date(date) : new Date(date);
   d.setHours(0, 0, 0, 0);
   return d;
 }
@@ -247,7 +247,7 @@ export function getTodayAtMidnight(): Date {
  * This is the display format for date pickers
  */
 export function formatToMMDDYYYY(date: Date | string): string {
-  const d = typeof date == 'string' ? new Date(date) : date;
+  const d = typeof date === 'string' ? new Date(date) : date;
   // Use UTC methods to extract the date since dates are stored as midnight UTC
   const month = String(d.getUTCMonth() + 1).padStart(2, '0');
   const day = String(d.getUTCDate()).padStart(2, '0');
@@ -273,9 +273,9 @@ export function parseMMDDYYYY(dateString: string): string {
     const date = new Date(yearNum, monthNum - 1, dayNum);
     // Check if the date is valid (handles invalid dates like 02/31/2024)
     if (
-      date.getFullYear() == yearNum &&
-      date.getMonth() == monthNum - 1 &&
-      date.getDate() == dayNum
+      date.getFullYear() === yearNum &&
+      date.getMonth() === monthNum - 1 &&
+      date.getDate() === dayNum
     ) {
       return `${year}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
     }

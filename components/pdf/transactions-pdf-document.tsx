@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
 // ─── Helper ────────────────────────────────────────────────────────────────────
 
 const DirectionBadge = ({ direction }: { direction: TransactionDirection }) => (
-  <View style={direction == 'In' ? styles.directionIn : styles.directionOut}>
+  <View style={direction === 'In' ? styles.directionIn : styles.directionOut}>
     <Text style={styles.directionText}>{direction}</Text>
   </View>
 );
@@ -250,7 +250,7 @@ const TransactionsPDFDocument = ({
   let totalIn = 0, totalOut = 0;
   data.forEach((tx) => {
     const amt = parseFloat(tx.amount) || 0;
-    if (tx.direction == 'In') totalIn += amt;
+    if (tx.direction === 'In') totalIn += amt;
     else totalOut += amt;
   });
 
@@ -291,13 +291,13 @@ const TransactionsPDFDocument = ({
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={styles.reportDate}>Generated: {dateStr} {timeStr}</Text>
             <Text style={styles.reportCount}>
-              {data.length} transaction{data.length !==1 ? 's' : ''}
+              {data.length} transaction{data.length !== 1 ? 's' : ''}
             </Text>
           </View>
         </View>
 
         {/* Table */}
-        {data.length == 0 ? (
+        {data.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No transactions to display.</Text>
           </View>
@@ -317,8 +317,8 @@ const TransactionsPDFDocument = ({
 
             {/* Data rows */}
             {data.map((tx, idx) => {
-              const isLast = idx == data.length - 1;
-              const isAlt = idx % 2 == 1;
+              const isLast = idx === data.length - 1;
+              const isAlt = idx % 2 === 1;
               const rowStyle = isLast
                 ? styles.tableRowLast
                 : isAlt
@@ -328,14 +328,14 @@ const TransactionsPDFDocument = ({
               return (
                 <View key={tx.id} style={rowStyle}>
                   {cols.map((col) => {
-                    if (col.key == 'direction') {
+                    if (col.key === 'direction') {
                       return (
                         <View key={col.key} style={{ flex: col.flex }}>
                           <DirectionBadge direction={tx.direction} />
                         </View>
                       );
                     }
-                    if (col.key == 'type') {
+                    if (col.key === 'type') {
                       return (
                         <View key={col.key} style={[{ flex: col.flex }]}>
                           <View style={styles.typeBadge}>
@@ -344,7 +344,7 @@ const TransactionsPDFDocument = ({
                         </View>
                       );
                     }
-                    if (col.key == 'amount') {
+                    if (col.key === 'amount') {
                       return (
                         <Text
                           key={col.key}
@@ -353,18 +353,18 @@ const TransactionsPDFDocument = ({
                             {
                               flex: col.flex,
                               color:
-                                tx.direction == 'In'
+                                tx.direction === 'In'
                                   ? PDF_COLORS.fullyFunded
                                   : PDF_COLORS.overdue,
                             },
                           ]}
                         >
-                          {tx.direction == 'In' ? '+' : '-'}
+                          {tx.direction === 'In' ? '+' : '-'}
                           {getCellValue(tx, col.key)}
                         </Text>
                       );
                     }
-                    if (col.key == 'notes') {
+                    if (col.key === 'notes') {
                       return (
                         <Text
                           key={col.key}
@@ -378,7 +378,7 @@ const TransactionsPDFDocument = ({
                       <Text
                         key={col.key}
                         style={[
-                          col.key == 'name' ? styles.tableCellBold : styles.tableCell,
+                          col.key === 'name' ? styles.tableCellBold : styles.tableCell,
                           { flex: col.flex },
                         ]}
                       >

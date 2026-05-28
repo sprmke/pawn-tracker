@@ -4,6 +4,6 @@ export const HIDDEN_CURRENCY_DISPLAY = '₱ ••••••';
 export const HIDDEN_PERCENTAGE_DISPLAY = '•••%';
 
 export function arePricesHidden(): boolean {
-  if (typeof window == 'undefined') return false;
+  if (typeof window === 'undefined') return false;
   return usePriceVisibilityStore.getState().pricesHidden;
 }

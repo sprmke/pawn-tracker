@@ -35,11 +35,11 @@ export async function PATCH(
     const rawAmt = body.amount;
     const receivedDate = body.receivedDate;
     const parsedAmount =
-      rawAmt == '' || rawAmt == null || rawAmt == undefined
+      rawAmt === '' || rawAmt === null || rawAmt === undefined
         ? NaN
         : parseFloat(String(rawAmt));
     const dateStr =
-      receivedDate == null || receivedDate == undefined
+      receivedDate === null || receivedDate === undefined
         ? ''
         : String(receivedDate).trim();
 
@@ -81,7 +81,7 @@ export async function PATCH(
       );
     }
 
-    if (rp.loanInvestor.loan.userId !==session.user.id) {
+    if (rp.loanInvestor.loan.userId !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -127,7 +127,7 @@ export async function PATCH(
       );
       const investorPrincipal = parseFloat(period.loanInvestor.amount) || 0;
       const principalBase =
-        investorPrincipal == 0 ? loanTotalPrincipal : investorPrincipal;
+        investorPrincipal === 0 ? loanTotalPrincipal : investorPrincipal;
       const expectedInterest = calculateInterest(
         principalBase,
         period.interestRate,
@@ -203,7 +203,7 @@ export async function DELETE(
       );
     }
 
-    if (rp.loanInvestor.loan.userId !==session.user.id) {
+    if (rp.loanInvestor.loan.userId !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

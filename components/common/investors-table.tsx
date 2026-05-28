@@ -53,7 +53,7 @@ export function InvestorsTable({
       sortFn: (a, b, direction) => {
         const aValue = calculateInvestorStats(a).totalCapital;
         const bValue = calculateInvestorStats(b).totalCapital;
-        return direction == 'asc' ? aValue - bValue : bValue - aValue;
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (investor) => (
         <span className="font-medium text-xs">
@@ -69,7 +69,7 @@ export function InvestorsTable({
       sortFn: (a, b, direction) => {
         const aValue = calculateAverageRate(a.loanInvestors);
         const bValue = calculateAverageRate(b.loanInvestors);
-        return direction == 'asc' ? aValue - bValue : bValue - aValue;
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (investor) => (
         <span>{calculateAverageRate(investor.loanInvestors).toFixed(2)}%</span>
@@ -83,7 +83,7 @@ export function InvestorsTable({
       sortFn: (a, b, direction) => {
         const aValue = calculateInvestorStats(a).totalInterest;
         const bValue = calculateInvestorStats(b).totalInterest;
-        return direction == 'asc' ? aValue - bValue : bValue - aValue;
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (investor) => (
         <span className="font-medium">
@@ -104,7 +104,7 @@ export function InvestorsTable({
         const bStats = calculateInvestorStats(b);
         const aValue = aStats.totalCapital + aStats.totalInterest;
         const bValue = bStats.totalCapital + bStats.totalInterest;
-        return direction == 'asc' ? aValue - bValue : bValue - aValue;
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (investor) => {
         const stats = calculateInvestorStats(investor);
@@ -157,7 +157,7 @@ export function InvestorsTable({
 
       // Completed loans
       const completedLoans = investorLoans
-        .filter((loan) => loan.status == 'Completed')
+        .filter((loan) => loan.status === 'Completed')
         .sort(
           (a, b) =>
             new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime(),
@@ -167,8 +167,8 @@ export function InvestorsTable({
       const overdueLoans = investorLoans
         .filter(
           (loan) =>
-            loan.status == 'Overdue' ||
-            (loan.status !=='Completed' && isPast(new Date(loan.dueDate))),
+            loan.status === 'Overdue' ||
+            (loan.status !== 'Completed' && isPast(new Date(loan.dueDate))),
         )
         .sort(
           (a, b) =>
@@ -188,7 +188,7 @@ export function InvestorsTable({
 
       investorLoans.forEach((loan) => {
         loan.loanInvestors
-          .filter((li) => !li.isPaid && li.investor.id == investor.id)
+          .filter((li) => !li.isPaid && li.investor.id === investor.id)
           .forEach((li) => {
             unpaidLoanTransactions.push({
               id: li.id,
@@ -212,8 +212,8 @@ export function InvestorsTable({
         .filter((loan) => {
           const dueDate = new Date(loan.dueDate);
           return (
-            (loan.status == 'Fully Funded' ||
-              loan.status == 'Partially Funded') &&
+            (loan.status === 'Fully Funded' ||
+              loan.status === 'Partially Funded') &&
             isAfter(dueDate, now) &&
             isBefore(dueDate, fourteenDaysFromNow)
           );

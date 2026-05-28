@@ -41,7 +41,7 @@ export function TransactionEventCard({
       className={`${
         paddingClasses[size]
       } cursor-pointer hover:shadow-md transition-shadow border-l-4 ${
-        transaction.direction == 'In'
+        transaction.direction === 'In'
           ? 'border-l-emerald-400'
           : 'border-l-rose-400'
       }`}
@@ -73,12 +73,12 @@ export function TransactionEventCard({
         <div className="pt-1 border-t">
           <p
             className={`${sizeClasses[size]} font-bold ${
-              transaction.direction == 'In'
+              transaction.direction === 'In'
                 ? 'text-emerald-600 dark:text-emerald-400'
                 : 'text-rose-600 dark:text-rose-400'
             }`}
           >
-            {transaction.direction == 'In' ? '+' : '-'}
+            {transaction.direction === 'In' ? '+' : '-'}
             {formatCurrency(amount)}
           </p>
         </div>

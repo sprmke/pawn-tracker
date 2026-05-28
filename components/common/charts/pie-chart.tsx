@@ -38,8 +38,8 @@ export function PieChart({
 }: PieChartProps) {
   const isEmpty =
     !data ||
-    data.length == 0 ||
-    data.every((item) => !item.value || item.value == 0);
+    data.length === 0 ||
+    data.every((item) => !item.value || item.value === 0);
 
   const total = data?.reduce((sum, item) => sum + item.value, 0) ?? 0;
 

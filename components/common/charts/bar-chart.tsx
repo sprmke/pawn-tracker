@@ -51,9 +51,9 @@ export function BarChart({
 }: BarChartProps) {
   const isEmpty =
     !data ||
-    data.length == 0 ||
+    data.length === 0 ||
     dataKeys.every((dataKey) =>
-      data.every((item) => !item[dataKey.key] || item[dataKey.key] == 0)
+      data.every((item) => !item[dataKey.key] || item[dataKey.key] === 0)
     );
 
   return (
@@ -76,7 +76,7 @@ export function BarChart({
               keys={dataKeys.map((dk) => ({ id: dk.key, color: dk.color }))}
             />
             <CartesianGrid {...CHART_GRID} />
-            {layout == 'horizontal' ? (
+            {layout === 'horizontal' ? (
               <>
                 <XAxis
                   dataKey={xAxisKey}

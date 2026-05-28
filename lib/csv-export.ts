@@ -13,7 +13,7 @@ export interface CSVColumn<T> {
  * Converts data to CSV format
  */
 export function convertToCSV<T>(data: T[], columns: CSVColumn<T>[]): string {
-  if (data.length == 0) {
+  if (data.length === 0) {
     return '';
   }
 
@@ -39,7 +39,7 @@ export function convertToCSV<T>(data: T[], columns: CSVColumn<T>[]): string {
     const totalRow = columns
       .map((col, index) => {
         // First column shows "TOTAL" label
-        if (index == 0) {
+        if (index === 0) {
           return escapeCSVValue('TOTAL');
         }
 
@@ -74,11 +74,11 @@ export function convertToCSV<T>(data: T[], columns: CSVColumn<T>[]): string {
 function extractNumericValue(
   value: string | number | null | undefined
 ): number {
-  if (value == null || value == undefined) {
+  if (value === null || value === undefined) {
     return 0;
   }
 
-  if (typeof value == 'number') {
+  if (typeof value === 'number') {
     return value;
   }
 
@@ -93,7 +93,7 @@ function extractNumericValue(
  * Escapes CSV values to handle commas, quotes, and newlines
  */
 function escapeCSVValue(value: string | number | null | undefined): string {
-  if (value == null || value == undefined) {
+  if (value === null || value === undefined) {
     return '';
   }
 
@@ -151,7 +151,7 @@ export function formatDateForCSV(date: Date | string): string {
  * Formats currency for CSV export with peso sign and thousand separators
  */
 export function formatCurrencyForCSV(amount: string | number): string {
-  const numValue = typeof amount == 'string' ? parseFloat(amount) : amount;
+  const numValue = typeof amount === 'string' ? parseFloat(amount) : amount;
 
   // Format with thousand separators and 2 decimal places
   const formatted = numValue.toLocaleString('en-PH', {

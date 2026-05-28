@@ -97,7 +97,7 @@ export function NavigationProgressProvider({
         !href ||
         href.startsWith('http') ||
         href.startsWith('#') ||
-        anchor.target == '_blank' ||
+        anchor.target === '_blank' ||
         anchor.hasAttribute('download') ||
         e.ctrlKey ||
         e.metaKey ||
@@ -111,8 +111,8 @@ export function NavigationProgressProvider({
       const targetUrl = new URL(href, window.location.origin);
 
       if (
-        currentUrl.pathname == targetUrl.pathname &&
-        currentUrl.search == targetUrl.search
+        currentUrl.pathname === targetUrl.pathname &&
+        currentUrl.search === targetUrl.search
       ) {
         return;
       }
@@ -141,7 +141,7 @@ export function NavigationProgressProvider({
           className="absolute inset-y-0 left-0 bg-primary transition-all ease-out shadow-[0_0_10px_rgba(var(--primary),0.3)]"
           style={{
             width: `${progress}%`,
-            transitionDuration: progress == 100 ? '200ms' : '300ms',
+            transitionDuration: progress === 100 ? '200ms' : '300ms',
           }}
         >
           {/* Glow effect at the leading edge */}

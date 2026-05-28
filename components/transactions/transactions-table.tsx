@@ -31,7 +31,7 @@ export function TransactionsTable({
       sortFn: (a, b, direction) => {
         const aTime = new Date(a.date).getTime();
         const bTime = new Date(b.date).getTime();
-        return direction == 'asc' ? aTime - bTime : bTime - aTime;
+        return direction === 'asc' ? aTime - bTime : bTime - aTime;
       },
       cell: (transaction) => (
         <span className="text-xs">{formatDateShort(transaction.date)}</span>
@@ -102,17 +102,17 @@ export function TransactionsTable({
       sortFn: (a, b, direction) => {
         const aValue = parseFloat(a.amount);
         const bValue = parseFloat(b.amount);
-        return direction == 'asc' ? aValue - bValue : bValue - aValue;
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (transaction) => (
         <span
           className={`font-semibold truncate ${
-            transaction.direction == 'In'
+            transaction.direction === 'In'
               ? 'text-emerald-600'
               : 'text-rose-600'
           }`}
         >
-          {transaction.direction == 'In' ? '+' : '-'}
+          {transaction.direction === 'In' ? '+' : '-'}
           {formatCurrency(transaction.amount)}
         </span>
       ),

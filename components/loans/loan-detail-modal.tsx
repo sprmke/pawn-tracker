@@ -155,8 +155,8 @@ export function LoanDetailModal({
     }, 150);
   };
 
-  const isOverdue = loan.status == 'Overdue';
-  const isPartiallyFunded = loan.status == 'Partially Funded';
+  const isOverdue = loan.status === 'Overdue';
+  const isPartiallyFunded = loan.status === 'Partially Funded';
 
   return (
     <>

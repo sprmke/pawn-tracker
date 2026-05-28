@@ -65,12 +65,12 @@ export function TransactionCard({
             <p className="text-[10px] text-muted-foreground mb-1">Amount</p>
             <p
               className={`text-xs font-semibold break-words ${
-                transaction.direction == 'In'
+                transaction.direction === 'In'
                   ? 'text-emerald-600 dark:text-emerald-400'
                   : 'text-rose-600 dark:text-rose-400'
               }`}
             >
-              {transaction.direction == 'In' ? '+' : '-'}
+              {transaction.direction === 'In' ? '+' : '-'}
               {formatCurrency(transaction.amount)}
             </p>
           </div>

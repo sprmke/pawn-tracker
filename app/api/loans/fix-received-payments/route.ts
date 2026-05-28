@@ -52,13 +52,13 @@ export async function POST() {
 
         // Completed periods sorted by due date
         const completedPeriods = li.interestPeriods
-          .filter((p) => p.status == 'Completed')
+          .filter((p) => p.status === 'Completed')
           .sort(
             (a, b) =>
               new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
           );
 
-        if (completedPeriods.length == 0) continue;
+        if (completedPeriods.length === 0) continue;
 
         // Periods that already have a linked received payment
         const linkedPeriodIds = new Set(
@@ -72,16 +72,16 @@ export async function POST() {
           (p) => !linkedPeriodIds.has(p.id),
         );
 
-        if (missingPeriods.length == 0) continue;
+        if (missingPeriods.length === 0) continue;
 
         const investorPrincipal = parseFloat(li.amount) || 0;
         const principalBase =
-          investorPrincipal == 0 ? loanTotalPrincipal : investorPrincipal;
+          investorPrincipal === 0 ? loanTotalPrincipal : investorPrincipal;
 
         for (const period of missingPeriods) {
           const rate = parseFloat(period.interestRate) || 0;
           const interestAmount =
-            period.interestType == 'fixed'
+            period.interestType === 'fixed'
               ? rate
               : principalBase * (rate / 100);
 

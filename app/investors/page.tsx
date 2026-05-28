@@ -80,8 +80,8 @@ const getInvestorActivityData = (
   const overdueLoans = investorLoans
     .filter(
       (loan) =>
-        loan.status == 'Overdue' ||
-        (loan.status !=='Completed' && isPast(new Date(loan.dueDate))),
+        loan.status === 'Overdue' ||
+        (loan.status !== 'Completed' && isPast(new Date(loan.dueDate))),
     )
     .sort(
       (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
@@ -100,7 +100,7 @@ const getInvestorActivityData = (
 
   investorLoans.forEach((loan) => {
     loan.loanInvestors
-      .filter((li) => !li.isPaid && li.investor.id == investor.id)
+      .filter((li) => !li.isPaid && li.investor.id === investor.id)
       .forEach((li) => {
         unpaidLoanTransactions.push({
           id: li.id,
@@ -123,8 +123,8 @@ const getInvestorActivityData = (
     .filter((loan) => {
       const dueDate = new Date(loan.dueDate);
       return (
-        (loan.status == 'Fully Funded' ||
-          loan.status == 'Partially Funded') &&
+        (loan.status === 'Fully Funded' ||
+          loan.status === 'Partially Funded') &&
         isAfter(dueDate, now) &&
         isBefore(dueDate, fourteenDaysFromNow)
       );
@@ -216,7 +216,7 @@ export default function InvestorsPage() {
     setExpandedTableRows((prev) => {
       const newSet = new Set(prev);
       const id =
-        typeof investorId == 'string' ? parseInt(investorId) : investorId;
+        typeof investorId === 'string' ? parseInt(investorId) : investorId;
       if (newSet.has(id)) {
         newSet.delete(id);
       } else {
@@ -240,17 +240,17 @@ export default function InvestorsPage() {
   };
 
   const hasActiveAmountFilters =
-    minBalance !=='' ||
-    maxBalance !=='' ||
-    minCapital !=='' ||
-    maxCapital !=='' ||
-    minInterest !=='' ||
-    maxInterest !=='' ||
-    minGain !=='' ||
-    maxGain !=='';
+    minBalance !== '' ||
+    maxBalance !== '' ||
+    minCapital !== '' ||
+    maxCapital !== '' ||
+    minInterest !== '' ||
+    maxInterest !== '' ||
+    minGain !== '' ||
+    maxGain !== '';
 
   const hasActiveFilters =
-    searchQuery !=='' || loanStatusFilter.length > 0 || hasActiveAmountFilters;
+    searchQuery !== '' || loanStatusFilter.length > 0 || hasActiveAmountFilters;
 
   // Filter investors based on search and filters
   const filteredInvestors = investors.filter((investor) => {
@@ -275,7 +275,7 @@ export default function InvestorsPage() {
           case 'overdue':
             return stats.overdueLoans > 0;
           case 'no-loans':
-            return stats.totalLoans == 0;
+            return stats.totalLoans === 0;
           default:
             return false;
         }
@@ -284,34 +284,34 @@ export default function InvestorsPage() {
     }
 
     // Balance range filter
-    if (minBalance !=='' && stats.currentBalance < parseFloat(minBalance)) {
+    if (minBalance !== '' && stats.currentBalance < parseFloat(minBalance)) {
       return false;
     }
-    if (maxBalance !=='' && stats.currentBalance > parseFloat(maxBalance)) {
+    if (maxBalance !== '' && stats.currentBalance > parseFloat(maxBalance)) {
       return false;
     }
 
     // Capital range filter
-    if (minCapital !=='' && stats.totalCapital < parseFloat(minCapital)) {
+    if (minCapital !== '' && stats.totalCapital < parseFloat(minCapital)) {
       return false;
     }
-    if (maxCapital !=='' && stats.totalCapital > parseFloat(maxCapital)) {
+    if (maxCapital !== '' && stats.totalCapital > parseFloat(maxCapital)) {
       return false;
     }
 
     // Interest range filter
-    if (minInterest !=='' && stats.totalInterest < parseFloat(minInterest)) {
+    if (minInterest !== '' && stats.totalInterest < parseFloat(minInterest)) {
       return false;
     }
-    if (maxInterest !=='' && stats.totalInterest > parseFloat(maxInterest)) {
+    if (maxInterest !== '' && stats.totalInterest > parseFloat(maxInterest)) {
       return false;
     }
 
     // Gain range filter
-    if (minGain !=='' && stats.totalGain < parseFloat(minGain)) {
+    if (minGain !== '' && stats.totalGain < parseFloat(minGain)) {
       return false;
     }
-    if (maxGain !=='' && stats.totalGain > parseFloat(maxGain)) {
+    if (maxGain !== '' && stats.totalGain > parseFloat(maxGain)) {
       return false;
     }
 
@@ -369,7 +369,7 @@ export default function InvestorsPage() {
             <div className="flex items-center border rounded-xl p-1">
               {/* Table view button - hidden on mobile, visible from tablet (md) and up */}
               <Button
-                variant={viewMode == 'table' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('table')}
                 className="h-8 px-3 hidden md:flex"
@@ -377,7 +377,7 @@ export default function InvestorsPage() {
                 <TableIcon className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode == 'cards' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('cards')}
                 className="h-8 px-3"
@@ -526,7 +526,7 @@ export default function InvestorsPage() {
         )}
       </div>
 
-      {investors.length == 0 ? (
+      {investors.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground mb-4">No investors found</p>
@@ -538,7 +538,7 @@ export default function InvestorsPage() {
             </Link>
           </CardContent>
         </Card>
-      ) : filteredInvestors.length == 0 ? (
+      ) : filteredInvestors.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground mb-4">
@@ -552,7 +552,7 @@ export default function InvestorsPage() {
         </Card>
       ) : (
         <>
-          {viewMode == 'cards' && (
+          {viewMode === 'cards' && (
             <CardPagination
               items={filteredInvestors}
               itemsPerPage={itemsPerPage}
@@ -692,7 +692,7 @@ export default function InvestorsPage() {
                             <div className="pt-2 border-t">
                               {(() => {
                                 const activityData =
-                                  allLoans.length == 0
+                                  allLoans.length === 0
                                     ? {
                                         overdueLoans: [],
                                         pendingDisbursements: [],
@@ -735,7 +735,7 @@ export default function InvestorsPage() {
             />
           )}
 
-          {viewMode == 'table' && (
+          {viewMode === 'table' && (
             <InvestorsTable
               investors={filteredInvestors}
               allLoans={allLoans}

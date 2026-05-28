@@ -120,7 +120,7 @@ function computePerPeriodInterest(loan: LoanWithInvestors): number {
         (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
       );
       const lastPeriod = sorted[sorted.length - 1];
-      const base = investorCapital == 0 ? totalPrincipal : investorCapital;
+      const base = investorCapital === 0 ? totalPrincipal : investorCapital;
       totalInterest += calculateInterest(
         base,
         lastPeriod.interestRate,
@@ -129,7 +129,7 @@ function computePerPeriodInterest(loan: LoanWithInvestors): number {
     } else {
       transactions.forEach((li) => {
         const capital = parseFloat(li.amount) || 0;
-        const base = capital == 0 ? totalPrincipal : capital;
+        const base = capital === 0 ? totalPrincipal : capital;
         totalInterest += calculateInterest(
           base,
           li.interestRate,
@@ -168,7 +168,7 @@ function generateDatesFromInterval(
         break;
       case 'every-1.5-months':
         currentDate.setMonth(currentDate.getMonth() + Math.floor(i * 1.5));
-        if (i % 2 == 1) currentDate.setDate(currentDate.getDate() + 15);
+        if (i % 2 === 1) currentDate.setDate(currentDate.getDate() + 15);
         break;
       case 'every-2-months':
         currentDate.setMonth(currentDate.getMonth() + i * 2);
@@ -246,7 +246,7 @@ export function OverdueInterestCard({
   const handleDateChange = (index: number, newDate: string) => {
     setEntries((prev) =>
       prev.map((entry, i) =>
-        i == index ? { ...entry, date: newDate } : entry,
+        i === index ? { ...entry, date: newDate } : entry,
       ),
     );
   };
@@ -257,18 +257,18 @@ export function OverdueInterestCard({
 
     setEntries((prev) =>
       prev.map((entry, i) =>
-        i == index ? { ...entry, amount: parsed } : entry,
+        i === index ? { ...entry, amount: parsed } : entry,
       ),
     );
   };
 
   const handleRemoveEntry = (index: number) => {
-    setEntries((prev) => prev.filter((_, i) => i !==index));
+    setEntries((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleAddEntry = () => {
     const nextDate = (() => {
-      if (entries.length == 0) {
+      if (entries.length === 0) {
         return new Date().toISOString().slice(0, 10);
       }
       const lastEntry = entries[entries.length - 1];
@@ -315,7 +315,7 @@ export function OverdueInterestCard({
   const totalAdditionalInterest = entries.reduce((sum, e) => sum + e.amount, 0);
 
   const handleApply = async () => {
-    if (entries.length == 0) {
+    if (entries.length === 0) {
       toast.error('No interest entries to apply');
       return;
     }
@@ -436,7 +436,7 @@ export function OverdueInterestCard({
           Add More
         </Button>
 
-        {entries.length == 0 && (
+        {entries.length === 0 && (
           <p className="text-center py-2 text-muted-foreground text-sm">
             No interest entries yet. Use the interval selector or add rows
             manually.
@@ -457,7 +457,7 @@ export function OverdueInterestCard({
         <div className="flex justify-end pt-2">
           <Button
             onClick={handleApply}
-            disabled={isApplying || entries.length == 0}
+            disabled={isApplying || entries.length === 0}
             className="bg-orange-600 hover:bg-orange-700"
           >
             {isApplying ? 'Applying...' : 'Apply'}

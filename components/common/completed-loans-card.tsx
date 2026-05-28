@@ -38,7 +38,7 @@ export function CompletedLoansCard({
 
   const totalAmount = loans.reduce((sum, loan) => {
     const filteredInvestors = investorId
-      ? loan.loanInvestors.filter((li) => li.investor.id == investorId)
+      ? loan.loanInvestors.filter((li) => li.investor.id === investorId)
       : loan.loanInvestors;
     return sum + calculateAmountDueOnDate(filteredInvestors);
   }, 0);
@@ -63,7 +63,7 @@ export function CompletedLoansCard({
       loadingVariant={loadingVariant}
       onViewAllClick={onViewAllClick}
     >
-      {displayLoans.length == 0 ? (
+      {displayLoans.length === 0 ? (
         <ActivityEmptyState message="No completed loans" />
       ) : (
         <div className="space-y-3">
@@ -121,7 +121,7 @@ export function CompletedLoansCard({
           <div className={activityListScrollClassName}>
             {displayLoans.map((loan) => {
               const filteredInvestors = investorId
-                ? loan.loanInvestors.filter((li) => li.investor.id == investorId)
+                ? loan.loanInvestors.filter((li) => li.investor.id === investorId)
                 : loan.loanInvestors;
               const amount = calculateAmountDueOnDate(filteredInvestors);
 

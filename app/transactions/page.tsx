@@ -85,8 +85,8 @@ export default function TransactionsPage() {
   useEffect(() => {
     if (
       !loading &&
-      transactions.length == 0 &&
-      (viewMode == 'cards' || viewMode == 'calendar')
+      transactions.length === 0 &&
+      (viewMode === 'cards' || viewMode === 'calendar')
     ) {
       setViewMode('table');
     }
@@ -94,12 +94,12 @@ export default function TransactionsPage() {
 
   // Handle view mode changes for calendar view
   useEffect(() => {
-    if (viewMode == 'calendar' && !wasCalendarView) {
+    if (viewMode === 'calendar' && !wasCalendarView) {
       // Entering calendar view: save current state and show all past transactions
       setPreviousShowPastState(showPastTransactions);
       setShowPastTransactions(true);
       setWasCalendarView(true);
-    } else if (viewMode !=='calendar' && wasCalendarView) {
+    } else if (viewMode !== 'calendar' && wasCalendarView) {
       // Leaving calendar view: restore the previous state
       setShowPastTransactions(previousShowPastState);
       setWasCalendarView(false);
@@ -140,7 +140,7 @@ export default function TransactionsPage() {
   const clearFilters = () => {
     setSearchQuery('');
     // Don't reset showPastTransactions if in calendar view (it should always be true)
-    if (viewMode !=='calendar') {
+    if (viewMode !== 'calendar') {
       setShowPastTransactions(false);
     }
     setTypeFilter([]);
@@ -152,12 +152,12 @@ export default function TransactionsPage() {
   };
 
   const hasActiveAmountFilters =
-    minAmount !=='' || maxAmount !=='' || selectedInvestors.length > 0;
+    minAmount !== '' || maxAmount !== '' || selectedInvestors.length > 0;
 
   const hasActiveFilters =
-    searchQuery !=='' ||
+    searchQuery !== '' ||
     // Don't count showPastTransactions as active filter in calendar view (it's always true)
-    (viewMode !=='calendar' && showPastTransactions !==false) ||
+    (viewMode !== 'calendar' && showPastTransactions !== false) ||
     typeFilter.length > 0 ||
     directionFilter.length > 0 ||
     hasActiveAmountFilters;
@@ -208,10 +208,10 @@ export default function TransactionsPage() {
 
     // Amount range filter
     const amount = parseFloat(transaction.amount);
-    if (minAmount !=='' && amount < parseFloat(minAmount)) {
+    if (minAmount !== '' && amount < parseFloat(minAmount)) {
       return false;
     }
-    if (maxAmount !=='' && amount > parseFloat(maxAmount)) {
+    if (maxAmount !== '' && amount > parseFloat(maxAmount)) {
       return false;
     }
 
@@ -277,11 +277,11 @@ export default function TransactionsPage() {
             />
 
             {/* Show/Hide Past Transactions Filter - Hidden on smaller screens & in calendar view */}
-            {viewMode !=='calendar' && (
+            {viewMode !== 'calendar' && (
               <Select
                 value={showPastTransactions ? 'show' : 'hide'}
                 onValueChange={(value) => {
-                  setShowPastTransactions(value == 'show');
+                  setShowPastTransactions(value === 'show');
                   setCurrentPage(1);
                 }}
               >
@@ -365,7 +365,7 @@ export default function TransactionsPage() {
               {/* Basic Filters - visible on smaller screens */}
               <div className="grid grid-cols-2 gap-3 pb-3 border-b xl:hidden">
                 {/* Past Transactions Filter - Mobile (only show when not in calendar view) */}
-                {viewMode !=='calendar' && (
+                {viewMode !== 'calendar' && (
                   <div>
                     <label className="text-xs font-semibold mb-2 block">
                       Past Transactions
@@ -373,7 +373,7 @@ export default function TransactionsPage() {
                     <Select
                       value={showPastTransactions ? 'show' : 'hide'}
                       onValueChange={(value) => {
-                        setShowPastTransactions(value == 'show');
+                        setShowPastTransactions(value === 'show');
                         setCurrentPage(1);
                       }}
                     >
@@ -409,7 +409,7 @@ export default function TransactionsPage() {
                 </div>
 
                 {/* Direction Filter - Mobile */}
-                <div className={viewMode !=='calendar' ? '' : 'col-span-2'}>
+                <div className={viewMode !== 'calendar' ? '' : 'col-span-2'}>
                   <label className="text-xs font-semibold mb-2 block">
                     Direction
                   </label>
@@ -462,11 +462,11 @@ export default function TransactionsPage() {
                   <Select value="placeholder">
                     <SelectTrigger className="w-full h-9">
                       <span className="text-sm">
-                        {selectedInvestors.length == 0
+                        {selectedInvestors.length === 0
                           ? 'All Investors'
-                          : selectedInvestors.length == 1
+                          : selectedInvestors.length === 1
                             ? investors.find(
-                                (i) => i.id == selectedInvestors[0],
+                                (i) => i.id === selectedInvestors[0],
                               )?.name
                             : `${selectedInvestors.length} investors selected`}
                       </span>
@@ -500,7 +500,7 @@ export default function TransactionsPage() {
                                 setSelectedInvestors((prev) => {
                                   if (prev.includes(investor.id)) {
                                     return prev.filter(
-                                      (id) => id !==investor.id,
+                                      (id) => id !== investor.id,
                                     );
                                   } else {
                                     return [...prev, investor.id];
@@ -552,7 +552,7 @@ export default function TransactionsPage() {
         )}
       </div>
 
-      {transactions.length == 0 ? (
+      {transactions.length === 0 ? (
         <EmptyState
           title="No transactions found"
           action={{
@@ -561,7 +561,7 @@ export default function TransactionsPage() {
             onClick: () => router.push('/transactions/new'),
           }}
         />
-      ) : filteredTransactions.length == 0 ? (
+      ) : filteredTransactions.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground mb-4">
@@ -575,7 +575,7 @@ export default function TransactionsPage() {
         </Card>
       ) : (
         <>
-          {viewMode == 'calendar' && (
+          {viewMode === 'calendar' && (
             <TransactionCalendarView
               transactions={filteredTransactions}
               onTransactionClick={(transaction) => {
@@ -585,7 +585,7 @@ export default function TransactionsPage() {
             />
           )}
 
-          {viewMode == 'cards' && (
+          {viewMode === 'cards' && (
             <CardPagination
               items={sortedTransactions}
               itemsPerPage={itemsPerPage}
@@ -605,7 +605,7 @@ export default function TransactionsPage() {
             />
           )}
 
-          {viewMode == 'table' && (
+          {viewMode === 'table' && (
             <TransactionsTable
               transactions={sortedTransactions}
               itemsPerPage={itemsPerPage}

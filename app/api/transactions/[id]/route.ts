@@ -104,7 +104,7 @@ export async function PUT(
       )
       .returning();
 
-    if (updatedTransaction.length == 0) {
+    if (updatedTransaction.length === 0) {
       return NextResponse.json(
         { error: 'Transaction not found' },
         { status: 404 },
@@ -160,7 +160,7 @@ export async function DELETE(
       .where(eq(transactions.id, id))
       .returning();
 
-    if (deletedTransaction.length == 0) {
+    if (deletedTransaction.length === 0) {
       return NextResponse.json(
         { error: 'Transaction not found' },
         { status: 404 },

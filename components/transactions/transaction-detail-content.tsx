@@ -19,7 +19,7 @@ export function TransactionDetailContent({
   transaction,
   showHeader = true,
 }: TransactionDetailContentProps) {
-  const isIncoming = transaction.direction == 'In';
+  const isIncoming = transaction.direction === 'In';
 
   return (
     <div className="space-y-6">

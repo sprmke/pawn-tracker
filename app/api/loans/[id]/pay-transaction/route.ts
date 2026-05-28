@@ -57,7 +57,7 @@ export async function POST(
     );
 
     // If no unpaid transactions remain, update loan status to "Fully Funded"
-    if (unpaidTransactions.length == 0) {
+    if (unpaidTransactions.length === 0) {
       await db
         .update(loans)
         .set({ status: 'Fully Funded' })

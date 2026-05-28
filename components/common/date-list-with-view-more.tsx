@@ -43,7 +43,7 @@ export function DateListWithViewMore({
   const hasMore = dates.length > limit;
 
   const getClassName = (date: Date, index: number) => {
-    if (typeof itemClassName == 'function') {
+    if (typeof itemClassName === 'function') {
       return itemClassName(date, index);
     }
 

@@ -15,7 +15,7 @@ import {
 export function formatCurrency(amount: string | number): string {
   if (arePricesHidden()) return HIDDEN_CURRENCY_DISPLAY;
 
-  const numAmount = typeof amount == 'string' ? parseFloat(amount) : amount;
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   return new Intl.NumberFormat('en-PH', {
     style: 'currency',
     currency: 'PHP',
@@ -28,7 +28,7 @@ export function formatCurrency(amount: string | number): string {
 export function formatCurrencyCompact(amount: string | number): string {
   if (arePricesHidden()) return HIDDEN_CURRENCY_DISPLAY;
 
-  const numAmount = typeof amount == 'string' ? parseFloat(amount) : amount;
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   return new Intl.NumberFormat('en-PH', {
     style: 'currency',
     currency: 'PHP',
@@ -41,7 +41,7 @@ export function formatCurrencyCompact(amount: string | number): string {
  * Format a date as a localized string (e.g., "January 1, 2024")
  */
 export function formatDate(date: Date | string): string {
-  const dateObj = typeof date == 'string' ? new Date(date) : date;
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj.toLocaleDateString('en-PH', {
     year: 'numeric',
     month: 'long',
@@ -53,7 +53,7 @@ export function formatDate(date: Date | string): string {
  * Format a date as a short localized string (e.g., "Jan 1, 2024")
  */
 export function formatDateShort(date: Date | string): string {
-  const dateObj = typeof date == 'string' ? new Date(date) : date;
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj.toLocaleDateString('en-PH', {
     year: 'numeric',
     month: 'short',
@@ -65,7 +65,7 @@ export function formatDateShort(date: Date | string): string {
  * Format a date as a very short string (e.g., "Jan 1")
  */
 export function formatDateVeryShort(date: Date | string): string {
-  const dateObj = typeof date == 'string' ? new Date(date) : date;
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

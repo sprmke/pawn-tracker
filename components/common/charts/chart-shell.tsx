@@ -66,7 +66,7 @@ export function ChartLegend({ payload, variant = 'dot' }: ChartLegendProps) {
           <div
             className={cn(
               'shrink-0 ring-2 ring-background',
-              variant == 'bar'
+              variant === 'bar'
                 ? 'h-2 w-3 rounded-sm'
                 : 'h-2.5 w-2.5 rounded-full'
             )}

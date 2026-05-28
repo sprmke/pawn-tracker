@@ -33,14 +33,14 @@ export interface MetricItem {
 }
 
 function resolveMetricValue(metric: MetricItem): string | ReactNode {
-  if (metric.amount !==undefined) {
+  if (metric.amount !== undefined) {
     return formatCurrency(metric.amount);
   }
   return metric.value ?? '—';
 }
 
 function resolveMetricSubValue(metric: MetricItem): string | undefined {
-  if (metric.subValueTemplate && metric.subAmount !==undefined) {
+  if (metric.subValueTemplate && metric.subAmount !== undefined) {
     return metric.subValueTemplate.replace(
       '{amount}',
       formatCurrency(metric.subAmount),

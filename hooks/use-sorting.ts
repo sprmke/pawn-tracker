@@ -20,8 +20,8 @@ export function useSorting<T, K extends keyof T>({
     useState<SortDirection>(defaultDirection);
 
   const handleSort = (field: K) => {
-    if (sortField == field) {
-      setSortDirection(sortDirection == 'asc' ? 'desc' : 'asc');
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
       setSortDirection('asc');
@@ -38,8 +38,8 @@ export function useSorting<T, K extends keyof T>({
       const aValue = a[sortField];
       const bValue = b[sortField];
 
-      if (aValue < bValue) return sortDirection == 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection == 'asc' ? 1 : -1;
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
   }, [items, sortField, sortDirection, sortFn]);

@@ -62,8 +62,8 @@ export function LoanSummary({
               {formatCurrency(totalAmount)}
             </p>
           </div>
-          {status == 'Partially Funded' &&
-            balance !==undefined &&
+          {status === 'Partially Funded' &&
+            balance !== undefined &&
             balance > 0 && (
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-xs sm:text-sm text-yellow-800 font-semibold mb-1">
@@ -90,8 +90,8 @@ export function LoanSummary({
             </div>
           )}
           {!(
-            status == 'Partially Funded' &&
-            balance !==undefined &&
+            status === 'Partially Funded' &&
+            balance !== undefined &&
             balance > 0
           ) && (
             <div className="p-3 bg-muted rounded-lg">

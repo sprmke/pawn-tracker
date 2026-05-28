@@ -57,15 +57,15 @@ export async function PATCH(
       );
     }
 
-    if (period.loanInvestor.loan.userId !==session.user.id) {
+    if (period.loanInvestor.loan.userId !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const wasCompleted = period.status == 'Completed';
-    const wasIncomplete = period.status == 'Incomplete';
+    const wasCompleted = period.status === 'Completed';
+    const wasIncomplete = period.status === 'Incomplete';
     const isReverting =
       (wasCompleted || wasIncomplete) &&
-      (status == 'Pending' || status == 'Overdue');
+      (status === 'Pending' || status === 'Overdue');
 
     const loanIdForPrincipal = period.loanInvestor.loanId;
     const coInvestors = await db.query.loanInvestors.findMany({
@@ -77,7 +77,7 @@ export async function PATCH(
     );
     const investorPrincipal = parseFloat(period.loanInvestor.amount) || 0;
     const principalBase =
-      investorPrincipal == 0 ? loanTotalPrincipal : investorPrincipal;
+      investorPrincipal === 0 ? loanTotalPrincipal : investorPrincipal;
     const expectedInterest = calculateInterest(
       principalBase,
       period.interestRate,
@@ -87,8 +87,8 @@ export async function PATCH(
     /** Response status may differ from request (e.g. Incomplete vs Completed). */
     let responseStatus: string = status;
 
-    if (status == 'Completed') {
-      if (period.status == 'Completed') {
+    if (status === 'Completed') {
+      if (period.status === 'Completed') {
         return NextResponse.json(
           { error: 'This period is already completed.' },
           { status: 400 },
@@ -97,11 +97,11 @@ export async function PATCH(
 
       const rawAmt = receivedAmount;
       const parsedAmount =
-        rawAmt == '' || rawAmt == null || rawAmt == undefined
+        rawAmt === '' || rawAmt === null || rawAmt === undefined
           ? NaN
           : parseFloat(String(rawAmt));
       const dateStr =
-        receivedDate == null || receivedDate == undefined
+        receivedDate === null || receivedDate === undefined
           ? ''
           : String(receivedDate).trim();
 
@@ -129,7 +129,7 @@ export async function PATCH(
       }
 
       const linkedBefore = (period.loanInvestor.receivedPayments || []).filter(
-        (rp) => rp.interestPeriodId == periodId,
+        (rp) => rp.interestPeriodId === periodId,
       );
       const priorTotal = linkedBefore.reduce(
         (s, rp) => s + (parseFloat(rp.amount) || 0),
@@ -182,7 +182,7 @@ export async function PATCH(
         .where(eq(receivedPayments.interestPeriodId, periodId))
         .returning({ id: receivedPayments.id });
 
-      if (removed.length == 0) {
+      if (removed.length === 0) {
         const existingPayments = period.loanInvestor.receivedPayments || [];
         const matchingPayment =
           existingPayments.find(
@@ -216,10 +216,10 @@ export async function PATCH(
     for (const li of allLoanInvestors) {
       if (li.hasMultipleInterest && li.interestPeriods) {
         for (const p of li.interestPeriods) {
-          if (p.id == periodId) continue;
+          if (p.id === periodId) continue;
 
           const periodDueDate = new Date(p.dueDate);
-          if (p.status == 'Pending' && now > periodDueDate) {
+          if (p.status === 'Pending' && now > periodDueDate) {
             await db
               .update(interestPeriods)
               .set({ status: 'Overdue', updatedAt: now })
@@ -243,13 +243,13 @@ export async function PATCH(
       }
     });
 
-    const hasOverduePeriod = allPeriods.some((p) => p.status == 'Overdue');
+    const hasOverduePeriod = allPeriods.some((p) => p.status === 'Overdue');
     const hasIncompletePeriod = allPeriods.some(
-      (p) => p.status == 'Incomplete',
+      (p) => p.status === 'Incomplete',
     );
     const allPeriodsCompleted =
       allPeriods.length > 0 &&
-      allPeriods.every((p) => p.status == 'Completed');
+      allPeriods.every((p) => p.status === 'Completed');
 
     const currentLoan = await db.query.loans.findFirst({
       where: eq(loans.id, loanId),
@@ -267,14 +267,14 @@ export async function PATCH(
           newLoanStatus = 'Completed';
         }
       } else if (
-        currentLoan.status == 'Overdue' &&
+        currentLoan.status === 'Overdue' &&
         !hasOverduePeriod &&
         !hasIncompletePeriod
       ) {
         newLoanStatus = 'Fully Funded';
       }
 
-      if (newLoanStatus !==currentLoan.status) {
+      if (newLoanStatus !== currentLoan.status) {
         await db
           .update(loans)
           .set({ status: newLoanStatus, updatedAt: new Date() })

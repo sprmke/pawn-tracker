@@ -40,12 +40,12 @@ export function ExportButton<T>({
   const handleExport = async (selectedSections: PDFSection<T>[]) => {
     const dataToExport = exportAllData ? data : filteredData;
 
-    if (dataToExport.length == 0) {
+    if (dataToExport.length === 0) {
       toast.error('No data to export');
       return;
     }
 
-    if (selectedSections.length == 0) {
+    if (selectedSections.length === 0) {
       toast.error('Please select at least one section to export');
       return;
     }
@@ -65,9 +65,9 @@ export function ExportButton<T>({
     }
   };
 
-  const hasFilters = data.length !==filteredData.length;
+  const hasFilters = data.length !== filteredData.length;
   const dataCount = exportAllData ? data.length : filteredData.length;
-  const itemLabel = dataCount == 1 ? 'item' : 'items';
+  const itemLabel = dataCount === 1 ? 'item' : 'items';
 
   const modalDescription = `Choose which sections to include in the exported PDF. (${dataCount} ${itemLabel})`;
 
@@ -118,12 +118,12 @@ export function ExportButton<T>({
         }
         items={[
           {
-            label: `Export All Data (${data.length} ${data.length == 1 ? 'item' : 'items'})`,
+            label: `Export All Data (${data.length} ${data.length === 1 ? 'item' : 'items'})`,
             icon: <FileText className="h-4 w-4" />,
             onClick: () => handleExportClick(true),
           },
           {
-            label: `Export Filtered Data (${filteredData.length} ${filteredData.length == 1 ? 'item' : 'items'})`,
+            label: `Export Filtered Data (${filteredData.length} ${filteredData.length === 1 ? 'item' : 'items'})`,
             icon: <Filter className="h-4 w-4" />,
             onClick: () => handleExportClick(false),
           },

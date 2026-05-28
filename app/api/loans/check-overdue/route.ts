@@ -50,7 +50,7 @@ export async function POST(request: Request) {
             const periodDueDate = new Date(period.dueDate);
             
             // If period is Pending and past due date, mark as Overdue
-            if (period.status == 'Pending' && now > periodDueDate) {
+            if (period.status === 'Pending' && now > periodDueDate) {
               await db
                 .update(interestPeriods)
                 .set({ status: 'Overdue', updatedAt: now })
@@ -58,12 +58,12 @@ export async function POST(request: Request) {
               
               updatedPeriodsCount++;
               hasOverduePeriod = true;
-            } else if (period.status == 'Overdue') {
+            } else if (period.status === 'Overdue') {
               hasOverduePeriod = true;
-            } else if (period.status == 'Incomplete') {
+            } else if (period.status === 'Incomplete') {
               // Partially paid — keep as Incomplete (not Overdue)
               hasIncompletePeriod = true;
-            } else if (period.status == 'Pending') {
+            } else if (period.status === 'Pending') {
               hasAnyPendingPeriod = true;
             }
           }
@@ -84,8 +84,8 @@ export async function POST(request: Request) {
       // If there are overdue or incomplete periods, loan should be overdue
       if (
         (hasOverduePeriod || hasIncompletePeriod) &&
-        loan.status !=='Overdue' &&
-        loan.status !=='Completed'
+        loan.status !== 'Overdue' &&
+        loan.status !== 'Completed'
       ) {
         newLoanStatus = 'Overdue';
         shouldUpdateLoanStatus = true;
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
       // If loan is Fully Funded and main due date has passed
       // and there are no multiple interest periods (or all are completed/overdue)
       else if (
-        loan.status == 'Fully Funded' &&
+        loan.status === 'Fully Funded' &&
         now > loanDueDate &&
         !hasAnyPendingPeriod
       ) {
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       }
       // If loan is currently overdue but shouldn't be (e.g., all periods completed)
       else if (
-        loan.status == 'Overdue' &&
+        loan.status === 'Overdue' &&
         !hasOverduePeriod &&
         !hasIncompletePeriod &&
         !hasAnyPendingPeriod &&

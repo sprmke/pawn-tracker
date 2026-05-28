@@ -71,11 +71,11 @@ export function useLoanCalendarEvents(loans: LoanWithInvestors[]) {
             );
 
             sortedPeriods.forEach((period, index) => {
-              const isLastPeriod = index == sortedPeriods.length - 1;
+              const isLastPeriod = index === sortedPeriods.length - 1;
               const principal = parseFloat(li.amount);
               let interest = 0;
 
-              if (period.interestType == 'rate') {
+              if (period.interestType === 'rate') {
                 const rate = parseFloat(period.interestRate) / 100;
                 interest = principal * rate;
               } else {
@@ -116,7 +116,7 @@ export function useLoanCalendarEvents(loans: LoanWithInvestors[]) {
         );
         const totalInterest = loan.loanInvestors.reduce((sum, li) => {
           const capital = parseFloat(li.amount);
-          if (li.interestType == 'rate') {
+          if (li.interestType === 'rate') {
             const rate = parseFloat(li.interestRate) / 100;
             return sum + capital * rate;
           } else {

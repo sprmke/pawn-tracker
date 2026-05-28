@@ -37,13 +37,13 @@ export function CopyInvestorModal({
   const handleToggleInvestor = (investorId: number) => {
     setCheckedInvestorIds((prev) =>
       prev.includes(investorId)
-        ? prev.filter((id) => id !==investorId)
+        ? prev.filter((id) => id !== investorId)
         : [...prev, investorId]
     );
   };
 
   const handleCopy = () => {
-    if (checkedInvestorIds.length == 0) return;
+    if (checkedInvestorIds.length === 0) return;
     onCopy(checkedInvestorIds);
     setCheckedInvestorIds([]);
     onOpenChange(false);
@@ -69,7 +69,7 @@ export function CopyInvestorModal({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label className="text-sm font-semibold">Select Investors</Label>
-            {availableInvestors.length == 0 ? (
+            {availableInvestors.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
                 No other investors available to copy to
               </p>
@@ -125,11 +125,11 @@ export function CopyInvestorModal({
             <Button
               type="button"
               onClick={handleCopy}
-              disabled={checkedInvestorIds.length == 0}
+              disabled={checkedInvestorIds.length === 0}
             >
               <Copy className="mr-2 h-4 w-4" />
               Copy to {checkedInvestorIds.length} investor
-              {checkedInvestorIds.length !==1 ? 's' : ''}
+              {checkedInvestorIds.length !== 1 ? 's' : ''}
             </Button>
           </div>
         </div>

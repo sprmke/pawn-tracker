@@ -30,7 +30,7 @@ export function LoanCalendarView({
   const calendarEvents = useLoanCalendarEvents(loans);
 
   const renderEventCard = (event: CalendarEvent, eventIndex: number) => {
-    if (event.type == 'sent') {
+    if (event.type === 'sent') {
       const sentEvent = event as CalendarEventSent;
 
       return (
@@ -45,7 +45,7 @@ export function LoanCalendarView({
           isFuture={sentEvent.hasUnpaidTransactions}
         />
       );
-    } else if (event.type == 'due') {
+    } else if (event.type === 'due') {
       const dueEvent = event as CalendarEventDue;
       return (
         <LoanDueEventCard
@@ -59,7 +59,7 @@ export function LoanCalendarView({
           size="sm"
         />
       );
-    } else if (event.type == 'interest_due') {
+    } else if (event.type === 'interest_due') {
       const interestDueEvent = event as CalendarEventInterestDue;
       return (
         <LoanInterestDueEventCard
@@ -82,11 +82,11 @@ export function LoanCalendarView({
     () => ({
       formatCurrency: formatCurrencyCompact,
       onEventClick: (event) => {
-        if (event.type == 'sent') {
+        if (event.type === 'sent') {
           onLoanClick((event as CalendarEventSent).loan);
-        } else if (event.type == 'due') {
+        } else if (event.type === 'due') {
           onLoanClick((event as CalendarEventDue).loan);
-        } else if (event.type == 'interest_due') {
+        } else if (event.type === 'interest_due') {
           onLoanClick((event as CalendarEventInterestDue).loan);
         }
       },

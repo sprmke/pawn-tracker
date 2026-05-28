@@ -82,9 +82,9 @@ export function DatePicker({
         const date = new Date(yearNum, monthNum - 1, dayNum);
         // Check if the date is valid (handles invalid dates like 02/31/2024)
         if (
-          date.getFullYear() == yearNum &&
-          date.getMonth() == monthNum - 1 &&
-          date.getDate() == dayNum
+          date.getFullYear() === yearNum &&
+          date.getMonth() === monthNum - 1 &&
+          date.getDate() === dayNum
         ) {
           const isoDate = `${year}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
           onChange?.(isoDate);

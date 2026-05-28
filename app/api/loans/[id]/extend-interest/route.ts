@@ -6,8 +6,8 @@ import { auth } from '@/auth';
 import { hasLoanAccess } from '@/lib/access-control';
 
 function safeParseFloat(value: string | number | null | undefined): number {
-  if (value == null || value == undefined) return 0;
-  if (typeof value == 'number') return Number.isNaN(value) ? 0 : value;
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return Number.isNaN(value) ? 0 : value;
   const n = parseFloat(value);
   return Number.isNaN(n) ? 0 : n;
 }
@@ -18,7 +18,7 @@ function calculateInterestAmount(
   interestType: string,
 ): number {
   const rateValue = safeParseFloat(interestRate);
-  return interestType == 'fixed' ? rateValue : amount * (rateValue / 100);
+  return interestType === 'fixed' ? rateValue : amount * (rateValue / 100);
 }
 
 interface EntryPayload {
@@ -42,7 +42,7 @@ export async function POST(
     const body = await request.json();
     const { entries } = body;
 
-    if (!entries || !Array.isArray(entries) || entries.length == 0) {
+    if (!entries || !Array.isArray(entries) || entries.length === 0) {
       return NextResponse.json(
         { error: 'Invalid request body' },
         { status: 400 },
@@ -130,7 +130,7 @@ export async function POST(
       }
 
       // Compute per-investor interest at original rates
-      const base = investorCapital == 0 ? totalPrincipal : investorCapital;
+      const base = investorCapital === 0 ? totalPrincipal : investorCapital;
       const originalInvestorInterest = calculateInterestAmount(
         base,
         baseRate,

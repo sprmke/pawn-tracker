@@ -43,7 +43,7 @@ export function PastDueLoansCard({
       if (hasMultipleInterest) {
         const overduePeriods = loan.loanInvestors
           .flatMap((li) => li.interestPeriods || [])
-          .filter((period) => period.status == 'Overdue')
+          .filter((period) => period.status === 'Overdue')
           .sort(
             (a, b) =>
               new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
@@ -65,7 +65,7 @@ export function PastDueLoansCard({
 
   const totalAmount = loans.reduce((sum, loan) => {
     const filteredInvestors = investorId
-      ? loan.loanInvestors.filter((li) => li.investor.id == investorId)
+      ? loan.loanInvestors.filter((li) => li.investor.id === investorId)
       : loan.loanInvestors;
     return sum + calculateOverdueAmount(filteredInvestors);
   }, 0);
@@ -90,7 +90,7 @@ export function PastDueLoansCard({
       loadingVariant={loadingVariant}
       onViewAllClick={onViewAllClick}
     >
-      {displayLoans.length == 0 ? (
+      {displayLoans.length === 0 ? (
         <ActivityEmptyState message="No overdue loans" />
       ) : (
         <div className="space-y-3">
@@ -148,7 +148,7 @@ export function PastDueLoansCard({
           <div className={activityListScrollClassName}>
             {displayLoans.map((loan) => {
               const filteredInvestors = investorId
-                ? loan.loanInvestors.filter((li) => li.investor.id == investorId)
+                ? loan.loanInvestors.filter((li) => li.investor.id === investorId)
                 : loan.loanInvestors;
               const amount = calculateOverdueAmount(filteredInvestors);
 
@@ -160,7 +160,7 @@ export function PastDueLoansCard({
               if (hasMultipleInterest) {
                 const overduePeriods = loan.loanInvestors
                   .flatMap((li) => li.interestPeriods || [])
-                  .filter((period) => period.status == 'Overdue')
+                  .filter((period) => period.status === 'Overdue')
                   .sort(
                     (a, b) =>
                       new Date(a.dueDate).getTime() -

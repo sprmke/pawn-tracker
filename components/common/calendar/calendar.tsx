@@ -42,7 +42,7 @@ export function Calendar({ events, config, showLegend = true }: CalendarProps) {
       />
 
       {/* Mobile Scroll Hint */}
-      {(viewMode == 'week' || viewMode == 'month') && (
+      {(viewMode === 'week' || viewMode === 'month') && (
         <div className="md:hidden text-xs text-muted-foreground text-center py-1 bg-muted/30 rounded-lg">
           ← Swipe to scroll horizontally →
         </div>
@@ -51,11 +51,11 @@ export function Calendar({ events, config, showLegend = true }: CalendarProps) {
       {/* Calendar Grid */}
       <Card>
         <CardContent className="p-0">
-          {viewMode == 'day' && (
+          {viewMode === 'day' && (
             <CalendarDayView cells={calendarData} config={config} />
           )}
 
-          {viewMode == 'week' && (
+          {viewMode === 'week' && (
             <CalendarWeekView
               cells={calendarData}
               config={config}
@@ -64,7 +64,7 @@ export function Calendar({ events, config, showLegend = true }: CalendarProps) {
             />
           )}
 
-          {viewMode == 'month' && (
+          {viewMode === 'month' && (
             <CalendarMonthView
               cells={calendarData}
               config={config}

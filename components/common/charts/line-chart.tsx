@@ -38,9 +38,9 @@ export function LineChart({
 }: LineChartProps) {
   const isEmpty =
     !data ||
-    data.length == 0 ||
+    data.length === 0 ||
     dataKeys.every((dataKey) =>
-      data.every((item) => !item[dataKey.key] || item[dataKey.key] == 0)
+      data.every((item) => !item[dataKey.key] || item[dataKey.key] === 0)
     );
 
   return (

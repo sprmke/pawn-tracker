@@ -67,7 +67,7 @@ function sumLinkedPaymentsForPeriod(
   periodId: number,
 ): number {
   return (receivedPayments || [])
-    .filter((rp) => rp.interestPeriodId == periodId)
+    .filter((rp) => rp.interestPeriodId === periodId)
     .reduce((s, rp) => s + (parseFloat(rp.amount) || 0), 0);
 }
 
@@ -124,7 +124,7 @@ function matchReceivedDatesToCompletedPeriods(
   const result = new Map<number, string>();
 
   for (const period of periodsSortedByDue) {
-    if (period.status !=='Completed' || typeof period.id !=='number')
+    if (period.status !== 'Completed' || typeof period.id !== 'number')
       continue;
 
     const expected = calculateInterest(
@@ -213,10 +213,10 @@ export function InvestorTransactionsDisplay({
   const isSectionOpen = (
     investorId: number,
     section: 'principal' | 'interest',
-  ) => openSections[sectionKey(investorId, section)] !==false;
+  ) => openSections[sectionKey(investorId, section)] !== false;
 
   const handlePayTransaction = async (transactionId: number | string) => {
-    if (!loanId || typeof transactionId !=='number') return;
+    if (!loanId || typeof transactionId !== 'number') return;
     setPayingTransactions((prev) => new Set(prev).add(transactionId));
     try {
       const response = await fetch(`/api/loans/${loanId}/pay-transaction`, {
@@ -282,13 +282,13 @@ export function InvestorTransactionsDisplay({
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         toast.error(
-          typeof data.error == 'string'
+          typeof data.error === 'string'
             ? data.error
             : 'Could not record this payment. Please try again.',
         );
         return;
       }
-      if (data.status == 'Incomplete') {
+      if (data.status === 'Incomplete') {
         toast.success(
           'Partial payment recorded. Period stays incomplete until the full interest is paid.',
         );
@@ -315,7 +315,7 @@ export function InvestorTransactionsDisplay({
     linkedRows: ReceivedPaymentDisplay[],
   ) => {
     const today = new Date().toISOString().slice(0, 10);
-    if (linkedRows.length == 0) {
+    if (linkedRows.length === 0) {
       // No linked rows (legacy/unlinked data) — open with full interest pre-filled
       setEditPaymentModal({
         periodId,
@@ -331,7 +331,7 @@ export function InvestorTransactionsDisplay({
     const last = linkedRows[linkedRows.length - 1];
     const dateStr = dateForPickerInput(last.receivedDate);
     const single =
-      linkedRows.length == 1 && typeof linkedRows[0].id == 'number';
+      linkedRows.length === 1 && typeof linkedRows[0].id === 'number';
     setEditPaymentModal({
       periodId,
       mode: single ? 'single' : 'consolidate',
@@ -359,7 +359,7 @@ export function InvestorTransactionsDisplay({
 
     setEditingPaymentPeriodIds((prev) => new Set(prev).add(periodId));
     try {
-      if (mode == 'single' && paymentId != null) {
+      if (mode === 'single' && paymentId != null) {
         const response = await fetch(`/api/received-payments/${paymentId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -371,7 +371,7 @@ export function InvestorTransactionsDisplay({
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
           toast.error(
-            typeof data.error == 'string'
+            typeof data.error === 'string'
               ? data.error
               : 'Could not update payment.',
           );
@@ -392,7 +392,7 @@ export function InvestorTransactionsDisplay({
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
           toast.error(
-            typeof data.error == 'string'
+            typeof data.error === 'string'
               ? data.error
               : 'Could not update payments.',
           );
@@ -430,7 +430,7 @@ export function InvestorTransactionsDisplay({
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         toast.error(
-          typeof data.error == 'string'
+          typeof data.error === 'string'
             ? data.error
             : 'Could not remove this payment.',
         );
@@ -481,17 +481,17 @@ export function InvestorTransactionsDisplay({
           if (hasMultiplePeriods) {
             totalInterest = item.interestPeriods!.reduce((sum, p) => {
               const rv = parseFloat(p.interestRate) || 0;
-              if (p.interestType == 'fixed') return sum + rv;
+              if (p.interestType === 'fixed') return sum + rv;
               const base =
-                totalCapital == 0 ? loanTotalPrincipal : totalCapital;
+                totalCapital === 0 ? loanTotalPrincipal : totalCapital;
               return sum + base * (rv / 100);
             }, 0);
           } else {
             totalInterest = transactions.reduce((sum, t) => {
               const capital = parseFloat(t.amount) || 0;
               const rv = parseFloat(t.interestRate) || 0;
-              if (t.interestType == 'fixed') return sum + rv;
-              const base = capital == 0 ? loanTotalPrincipal : capital;
+              if (t.interestType === 'fixed') return sum + rv;
+              const base = capital === 0 ? loanTotalPrincipal : capital;
               return sum + base * (rv / 100);
             }, 0);
           }
@@ -499,8 +499,8 @@ export function InvestorTransactionsDisplay({
           const grandTotal = totalCapital + totalInterest;
 
           const anyFixed = hasMultiplePeriods
-            ? item.interestPeriods!.some((p) => p.interestType == 'fixed')
-            : transactions.some((t) => t.interestType == 'fixed');
+            ? item.interestPeriods!.some((p) => p.interestType === 'fixed')
+            : transactions.some((t) => t.interestType === 'fixed');
 
           let rateDisplay: string;
           if (totalCapital > 0) {
@@ -528,7 +528,7 @@ export function InvestorTransactionsDisplay({
           const periodCount = item.interestPeriods?.length ?? 0;
 
           const periodPrincipalBase =
-            totalCapital == 0 ? loanTotalPrincipal : totalCapital;
+            totalCapital === 0 ? loanTotalPrincipal : totalCapital;
 
           const sortedPeriodsForMatch =
             hasMultiplePeriods && item.interestPeriods
@@ -596,7 +596,7 @@ export function InvestorTransactionsDisplay({
                           Disbursements
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {principalCount == 1
+                          {principalCount === 1
                             ? '1 payment'
                             : `${principalCount} payments`}{' '}
                           · Total {formatCurrency(totalCapital)}
@@ -652,7 +652,7 @@ export function InvestorTransactionsDisplay({
                               </div>
                               {isUnpaid &&
                                 loanId &&
-                                typeof transaction.id == 'number' && (
+                                typeof transaction.id === 'number' && (
                                   <Button
                                     size="sm"
                                     onClick={() =>
@@ -721,7 +721,7 @@ export function InvestorTransactionsDisplay({
                               period.interestType,
                             );
                             const periodRate =
-                              period.interestType == 'fixed'
+                              period.interestType === 'fixed'
                                 ? periodPrincipalBase > 0
                                   ? (periodInterest / periodPrincipalBase) * 100
                                   : 0
@@ -730,7 +730,7 @@ export function InvestorTransactionsDisplay({
                             const statusBadge =
                               getInterestPeriodStatusBadge(periodStatus);
                             const pid =
-                              typeof period.id == 'number' ? period.id : null;
+                              typeof period.id === 'number' ? period.id : null;
                             const paidLinked =
                               pid != null
                                 ? sumLinkedPaymentsForPeriod(
@@ -745,7 +745,7 @@ export function InvestorTransactionsDisplay({
                             const linkedRowsForPeriod =
                               pid != null
                                 ? [...(item.receivedPayments || [])]
-                                    .filter((rp) => rp.interestPeriodId == pid)
+                                    .filter((rp) => rp.interestPeriodId === pid)
                                     .sort(
                                       (a, b) =>
                                         new Date(a.receivedDate).getTime() -
@@ -754,13 +754,13 @@ export function InvestorTransactionsDisplay({
                                 : [];
                             const canComplete =
                               pid != null &&
-                              (periodStatus == 'Pending' ||
-                                periodStatus == 'Overdue' ||
-                                periodStatus == 'Incomplete') &&
+                              (periodStatus === 'Pending' ||
+                                periodStatus === 'Overdue' ||
+                                periodStatus === 'Incomplete') &&
                               loanId;
                             const canEditPayment =
                               pid != null &&
-                              periodStatus == 'Completed' &&
+                              periodStatus === 'Completed' &&
                               loanId;
 
                             const legacyMatch =
@@ -772,8 +772,8 @@ export function InvestorTransactionsDisplay({
                                 ? formatReceivedDatesCommaSeparated(
                                     linkedRowsForPeriod,
                                   )
-                                : periodStatus == 'Completed' ||
-                                    periodStatus == 'Incomplete'
+                                : periodStatus === 'Completed' ||
+                                    periodStatus === 'Incomplete'
                                   ? legacyMatch
                                     ? formatDate(legacyMatch)
                                     : '—'
@@ -786,7 +786,7 @@ export function InvestorTransactionsDisplay({
                               >
                                 <div className="flex items-center justify-between mb-1.5">
                                   <span className="text-xs font-semibold text-muted-foreground">
-                                    {pIndex == arr.length - 1
+                                    {pIndex === arr.length - 1
                                       ? `Period ${pIndex + 1} · Final`
                                       : `Period ${pIndex + 1}`}
                                   </span>
@@ -842,7 +842,7 @@ export function InvestorTransactionsDisplay({
                                   </div>
                                 </div>
                                 {/* Show paid/remaining + payment rows only for partial or multi-payment periods */}
-                                {(periodStatus !=='Completed' ||
+                                {(periodStatus !== 'Completed' ||
                                   linkedRowsForPeriod.length > 1) && (
                                   <div className="mt-2 pt-2 border-t border-border/50 space-y-2">
                                     {paidLinked > 0 && (
@@ -872,7 +872,7 @@ export function InvestorTransactionsDisplay({
                                         {linkedRowsForPeriod.map((rp, i) => (
                                           <div
                                             key={
-                                              typeof rp.id == 'number'
+                                              typeof rp.id === 'number'
                                                 ? `rp-${rp.id}`
                                                 : `rp-${pid}-${i}-${rp.receivedDate}-${rp.amount}`
                                             }
@@ -888,7 +888,7 @@ export function InvestorTransactionsDisplay({
                                                 )}
                                               </span>
                                             </div>
-                                            {typeof rp.id == 'number' &&
+                                            {typeof rp.id === 'number' &&
                                               loanId && (
                                                 <Button
                                                   type="button"
@@ -936,14 +936,14 @@ export function InvestorTransactionsDisplay({
                                     disabled={completingPeriods.has(period.id!)}
                                     className="w-full mt-2 h-7 text-xs bg-background"
                                   >
-                                    {periodStatus == 'Incomplete' ? (
+                                    {periodStatus === 'Incomplete' ? (
                                       <Pencil className="mr-1.5 h-3 w-3" />
                                     ) : (
                                       <Check className="mr-1.5 h-3 w-3" />
                                     )}{' '}
                                     {completingPeriods.has(period.id!)
                                       ? 'Recording…'
-                                      : periodStatus == 'Incomplete'
+                                      : periodStatus === 'Incomplete'
                                         ? 'More payment'
                                         : 'Pay'}
                                   </Button>
@@ -1052,7 +1052,7 @@ export function InvestorTransactionsDisplay({
                                 {transactions.map((t, idx) => {
                                   const cap = parseFloat(t.amount) || 0;
                                   const int = calculateInterest(
-                                    cap == 0 ? loanTotalPrincipal : cap,
+                                    cap === 0 ? loanTotalPrincipal : cap,
                                     t.interestRate,
                                     t.interestType,
                                   );
@@ -1237,7 +1237,7 @@ export function InvestorTransactionsDisplay({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit payment</DialogTitle>
-            {editPaymentModal?.mode == 'consolidate' && (
+            {editPaymentModal?.mode === 'consolidate' && (
               <p className="text-sm text-muted-foreground font-normal pt-1">
                 This replaces all payment lines for this period with a single
                 entry using the amount and date below.

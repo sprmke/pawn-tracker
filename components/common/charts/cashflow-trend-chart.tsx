@@ -79,12 +79,12 @@ export function CashflowTrendChart({
 
   const isEmpty =
     !data ||
-    data.length == 0 ||
+    data.length === 0 ||
     dataKeys.every((dataKey) =>
       data.every(
         (item) =>
           !item[dataKey.key as keyof CashflowData] ||
-          item[dataKey.key as keyof CashflowData] == 0
+          item[dataKey.key as keyof CashflowData] === 0
       )
     );
 
@@ -93,7 +93,7 @@ export function CashflowTrendChart({
       {(['day', 'week', 'month'] as TimePeriod[]).map((p) => (
         <Button
           key={p}
-          variant={period == p ? 'secondary' : 'ghost'}
+          variant={period === p ? 'secondary' : 'ghost'}
           size="sm"
           onClick={() => setPeriod(p)}
           className="h-8 rounded-xl px-3.5 text-xs font-semibold"
@@ -139,7 +139,7 @@ export function CashflowTrendChart({
             />
             <Legend content={<ChartLegend />} />
             {dataKeys.map((dataKey) =>
-              dataKey.key == 'net' ? (
+              dataKey.key === 'net' ? (
                 <Line
                   key={dataKey.key}
                   type="monotone"

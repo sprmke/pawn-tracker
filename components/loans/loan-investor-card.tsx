@@ -127,7 +127,7 @@ export function LoanInvestorCard({
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="text-[10px] h-5">
                         {si.transactions.length} payment
-                        {si.transactions.length !==1 ? 's' : ''}
+                        {si.transactions.length !== 1 ? 's' : ''}
                       </Badge>
                     </div>
                   </div>
@@ -278,8 +278,8 @@ export function LoanInvestorCard({
                                     // Check if date is already used by another transaction
                                     const isDateUsed = si.transactions.some(
                                       (t) =>
-                                        t.id !==transaction.id &&
-                                        t.sentDate == newDate
+                                        t.id !== transaction.id &&
+                                        t.sentDate === newDate
                                     );
 
                                     if (isDateUsed) {
@@ -434,13 +434,13 @@ export function LoanInvestorCard({
                           (sum, t) => sum + (parseFloat(t.amount) || 0),
                           0
                         );
-                        if (totalAmount == 0) return '10';
+                        if (totalAmount === 0) return '10';
 
                         const weightedRate = si.transactions.reduce(
                           (sum, t) => {
                             const amount = parseFloat(t.amount) || 0;
                             const rate =
-                              t.interestType == 'rate'
+                              t.interestType === 'rate'
                                 ? parseFloat(t.interestRate) || 0
                                 : amount > 0
                                 ? ((parseFloat(t.interestAmount) || 0) /

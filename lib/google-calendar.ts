@@ -74,7 +74,7 @@ function createEventDescription(eventData: CalendarEventData): string {
 
   let description = '';
 
-  if (type == 'summary') {
+  if (type === 'summary') {
     if (loans && loans.length > 0 && loanAmounts) {
       description += `Loans:\n`;
       loans.forEach((l) => {
@@ -105,18 +105,18 @@ function createEventDescription(eventData: CalendarEventData): string {
     description += `Type: ${loan.type}\n`;
     description += `Status: ${loan.status}\n\n`;
 
-    if (type == 'sent') {
+    if (type === 'sent') {
       description += `Investors:\n`;
       investors?.forEach((inv) => {
         description += `  • ${inv.name}: -${formatCurrency(inv.amount)}\n`;
       });
       description += `\n<b>Total: -${formatCurrency(totalAmount || 0)}</b>\n`;
-    } else if (type == 'due') {
+    } else if (type === 'due') {
       description += `Investor: ${investorName}\n`;
       description += `Principal: +${formatCurrency(totalPrincipal || 0)}\n`;
       description += `Interest: +${formatCurrency(totalInterest || 0)}\n`;
       description += `\n<b>Total: +${formatCurrency(totalAmount || 0)}</b>\n`;
-    } else if (type == 'interest_due') {
+    } else if (type === 'interest_due') {
       description += `Investor: ${investorName}\n`;
       description += `\n<b>Total: +${formatCurrency(interest || 0)}</b>\n`;
     }
@@ -134,19 +134,19 @@ function createEventDescription(eventData: CalendarEventData): string {
 function createEventSummary(eventData: CalendarEventData): string {
   const { type, loan, totalAmount, investorName } = eventData;
 
-  if (type == 'summary') {
+  if (type === 'summary') {
     const sign = (totalAmount || 0) >= 0 ? '+' : '-';
     return `Daily Summary ${sign}${formatCurrency(Math.abs(totalAmount || 0))}`;
   } else if (loan) {
-    if (type == 'sent') {
+    if (type === 'sent') {
       return `${loan.type}: ${loan.loanName} - Disbursement (-${formatCurrency(
         totalAmount || 0
       )})`;
-    } else if (type == 'due') {
+    } else if (type === 'due') {
       return `${loan.type}: ${
         loan.loanName
       } - Due Date (${investorName} +${formatCurrency(totalAmount || 0)})`;
-    } else if (type == 'interest_due') {
+    } else if (type === 'interest_due') {
       return `${loan.type}: ${
         loan.loanName
       } - Interest Due (${investorName} +${formatCurrency(
@@ -328,7 +328,7 @@ export async function deleteCalendarEvent(eventId: string): Promise<boolean> {
 export async function deleteMultipleCalendarEvents(
   eventIds: string[]
 ): Promise<void> {
-  if (!eventIds || eventIds.length == 0) return;
+  if (!eventIds || eventIds.length === 0) return;
 
   for (const eventId of eventIds) {
     await deleteCalendarEvent(eventId);
@@ -482,7 +482,7 @@ export async function updateDailySummaryEvents(
         if (!dailyEvents.has(dateKey)) continue; // Only process affected dates
 
         const dayData = dailyEvents.get(dateKey)!;
-        if (!dayData.out.loans.find((l) => l.id == loan.id)) {
+        if (!dayData.out.loans.find((l) => l.id === loan.id)) {
           dayData.out.loans.push(loan);
         }
         dayData.out.amount += amount;
@@ -520,14 +520,14 @@ export async function updateDailySummaryEvents(
 
             for (let i = 0; i < sortedPeriods.length; i++) {
               const period = sortedPeriods[i];
-              const isLastPeriod = i == sortedPeriods.length - 1;
+              const isLastPeriod = i === sortedPeriods.length - 1;
               const dateKey = toLocalDateString(period.dueDate);
 
               if (!dailyEvents.has(dateKey)) continue; // Only process affected dates
 
               const principal = parseFloat(li.amount);
               let interest = 0;
-              if (period.interestType == 'rate') {
+              if (period.interestType === 'rate') {
                 const rate = parseFloat(period.interestRate) / 100;
                 interest = principal * rate;
               } else {
@@ -540,7 +540,7 @@ export async function updateDailySummaryEvents(
                 : interest;
 
               const dayData = dailyEvents.get(dateKey)!;
-              if (!dayData.in.loans.find((l) => l.id == loan.id)) {
+              if (!dayData.in.loans.find((l) => l.id === loan.id)) {
                 dayData.in.loans.push(loan);
               }
               dayData.in.amount += totalAmount;
@@ -571,7 +571,7 @@ export async function updateDailySummaryEvents(
         );
         const totalInterest = loan.loanInvestors.reduce((sum, li) => {
           const capital = parseFloat(li.amount);
-          if (li.interestType == 'rate') {
+          if (li.interestType === 'rate') {
             const rate = parseFloat(li.interestRate) / 100;
             return sum + capital * rate;
           } else {
@@ -581,7 +581,7 @@ export async function updateDailySummaryEvents(
         const totalAmount = totalPrincipal + totalInterest;
 
         const dayData = dailyEvents.get(dateKey)!;
-        if (!dayData.in.loans.find((l) => l.id == loan.id)) {
+        if (!dayData.in.loans.find((l) => l.id === loan.id)) {
           dayData.in.loans.push(loan);
         }
         dayData.in.amount += totalAmount;
@@ -775,11 +775,11 @@ export async function generateLoanCalendarEvents(
 
           for (let i = 0; i < sortedPeriods.length; i++) {
             const period = sortedPeriods[i];
-            const isLastPeriod = i == sortedPeriods.length - 1;
+            const isLastPeriod = i === sortedPeriods.length - 1;
             const principal = parseFloat(li.amount);
             let interest = 0;
 
-            if (period.interestType == 'rate') {
+            if (period.interestType === 'rate') {
               const rate = parseFloat(period.interestRate) / 100;
               interest = principal * rate;
             } else {
@@ -826,7 +826,7 @@ export async function generateLoanCalendarEvents(
         const principal = parseFloat(li.amount);
         let interest = 0;
 
-        if (li.interestType == 'rate') {
+        if (li.interestType === 'rate') {
           const rate = parseFloat(li.interestRate) / 100;
           interest = principal * rate;
         } else {
@@ -898,7 +898,7 @@ export async function generateAllLoansCalendarEvents(
           });
         }
         const dayData = dailyEvents.get(dateKey)!;
-        if (!dayData.out.loans.find((l) => l.id == loan.id)) {
+        if (!dayData.out.loans.find((l) => l.id === loan.id)) {
           dayData.out.loans.push(loan);
         }
         dayData.out.amount += amount;
@@ -936,11 +936,11 @@ export async function generateAllLoansCalendarEvents(
 
             for (let i = 0; i < sortedPeriods.length; i++) {
               const period = sortedPeriods[i];
-              const isLastPeriod = i == sortedPeriods.length - 1;
+              const isLastPeriod = i === sortedPeriods.length - 1;
               const dateKey = toLocalDateString(period.dueDate);
               const principal = parseFloat(li.amount);
               let interest = 0;
-              if (period.interestType == 'rate') {
+              if (period.interestType === 'rate') {
                 const rate = parseFloat(period.interestRate) / 100;
                 interest = principal * rate;
               } else {
@@ -960,7 +960,7 @@ export async function generateAllLoansCalendarEvents(
                 });
               }
               const dayData = dailyEvents.get(dateKey)!;
-              if (!dayData.in.loans.find((l) => l.id == loan.id)) {
+              if (!dayData.in.loans.find((l) => l.id === loan.id)) {
                 dayData.in.loans.push(loan);
               }
               dayData.in.amount += totalAmount;
@@ -988,7 +988,7 @@ export async function generateAllLoansCalendarEvents(
         );
         const totalInterest = loan.loanInvestors.reduce((sum, li) => {
           const capital = parseFloat(li.amount);
-          if (li.interestType == 'rate') {
+          if (li.interestType === 'rate') {
             const rate = parseFloat(li.interestRate) / 100;
             return sum + capital * rate;
           } else {
@@ -1005,7 +1005,7 @@ export async function generateAllLoansCalendarEvents(
           });
         }
         const dayData = dailyEvents.get(dateKey)!;
-        if (!dayData.in.loans.find((l) => l.id == loan.id)) {
+        if (!dayData.in.loans.find((l) => l.id === loan.id)) {
           dayData.in.loans.push(loan);
         }
         dayData.in.amount += totalAmount;

@@ -82,7 +82,7 @@ export async function PUT(
 
     // If email changed, update or create investor user account
     let investorUserId = existingInvestor.investorUserId;
-    if (body.email !==existingInvestor.email) {
+    if (body.email !== existingInvestor.email) {
       // Check if a user with new email already exists
       let investorUser = await db.query.users.findFirst({
         where: eq(users.email, body.email),

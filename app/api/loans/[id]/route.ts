@@ -157,7 +157,7 @@ export async function PUT(
         amount: String(inv.amount),
         interestRate: inv.interestRate ? String(inv.interestRate) : '0',
         // Explicitly check for 'fixed' to ensure proper enum value is saved
-        interestType: inv.interestType == 'fixed' ? 'fixed' : 'rate',
+        interestType: inv.interestType === 'fixed' ? 'fixed' : 'rate',
         sentDate: new Date(inv.sentDate),
         isPaid: inv.isPaid ?? true, // Default to true for backward compatibility
         hasMultipleInterest: inv.hasMultipleInterest || false,
@@ -196,7 +196,7 @@ export async function PUT(
             const newInterestRate = String(period.interestRate);
             // Explicitly check for 'fixed' to ensure proper enum value is used
             const newInterestType =
-              period.interestType == 'fixed' ? 'fixed' : 'rate';
+              period.interestType === 'fixed' ? 'fixed' : 'rate';
 
             // Check if this period existed before with same date/rate
             const key = `${investorId}-${dueDate.toISOString()}`;
@@ -206,19 +206,19 @@ export async function PUT(
             let status: 'Pending' | 'Completed' | 'Overdue' = 'Pending';
             if (existingPeriod) {
               const rateChanged =
-                existingPeriod.interestRate !==newInterestRate;
+                existingPeriod.interestRate !== newInterestRate;
               const typeChanged =
-                existingPeriod.interestType !==newInterestType;
+                existingPeriod.interestType !== newInterestType;
 
               // If nothing changed and it was completed, keep it completed
               if (
                 !rateChanged &&
                 !typeChanged &&
-                existingPeriod.status == 'Completed'
+                existingPeriod.status === 'Completed'
               ) {
                 status = 'Completed';
               } else if (
-                existingPeriod.status == 'Overdue' &&
+                existingPeriod.status === 'Overdue' &&
                 !rateChanged &&
                 !typeChanged
               ) {

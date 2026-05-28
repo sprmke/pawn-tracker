@@ -478,7 +478,7 @@ const LoanCard = ({
   if (showNotes && hasNotes) visibleSectionKeys.push('notes');
 
   const sectionStyle = (key: string) =>
-    visibleSectionKeys[visibleSectionKeys.length - 1] == key
+    visibleSectionKeys[visibleSectionKeys.length - 1] === key
       ? styles.sectionNoBorder
       : styles.section;
 
@@ -496,7 +496,7 @@ const LoanCard = ({
       </View>
 
       {/* No sections enabled */}
-      {visibleSectionKeys.length == 0 && (
+      {visibleSectionKeys.length === 0 && (
         <View style={styles.sectionNoBorder}>
           <Text style={{ fontSize: 8, color: PDF_COLORS.muted }}>No additional sections enabled.</Text>
         </View>
@@ -576,11 +576,11 @@ const LoanCard = ({
         <View style={sectionStyle('investors')}>
           <Text style={styles.sectionLabel}>Investor Breakdown</Text>
           {loan.loanInvestors.map((li, liIdx) => {
-            const isLastInvestor = liIdx == loan.loanInvestors.length - 1;
+            const isLastInvestor = liIdx === loan.loanInvestors.length - 1;
             const interest = calculateInterest(li.amount, li.interestRate, li.interestType);
             const principal = parseFloat(li.amount) || 0;
             const total = principal + interest;
-            const isFixed = li.interestType == 'fixed';
+            const isFixed = li.interestType === 'fixed';
             const hasPeriods = showPeriods && li.hasMultipleInterest && li.interestPeriods && li.interestPeriods.length > 0;
 
             // For multi-interest investors, only show payments that are linked to a period
@@ -645,8 +645,8 @@ const LoanCard = ({
                       {[...li.interestPeriods]
                         .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
                         .map((period, pIdx) => {
-                        const isLastPeriod = pIdx == li.interestPeriods!.length - 1;
-                        const periodIsFixed = period.interestType == 'fixed';
+                        const isLastPeriod = pIdx === li.interestPeriods!.length - 1;
+                        const periodIsFixed = period.interestType === 'fixed';
                         const periodRate = parseFloat(period.interestRate);
                         const periodPrincipal = parseFloat(li.amount) || 0;
                         const periodInterest = periodIsFixed
@@ -691,7 +691,7 @@ const LoanCard = ({
                         <Text style={[styles.periodTableHeaderCell, { flex: 2 }]}>Amount</Text>
                       </View>
                       {visiblePayments.map((payment, rIdx) => {
-                        const isLastPayment = rIdx == visiblePayments.length - 1;
+                        const isLastPayment = rIdx === visiblePayments.length - 1;
                         return (
                           <View
                             key={payment.id}
@@ -759,7 +759,7 @@ const LoansPDFDocument = ({
   // Compute grand totals — filter to investor-specific entries when investorId is provided
   const getRelevantInvestors = (loan: LoanWithInvestors) =>
     investorId
-      ? loan.loanInvestors.filter((li) => li.investor.id == investorId)
+      ? loan.loanInvestors.filter((li) => li.investor.id === investorId)
       : loan.loanInvestors;
 
   const grandTotalPrincipal = data.reduce((sum, loan) => {
@@ -816,7 +816,7 @@ const LoansPDFDocument = ({
           </View>
           <View style={styles.pageHeaderRight}>
             <Text style={styles.reportDate}>Generated: {dateStr} {timeStr}</Text>
-            <Text style={styles.reportCount}>{data.length} loan{data.length !==1 ? 's' : ''}</Text>
+            <Text style={styles.reportCount}>{data.length} loan{data.length !== 1 ? 's' : ''}</Text>
           </View>
         </View>
 
@@ -824,7 +824,7 @@ const LoansPDFDocument = ({
         {data.length > 0 && (
           <View style={[styles.totalsCard, { marginTop: 0, marginBottom: 16 }]} wrap={false}>
             <View style={styles.totalsHeader}>
-              <Text style={styles.totalsHeaderText}>Grand Totals — {data.length} Loan{data.length !==1 ? 's' : ''}</Text>
+              <Text style={styles.totalsHeaderText}>Grand Totals — {data.length} Loan{data.length !== 1 ? 's' : ''}</Text>
             </View>
             {/* Row 1: Principal / Interest / Total Amount / Total Received / Balance */}
             <View style={[styles.totalsGrid, { paddingBottom: 4 }]}>
@@ -880,7 +880,7 @@ const LoansPDFDocument = ({
         )}
 
         {/* Loan Cards */}
-        {data.length == 0 ? (
+        {data.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No loans to display.</Text>
           </View>
@@ -890,8 +890,8 @@ const LoansPDFDocument = ({
               key={loan.id}
               loan={loan}
               enabledSections={enabledSet}
-              isFirst={idx == 0}
-              isLast={idx == data.length - 1}
+              isFirst={idx === 0}
+              isLast={idx === data.length - 1}
             />
           ))
         )}

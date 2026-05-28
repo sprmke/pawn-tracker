@@ -28,13 +28,13 @@ export function ViewModeToggle({
       {modes.map(({ id, icon: Icon, label, hidden }) => (
         <Button
           key={id}
-          variant={viewMode == id ? 'secondary' : 'ghost'}
+          variant={viewMode === id ? 'secondary' : 'ghost'}
           size="sm"
           onClick={() => hasData && onViewModeChange(id)}
           className={cn(
             'h-8 rounded-xl px-3',
             hidden && 'hidden md:flex',
-            viewMode == id && 'shadow-sm'
+            viewMode === id && 'shadow-sm'
           )}
           title={`${label} view`}
           disabled={!hasData}

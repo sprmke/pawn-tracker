@@ -207,7 +207,7 @@ async function getDashboardData(userId: string) {
 
     // Calculate completed principal (only from completed loans)
     const completedLoansData = allLoans.filter(
-      (loan) => loan.status == 'Completed',
+      (loan) => loan.status === 'Completed',
     );
     const completedPrincipal = completedLoansData.reduce(
       (sum, loan) => sum + calculateTotalPrincipal(loan.loanInvestors),
@@ -228,13 +228,13 @@ async function getDashboardData(userId: string) {
 
     const activeLoansCount = allLoans.filter(
       (loan) =>
-        loan.status == 'Fully Funded' || loan.status == 'Partially Funded',
+        loan.status === 'Fully Funded' || loan.status === 'Partially Funded',
     ).length;
 
     const completedLoansCount = completedLoansData.length;
 
     const overdueLoansCount = allLoans.filter(
-      (loan) => loan.status == 'Overdue',
+      (loan) => loan.status === 'Overdue',
     ).length;
 
     // Calculate investor statistics
@@ -242,18 +242,18 @@ async function getDashboardData(userId: string) {
     const activeInvestors = allInvestors.filter((inv) =>
       inv.loanInvestors.some(
         (li: any) =>
-          li.loan.status == 'Fully Funded' ||
-          li.loan.status == 'Partially Funded',
+          li.loan.status === 'Fully Funded' ||
+          li.loan.status === 'Partially Funded',
       ),
     ).length;
 
     // Calculate transaction statistics
     const totalInflow = allTransactions
-      .filter((t) => t.direction == 'In')
+      .filter((t) => t.direction === 'In')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
     const totalOutflow = allTransactions
-      .filter((t) => t.direction == 'Out')
+      .filter((t) => t.direction === 'Out')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
     // Helper function to check if a transaction qualifies as valid inflow
@@ -261,11 +261,11 @@ async function getDashboardData(userId: string) {
     // - No loan attached (general investment transaction), OR
     // - Loan is attached AND loan status is 'Completed' (paid on time, not overdue)
     const isValidInflow = (t: (typeof allTransactions)[0]) => {
-      if (t.direction !=='In') return false;
+      if (t.direction !== 'In') return false;
       // If no loan attached, it's a general transaction - count as inflow
       if (!t.loan) return true;
       // If loan is attached, only count if loan is completed (paid)
-      return t.loan.status == 'Completed';
+      return t.loan.status === 'Completed';
     };
 
     // Calculate daily trend data (last 14 days)
@@ -285,7 +285,7 @@ async function getDashboardData(userId: string) {
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
       const dayOutflow = dayTransactions
-        .filter((t) => t.direction == 'Out')
+        .filter((t) => t.direction === 'Out')
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
       dailyData.push({
@@ -313,7 +313,7 @@ async function getDashboardData(userId: string) {
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
       const weekOutflow = weekTransactions
-        .filter((t) => t.direction == 'Out')
+        .filter((t) => t.direction === 'Out')
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
       weeklyData.push({
@@ -341,7 +341,7 @@ async function getDashboardData(userId: string) {
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
       const monthOutflow = monthTransactions
-        .filter((t) => t.direction == 'Out')
+        .filter((t) => t.direction === 'Out')
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
       monthlyData.push({
@@ -356,28 +356,28 @@ async function getDashboardData(userId: string) {
     const loanTypeData = [
       {
         name: 'Lot Title',
-        value: allLoans.filter((l) => l.type == 'Lot Title').length,
+        value: allLoans.filter((l) => l.type === 'Lot Title').length,
         color: '#e8850c', // Primary Orange
       },
       {
         name: 'OR/CR',
-        value: allLoans.filter((l) => l.type == 'OR/CR').length,
+        value: allLoans.filter((l) => l.type === 'OR/CR').length,
         color: '#7c6dcb', // Violet
       },
       {
         name: 'Agent',
-        value: allLoans.filter((l) => l.type == 'Agent').length,
+        value: allLoans.filter((l) => l.type === 'Agent').length,
         color: '#dc6b6b', // Coral
       },
     ].filter((item) => item.value > 0);
 
     // Loan status distribution
     const fullyFundedLoans = allLoans.filter(
-      (loan) => loan.status == 'Fully Funded',
+      (loan) => loan.status === 'Fully Funded',
     ).length;
 
     const partiallyFundedLoans = allLoans.filter(
-      (loan) => loan.status == 'Partially Funded',
+      (loan) => loan.status === 'Partially Funded',
     ).length;
 
     const loanStatusData = [
@@ -454,8 +454,8 @@ async function getDashboardData(userId: string) {
       .filter((loan) => {
         const dueDate = new Date(loan.dueDate);
         return (
-          (loan.status == 'Fully Funded' ||
-            loan.status == 'Partially Funded') &&
+          (loan.status === 'Fully Funded' ||
+            loan.status === 'Partially Funded') &&
           isAfter(dueDate, now) &&
           isBefore(dueDate, fourteenDaysFromNow)
         );
@@ -468,8 +468,8 @@ async function getDashboardData(userId: string) {
     const overdueLoansData = allLoans
       .filter(
         (loan) =>
-          loan.status == 'Overdue' ||
-          (loan.status !=='Completed' && isPast(new Date(loan.dueDate))),
+          loan.status === 'Overdue' ||
+          (loan.status !== 'Completed' && isPast(new Date(loan.dueDate))),
       )
       .sort(
         (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),

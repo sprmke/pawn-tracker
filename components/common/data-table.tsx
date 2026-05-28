@@ -80,11 +80,11 @@ export function DataTable<TData>({
   }, []);
 
   const handleSort = (columnId: string) => {
-    const column = columns.find((col) => col.id == columnId);
+    const column = columns.find((col) => col.id === columnId);
     if (!column?.sortable) return;
 
-    if (sortField == columnId) {
-      setSortDirection(sortDirection == 'asc' ? 'desc' : 'asc');
+    if (sortField === columnId) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(columnId);
       setSortDirection('asc');
@@ -100,7 +100,7 @@ export function DataTable<TData>({
   const sortedData = React.useMemo(() => {
     if (!sortField) return data;
 
-    const column = columns.find((col) => col.id == sortField);
+    const column = columns.find((col) => col.id === sortField);
     if (!column) return data;
 
     return [...data].sort((a, b) => {
@@ -122,13 +122,13 @@ export function DataTable<TData>({
       }
 
       // Handle string comparison
-      if (typeof aValue == 'string' && typeof bValue == 'string') {
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
       }
 
-      if (aValue < bValue) return sortDirection == 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection == 'asc' ? 1 : -1;
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
   }, [data, sortField, sortDirection, columns]);
@@ -152,7 +152,7 @@ export function DataTable<TData>({
     columnId: string;
     children: React.ReactNode;
   }) => {
-    const column = columns.find((col) => col.id == columnId);
+    const column = columns.find((col) => col.id === columnId);
     if (!column?.sortable) return <>{children}</>;
 
     return (
@@ -166,7 +166,7 @@ export function DataTable<TData>({
     );
   };
 
-  if (data.length == 0 && emptyState) {
+  if (data.length === 0 && emptyState) {
     return <>{emptyState}</>;
   }
 

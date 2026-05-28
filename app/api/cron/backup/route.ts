@@ -40,8 +40,8 @@ export async function GET(request: Request) {
     const cronSecret = process.env.CRON_SECRET;
 
     // In production, verify the cron secret
-    if (process.env.NODE_ENV == 'production' && cronSecret) {
-      if (authHeader !==`Bearer ${cronSecret}`) {
+    if (process.env.NODE_ENV === 'production' && cronSecret) {
+      if (authHeader !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
     }
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       where: eq(users.role, 'admin'),
     });
 
-    if (adminUsers.length == 0) {
+    if (adminUsers.length === 0) {
       return NextResponse.json({
         message: 'No admin users found',
         timestamp: new Date().toISOString(),
@@ -75,11 +75,11 @@ export async function GET(request: Request) {
         totalLoans: payload.summary.totalLoans,
         totalTransactions: payload.summary.totalTransactions,
         activeLoans: loansForStats.filter(
-          (l) => l.status == 'Fully Funded' || l.status == 'Partially Funded',
+          (l) => l.status === 'Fully Funded' || l.status === 'Partially Funded',
         ).length,
-        completedLoans: loansForStats.filter((l) => l.status == 'Completed')
+        completedLoans: loansForStats.filter((l) => l.status === 'Completed')
           .length,
-        overdueLoans: loansForStats.filter((l) => l.status == 'Overdue')
+        overdueLoans: loansForStats.filter((l) => l.status === 'Overdue')
           .length,
         totalLoanInvestors: payload.summary.totalLoanInvestors,
         totalInterestPeriods: payload.summary.totalInterestPeriods,

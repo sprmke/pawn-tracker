@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     });
 
     const { searchParams } = new URL(request.url);
-    const download = searchParams.get('download') == 'true';
+    const download = searchParams.get('download') === 'true';
 
     if (download) {
       const filename = `pawn-tracker-backup-${format(new Date(), 'yyyy-MM-dd-HHmmss')}.json`;

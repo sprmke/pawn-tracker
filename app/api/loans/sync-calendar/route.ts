@@ -45,17 +45,17 @@ export async function POST(request: Request) {
 
     // Check if user has access to this loan
     const userId = session.user.id;
-    if (loan.userId !==userId) {
+    if (loan.userId !== userId) {
       // Check if user is an investor in this loan
       const isInvestor = loan.loanInvestors.some(
-        (li) => li.investor.investorUserId == userId
+        (li) => li.investor.investorUserId === userId
       );
       if (!isInvestor) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
       }
     }
 
-    if (action == 'sync') {
+    if (action === 'sync') {
       // Delete existing calendar events if any
       const existingEventIds = loan.googleCalendarEventIds as string[] | null;
       if (existingEventIds && existingEventIds.length > 0) {
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
           message: 'No calendar events were created',
         });
       }
-    } else if (action == 'remove') {
+    } else if (action === 'remove') {
       // Remove calendar events
       const existingEventIds = loan.googleCalendarEventIds as string[] | null;
       if (existingEventIds && existingEventIds.length > 0) {

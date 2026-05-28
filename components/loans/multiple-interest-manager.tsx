@@ -87,7 +87,7 @@ export function MultipleInterestManager({
   // AND we're not in edit mode (don't auto-switch when editing existing loans)
   useEffect(() => {
     if (!isEditMode && !userOverrodeAutoMode && sentDate && loanDueDate && isMoreThanOneMonthAndFifteenDays(sentDate, loanDueDate)) {
-      if (mode == 'single') {
+      if (mode === 'single') {
         setMode('multiple');
         onModeChange('multiple');
       }
@@ -102,7 +102,7 @@ export function MultipleInterestManager({
       return;
     }
 
-    if (mode == 'multiple' && sentDate && loanDueDate) {
+    if (mode === 'multiple' && sentDate && loanDueDate) {
       const defaultPeriods = generateDefaultInterestPeriods(
         sentDate,
         loanDueDate
@@ -125,8 +125,8 @@ export function MultipleInterestManager({
       
       // Only update if periods actually changed
       const periodsChanged = 
-        newPeriods.length !==periods.length ||
-        newPeriods.some((np, idx) => np.dueDate !==periods[idx]?.dueDate);
+        newPeriods.length !== periods.length ||
+        newPeriods.some((np, idx) => np.dueDate !== periods[idx]?.dueDate);
       
       if (periodsChanged) {
         setPeriods(newPeriods);
@@ -139,11 +139,11 @@ export function MultipleInterestManager({
   // This runs in all modes (create, edit, duplicate) because the final period's
   // DatePicker is always disabled and displays loanDueDate — the state must match.
   useEffect(() => {
-    if (mode == 'multiple' && periods.length > 0 && loanDueDate) {
+    if (mode === 'multiple' && periods.length > 0 && loanDueDate) {
       const lastPeriod = periods[periods.length - 1];
-      if (lastPeriod.dueDate !==loanDueDate) {
+      if (lastPeriod.dueDate !== loanDueDate) {
         const updatedPeriods = periods.map((period, index) =>
-          index == periods.length - 1
+          index === periods.length - 1
             ? { ...period, dueDate: loanDueDate }
             : period
         );
@@ -155,12 +155,12 @@ export function MultipleInterestManager({
 
   // Calculate interest amount when rate or amount changes
   useEffect(() => {
-    if (mode == 'multiple') {
+    if (mode === 'multiple') {
       const updatedPeriods = periods.map((period) => {
         const principal = parseFloat(amount) || 0;
         const rate = parseFloat(period.interestRate) || 0;
 
-        if (period.interestType == 'rate' && principal > 0) {
+        if (period.interestType === 'rate' && principal > 0) {
           const fixedAmount = principal * (rate / 100);
           return {
             ...period,
@@ -182,12 +182,12 @@ export function MultipleInterestManager({
 
     // If user manually switches to single mode when auto-mode would suggest multiple,
     // mark that they've overridden the automatic behavior
-    if (newMode == 'single' && sentDate && loanDueDate && 
+    if (newMode === 'single' && sentDate && loanDueDate && 
         isMoreThanOneMonthAndFifteenDays(sentDate, loanDueDate)) {
       setUserOverrodeAutoMode(true);
     }
 
-    if (newMode == 'multiple' && periods.length == 0) {
+    if (newMode === 'multiple' && periods.length === 0) {
       // Generate default periods
       const defaultPeriods = generateDefaultInterestPeriods(
         sentDate,
@@ -225,10 +225,10 @@ export function MultipleInterestManager({
 
   const removePeriod = (id: string) => {
     // Don't allow removing the last period (loan due date)
-    const periodIndex = periods.findIndex((p) => p.id == id);
-    if (periodIndex == periods.length - 1) return;
+    const periodIndex = periods.findIndex((p) => p.id === id);
+    if (periodIndex === periods.length - 1) return;
 
-    const newPeriods = periods.filter((p) => p.id !==id);
+    const newPeriods = periods.filter((p) => p.id !== id);
     setPeriods(newPeriods);
     onPeriodsChange(newPeriods);
   };
@@ -239,21 +239,21 @@ export function MultipleInterestManager({
     value: string
   ) => {
     const newPeriods = periods.map((period, index) => {
-      if (period.id !==id) return period;
+      if (period.id !== id) return period;
 
       // Prevent updating due date for the last period (loan due date)
-      if (field == 'dueDate' && index == periods.length - 1) {
+      if (field === 'dueDate' && index === periods.length - 1) {
         return period;
       }
 
       const updatedPeriod = { ...period, [field]: value };
       const principal = parseFloat(amount) || 0;
 
-      if (field == 'interestRate' && principal > 0) {
+      if (field === 'interestRate' && principal > 0) {
         const rate = parseFloat(value) || 0;
         const fixedAmount = principal * (rate / 100);
         updatedPeriod.interestAmount = fixedAmount.toFixed(2);
-      } else if (field == 'interestAmount' && principal > 0) {
+      } else if (field === 'interestAmount' && principal > 0) {
         const fixedAmount = parseFloat(value) || 0;
         const rate = (fixedAmount / principal) * 100;
         updatedPeriod.interestRate = rate.toFixed(2);
@@ -272,7 +272,7 @@ export function MultipleInterestManager({
     let totalInterest = 0;
 
     periods.forEach((period) => {
-      if (period.interestType == 'rate') {
+      if (period.interestType === 'rate') {
         const rate = parseFloat(period.interestRate) || 0;
         totalInterest += principal * (rate / 100);
       } else {
@@ -286,7 +286,7 @@ export function MultipleInterestManager({
     return { principal, totalInterest, avgRate, total };
   };
 
-  const totals = mode == 'multiple' ? calculateTotals() : null;
+  const totals = mode === 'multiple' ? calculateTotals() : null;
 
   const [copySourcePeriod, setCopySourcePeriod] = useState<{
     period: InterestPeriodData;
@@ -299,7 +299,7 @@ export function MultipleInterestManager({
     const sourcePeriod = copySourcePeriod.period;
     const principal = parseFloat(amount) || 0;
     const periodsToUpdate = applyToAll
-      ? periods.filter((p) => p.id !==sourcePeriod.id).map((p) => p.id)
+      ? periods.filter((p) => p.id !== sourcePeriod.id).map((p) => p.id)
       : targetPeriodIds;
 
     const updatedPeriods = periods.map((period) => {
@@ -313,7 +313,7 @@ export function MultipleInterestManager({
         };
 
         // Recalculate interestAmount for rate type based on principal
-        if (updatedPeriod.interestType == 'rate' && principal > 0) {
+        if (updatedPeriod.interestType === 'rate' && principal > 0) {
           const rate = parseFloat(updatedPeriod.interestRate) || 0;
           updatedPeriod.interestAmount = (principal * (rate / 100)).toFixed(2);
         }
@@ -338,9 +338,9 @@ export function MultipleInterestManager({
         value={mode}
         onValueChange={(v) => handleModeChange(v as 'single' | 'multiple')}
       >
-        <TabsList className={`grid w-full grid-cols-2 ${shouldHighlightMultiple && mode == 'multiple' ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
+        <TabsList className={`grid w-full grid-cols-2 ${shouldHighlightMultiple && mode === 'multiple' ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
           <TabsTrigger value="single">One Time Interest</TabsTrigger>
-          <TabsTrigger value="multiple" className={shouldHighlightMultiple && mode == 'multiple' ? 'data-[state=active]:bg-primary data-[state=active]:text-white' : ''}>
+          <TabsTrigger value="multiple" className={shouldHighlightMultiple && mode === 'multiple' ? 'data-[state=active]:bg-primary data-[state=active]:text-white' : ''}>
             Multiple Interest
           </TabsTrigger>
         </TabsList>
@@ -391,7 +391,7 @@ export function MultipleInterestManager({
               Add Period
             </Button>
             {periods.map((period, index) => {
-              const isLastPeriod = index == periods.length - 1;
+              const isLastPeriod = index === periods.length - 1;
               return (
                 <div
                   key={period.id}
@@ -451,7 +451,7 @@ export function MultipleInterestManager({
                       onChange={(newDate) => {
                         // Check if date is already used by another period
                         const isDateUsed = periods.some(
-                          (p) => p.id !==period.id && p.dueDate == newDate
+                          (p) => p.id !== period.id && p.dueDate === newDate
                         );
 
                         if (isDateUsed) {
@@ -577,7 +577,7 @@ export function MultipleInterestManager({
       {/* Copy Period Modal */}
       {copySourcePeriod && (
         <CopyPeriodModal
-          open={copySourcePeriod !==null}
+          open={copySourcePeriod !== null}
           onOpenChange={(open) => {
             if (!open) setCopySourcePeriod(null);
           }}

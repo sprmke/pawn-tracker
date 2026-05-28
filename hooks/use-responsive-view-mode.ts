@@ -77,7 +77,7 @@ export function useResponsiveViewMode<
   const setViewMode = useCallback(
     (mode: T) => {
       // On mobile, don't allow switching to table view
-      if (isMobile && mode == 'table') {
+      if (isMobile && mode === 'table') {
         setViewModeState('cards' as T);
       } else {
         setViewModeState(mode);
@@ -101,7 +101,7 @@ export function useResponsiveViewMode<
     // Only change if we're on mobile and currently set to table
     if (mobile) {
       setViewModeState((current) => 
-        current == 'table' ? (defaultMobileMode as T) : current
+        current === 'table' ? (defaultMobileMode as T) : current
       );
     }
     
@@ -115,7 +115,7 @@ export function useResponsiveViewMode<
       // If switching to mobile and currently on table, switch to cards
       if (mobile) {
         setViewModeState((current) =>
-          current == 'table' ? (defaultMobileMode as T) : current
+          current === 'table' ? (defaultMobileMode as T) : current
         );
       }
     };

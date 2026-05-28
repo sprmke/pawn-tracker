@@ -45,17 +45,17 @@ export function CopyPeriodModal({
     config2: PeriodConfiguration
   ): boolean => {
     // Compare interest type
-    if (config1.interestType !==config2.interestType) {
+    if (config1.interestType !== config2.interestType) {
       return false;
     }
 
     // Compare interest fields based on type
-    if (config1.interestType == 'rate') {
+    if (config1.interestType === 'rate') {
       // For rate type, only compare interestRate
-      return config1.interestRate == config2.interestRate;
+      return config1.interestRate === config2.interestRate;
     } else {
       // For fixed type, only compare interestAmount
-      return config1.interestAmount == config2.interestAmount;
+      return config1.interestAmount === config2.interestAmount;
     }
   };
 
@@ -84,7 +84,7 @@ export function CopyPeriodModal({
 
     availablePeriods.forEach((period) => {
       // Skip the source period itself
-      if (period.id == sourcePeriod.id) return;
+      if (period.id === sourcePeriod.id) return;
 
       const periodConfig = getPeriodConfig(period);
       if (periodConfigurationsMatch(sourceConfig, periodConfig)) {
@@ -126,7 +126,7 @@ export function CopyPeriodModal({
   // Helper to check if a period currently has matching config with source
   const hasMatchingConfig = useCallback(
     (periodId: string): boolean => {
-      const period = availablePeriods.find((p) => p.id == periodId);
+      const period = availablePeriods.find((p) => p.id === periodId);
       if (!period) return false;
 
       const sourceConfig = getSourceConfig();
@@ -141,7 +141,7 @@ export function CopyPeriodModal({
 
     if (isCurrentlyChecked) {
       // Unchecking period - just remove it from checked list
-      setCheckedPeriodIds((prev) => prev.filter((id) => id !==periodId));
+      setCheckedPeriodIds((prev) => prev.filter((id) => id !== periodId));
       // Remove from auto-checked set if it was there
       setAutoCheckedPeriodIds((prev) => {
         const newSet = new Set(prev);
@@ -163,7 +163,7 @@ export function CopyPeriodModal({
     if (checked) {
       // Check all periods except source
       const allPeriodIds = availablePeriods
-        .filter((p) => p.id !==sourcePeriod.id)
+        .filter((p) => p.id !== sourcePeriod.id)
         .map((p) => p.id);
       setCheckedPeriodIds(allPeriodIds);
     } else {
@@ -175,7 +175,7 @@ export function CopyPeriodModal({
   };
 
   const handleCopy = () => {
-    if (checkedPeriodIds.length == 0 && !applyToAll) return;
+    if (checkedPeriodIds.length === 0 && !applyToAll) return;
     onCopy(checkedPeriodIds, applyToAll);
     setCheckedPeriodIds([]);
     setApplyToAll(false);
@@ -190,7 +190,7 @@ export function CopyPeriodModal({
 
   const sourceConfig = getSourceConfig();
   const sourceDisplayValue =
-    sourceConfig.interestType == 'rate'
+    sourceConfig.interestType === 'rate'
       ? formatPercentage(parseFloat(sourceConfig.interestRate || '0'))
       : formatCurrency(parseFloat(sourceConfig.interestAmount || '0'));
 
@@ -223,7 +223,7 @@ export function CopyPeriodModal({
 
           <div className="space-y-2">
             <Label className="text-sm font-semibold">Select Periods</Label>
-            {availablePeriods.length == 0 ? (
+            {availablePeriods.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
                 No other periods available to copy to
               </p>
@@ -232,14 +232,14 @@ export function CopyPeriodModal({
                 <div className="space-y-3">
                   {availablePeriods.map((period, index) => {
                     // Skip the source period
-                    if (period.id == sourcePeriod.id) return null;
+                    if (period.id === sourcePeriod.id) return null;
 
                     const isChecked = checkedPeriodIds.includes(period.id);
                     const currentlyMatches = hasMatchingConfig(period.id);
 
                     const periodConfig = getPeriodConfig(period);
                     const periodDisplayValue =
-                      periodConfig.interestType == 'rate'
+                      periodConfig.interestType === 'rate'
                         ? formatPercentage(
                             parseFloat(periodConfig.interestRate || '0')
                           )
@@ -264,7 +264,7 @@ export function CopyPeriodModal({
                           <div className="flex items-center gap-2">
                             <span>
                               Period {index + 1}
-                              {index == availablePeriods.length - 1
+                              {index === availablePeriods.length - 1
                                 ? ' (Final)'
                                 : ''}
                             </span>
@@ -295,13 +295,13 @@ export function CopyPeriodModal({
             <Button
               type="button"
               onClick={handleCopy}
-              disabled={checkedPeriodIds.length == 0 && !applyToAll}
+              disabled={checkedPeriodIds.length === 0 && !applyToAll}
             >
               <Copy className="mr-2 h-4 w-4" />
               Copy to{' '}
               {applyToAll
                 ? 'all periods'
-                : `${checkedPeriodIds.length} period${checkedPeriodIds.length !==1 ? 's' : ''}`}
+                : `${checkedPeriodIds.length} period${checkedPeriodIds.length !== 1 ? 's' : ''}`}
             </Button>
           </div>
         </div>

@@ -103,7 +103,7 @@ function calculateRecurringDates(
         break;
       case 'every-1.5-months':
         currentDate.setMonth(currentDate.getMonth() + Math.floor(i * 1.5));
-        currentDate.setDate(currentDate.getDate() + (i % 2 == 1 ? 15 : 0));
+        currentDate.setDate(currentDate.getDate() + (i % 2 === 1 ? 15 : 0));
         break;
       case 'every-2-months':
         currentDate.setMonth(currentDate.getMonth() + i * 2);
@@ -285,7 +285,7 @@ function TransactionEntryCard({
                   <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
                     Preview — {recurringDates.length} transaction
-                    {recurringDates.length !==1 ? 's' : ''}
+                    {recurringDates.length !== 1 ? 's' : ''}
                   </p>
                   <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
                     {recurringDates.map((item, i) => (
@@ -302,12 +302,12 @@ function TransactionEntryCard({
                         </span>
                         <span
                           className={
-                            entry.direction == 'In'
+                            entry.direction === 'In'
                               ? 'text-emerald-600 font-medium'
                               : 'text-rose-600 font-medium'
                           }
                         >
-                          {entry.direction == 'In' ? '+' : '-'}
+                          {entry.direction === 'In' ? '+' : '-'}
                           {formatCurrency(parseFloat(entry.amount) || 0)}
                         </span>
                       </div>
@@ -373,7 +373,7 @@ export function TransactionForm({
 
   const handleEntryChange = (id: string, field: keyof TransactionEntry, value: any) => {
     setEntries((prev) =>
-      prev.map((e) => (e.id == id ? { ...e, [field]: value } : e)),
+      prev.map((e) => (e.id === id ? { ...e, [field]: value } : e)),
     );
     // Clear error for this field on change
     if (entryErrors[id]?.[field]) {
@@ -394,7 +394,7 @@ export function TransactionForm({
 
 
   const handleRemoveEntry = (id: string) => {
-    setEntries((prev) => prev.filter((e) => e.id !==id));
+    setEntries((prev) => prev.filter((e) => e.id !== id));
     setEntryErrors((prev) => {
       const next = { ...prev };
       delete next[id];
@@ -418,7 +418,7 @@ export function TransactionForm({
   };
 
   const handleRemoveInvestor = (id: string) => {
-    setSelectedInvestorIds((prev) => prev.filter((v) => v !==id));
+    setSelectedInvestorIds((prev) => prev.filter((v) => v !== id));
   };
 
   const validate = (): boolean => {
@@ -440,7 +440,7 @@ export function TransactionForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (selectedInvestorIds.length == 0) {
+    if (selectedInvestorIds.length === 0) {
       toast.error('Please select at least one investor');
       return;
     }
@@ -463,14 +463,14 @@ export function TransactionForm({
 
           if (entry.isRecurring) {
             const dates = calculateRecurringDates(entry);
-            if (dates.length == 0) {
+            if (dates.length === 0) {
               toast.error(`Entry "${entry.name}": Please configure recurring settings`);
               setIsSubmitting(false);
               return;
             }
             let runningBalance = 0;
             dates.forEach((dateInfo, index) => {
-              runningBalance += entry.direction == 'In' ? amount : -amount;
+              runningBalance += entry.direction === 'In' ? amount : -amount;
               transactionsToCreate.push({
                 investorId,
                 date: dateInfo.date.toISOString(),
@@ -483,7 +483,7 @@ export function TransactionForm({
               });
             });
           } else {
-            const balance = entry.direction == 'In' ? amount : -amount;
+            const balance = entry.direction === 'In' ? amount : -amount;
             transactionsToCreate.push({
               investorId,
               date: new Date(entry.transactionDate).toISOString(),
@@ -509,7 +509,7 @@ export function TransactionForm({
       );
 
       toast.success(
-        `Successfully created ${transactionsToCreate.length} transaction${transactionsToCreate.length !==1 ? 's' : ''}!`,
+        `Successfully created ${transactionsToCreate.length} transaction${transactionsToCreate.length !== 1 ? 's' : ''}!`,
       );
 
       if (onSuccess) {
@@ -592,7 +592,7 @@ export function TransactionForm({
           {selectedInvestorIds.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {selectedInvestorIds.map((id) => {
-                const inv = investors.find((i) => i.id.toString() == id);
+                const inv = investors.find((i) => i.id.toString() === id);
                 if (!inv) return null;
                 return (
                   <span
@@ -658,7 +658,7 @@ export function TransactionForm({
         <Button type="submit" disabled={isSubmitting} className="flex-1 w-full">
           {isSubmitting
             ? 'Creating...'
-            : `Create ${totalTransactionCount > 1 ? `${totalTransactionCount} ` : ''}Transaction${totalTransactionCount !==1 ? 's' : ''}`}
+            : `Create ${totalTransactionCount > 1 ? `${totalTransactionCount} ` : ''}Transaction${totalTransactionCount !== 1 ? 's' : ''}`}
         </Button>
       </div>
 

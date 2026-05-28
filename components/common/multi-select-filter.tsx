@@ -39,7 +39,7 @@ export function MultiSelectFilter({
 
   const handleToggle = (value: string) => {
     if (selected.includes(value)) {
-      onChange(selected.filter((v) => v !==value));
+      onChange(selected.filter((v) => v !== value));
     } else {
       onChange([...selected, value]);
     }
@@ -51,7 +51,7 @@ export function MultiSelectFilter({
   };
 
   const handleSelectAll = () => {
-    if (selected.length == options.length) {
+    if (selected.length === options.length) {
       onChange([]);
     } else {
       onChange(options.map((o) => o.value));
@@ -59,11 +59,11 @@ export function MultiSelectFilter({
   };
 
   const getDisplayText = () => {
-    if (selected.length == 0) {
+    if (selected.length === 0) {
       return allLabel;
     }
-    if (selected.length == 1) {
-      return options.find((o) => o.value == selected[0])?.label || selected[0];
+    if (selected.length === 1) {
+      return options.find((o) => o.value === selected[0])?.label || selected[0];
     }
     return `${selected.length} selected`;
   };
@@ -107,7 +107,7 @@ export function MultiSelectFilter({
               onClick={handleSelectAll}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              {selected.length == options.length ? 'Clear All' : 'Select All'}
+              {selected.length === options.length ? 'Clear All' : 'Select All'}
             </button>
           </div>
 

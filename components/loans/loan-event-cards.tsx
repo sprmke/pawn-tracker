@@ -98,7 +98,7 @@ export function LoanSentEventCard({
         <p className={`font-bold text-gray-900 truncate ${classes.title}`}>
           {loan.loanName}
         </p>
-        <div className={size == 'sm' ? 'space-y-1' : 'pl-8 space-y-1'}>
+        <div className={size === 'sm' ? 'space-y-1' : 'pl-8 space-y-1'}>
           <div className={`text-gray-700 space-y-0.5 ${classes.investor}`}>
             {investors.map((inv, idx) => (
               <div key={idx} className="flex items-start gap-1">
@@ -189,11 +189,11 @@ export function LoanDueEventCard({
         <p className={`font-bold text-gray-900 truncate ${classes.title}`}>
           {loan.loanName}
         </p>
-        <div className={size == 'sm' ? 'space-y-1' : 'pl-8 space-y-1'}>
+        <div className={size === 'sm' ? 'space-y-1' : 'pl-8 space-y-1'}>
           <div className={`text-gray-700 space-y-0.5 ${classes.detail}`}>
             <div
               className={`flex items-center ${
-                size == 'sm' ? 'gap-1' : 'justify-between'
+                size === 'sm' ? 'gap-1' : 'justify-between'
               }`}
             >
               <span className="font-medium">Principal:</span>
@@ -203,7 +203,7 @@ export function LoanDueEventCard({
             </div>
             <div
               className={`flex items-center ${
-                size == 'sm' ? 'gap-1' : 'justify-between'
+                size === 'sm' ? 'gap-1' : 'justify-between'
               }`}
             >
               <span className="font-medium">Interest:</span>
@@ -296,7 +296,7 @@ export function LoanInterestDueEventCard({
             </div>
           </div>
         </div>
-        <div className={size == 'sm' ? 'space-y-1' : 'pl-8 space-y-1'}>
+        <div className={size === 'sm' ? 'space-y-1' : 'pl-8 space-y-1'}>
           <div className={`text-gray-700 font-semibold ${classes.detail}`}>
             {investorName}
           </div>
@@ -308,7 +308,7 @@ export function LoanInterestDueEventCard({
           <div className={`text-gray-700 space-y-0.5 ${classes.detail}`}>
             <div
               className={`flex items-center ${
-                size == 'sm' ? 'gap-1' : 'justify-between'
+                size === 'sm' ? 'gap-1' : 'justify-between'
               }`}
             >
               <span className="font-medium">Principal:</span>
@@ -316,7 +316,7 @@ export function LoanInterestDueEventCard({
             </div>
             <div
               className={`flex items-center ${
-                size == 'sm' ? 'gap-1' : 'justify-between'
+                size === 'sm' ? 'gap-1' : 'justify-between'
               }`}
             >
               <span className="font-medium">Interest:</span>

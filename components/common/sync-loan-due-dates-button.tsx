@@ -38,7 +38,7 @@ export function SyncLoanDueDatesButton({
 
       setJustDone(true);
 
-      if (data.updatedCount == 0) {
+      if (data.updatedCount === 0) {
         toast.success('Due dates already up to date', {
           description: 'All loan due dates match their last interest period.',
         });

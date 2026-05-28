@@ -129,7 +129,7 @@ export async function POST(request: Request) {
       amount: String(inv.amount),
       interestRate: inv.interestRate ? String(inv.interestRate) : '0',
       // Explicitly check for 'fixed' to ensure proper enum value is saved
-      interestType: inv.interestType == 'fixed' ? 'fixed' : 'rate',
+      interestType: inv.interestType === 'fixed' ? 'fixed' : 'rate',
       sentDate: new Date(inv.sentDate),
       isPaid: inv.isPaid ?? true, // Default to true for backward compatibility
       hasMultipleInterest: inv.hasMultipleInterest || false,
@@ -164,7 +164,7 @@ export async function POST(request: Request) {
           dueDate: new Date(period.dueDate),
           interestRate: String(period.interestRate),
           // Explicitly check for 'fixed' to ensure proper enum value is saved
-          interestType: period.interestType == 'fixed' ? 'fixed' : 'rate',
+          interestType: period.interestType === 'fixed' ? 'fixed' : 'rate',
         }));
 
         await db.insert(interestPeriods).values(periodData);

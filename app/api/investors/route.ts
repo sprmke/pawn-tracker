@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const simple = request.nextUrl.searchParams.get('simple') == 'true';
+    const simple = request.nextUrl.searchParams.get('simple') === 'true';
 
     if (simple) {
       const ownedInvestors = await db.query.investors.findMany({

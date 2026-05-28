@@ -56,7 +56,7 @@ export function CardPagination<T>({
     }
   };
 
-  if (items.length == 0) {
+  if (items.length === 0) {
     return null;
   }
 

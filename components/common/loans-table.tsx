@@ -29,7 +29,7 @@ export function LoansTable({
   // Helper to get investor-specific loan investors or all if no investorId
   const getRelevantLoanInvestors = (loan: LoanWithInvestors) => {
     if (investorId) {
-      return loan.loanInvestors.filter((li) => li.investor.id == investorId);
+      return loan.loanInvestors.filter((li) => li.investor.id === investorId);
     }
     return loan.loanInvestors;
   };
@@ -109,7 +109,7 @@ export function LoansTable({
         );
         const aValue = aDates.length > 0 ? Math.min(...aDates) : 0;
         const bValue = bDates.length > 0 ? Math.min(...bDates) : 0;
-        return direction == 'asc' ? aValue - bValue : bValue - aValue;
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => {
         // Get unique sent dates
@@ -140,7 +140,7 @@ export function LoansTable({
               const dateStr = date.toISOString().split('T')[0];
               return loan.loanInvestors.some(
                 (li) =>
-                  new Date(li.sentDate).toISOString().split('T')[0] ==
+                  new Date(li.sentDate).toISOString().split('T')[0] ===
                     dateStr && !li.isPaid,
               );
             }}
@@ -159,7 +159,7 @@ export function LoansTable({
       sortFn: (a, b, direction) => {
         const aTime = new Date(a.dueDate).getTime();
         const bTime = new Date(b.dueDate).getTime();
-        return direction == 'asc' ? aTime - bTime : bTime - aTime;
+        return direction === 'asc' ? aTime - bTime : bTime - aTime;
       },
       cell: (loan) => {
         // Collect all unique due dates
@@ -207,7 +207,7 @@ export function LoansTable({
       sortFn: (a, b, direction) => {
         const aValue = getStats(a).totalPrincipal;
         const bValue = getStats(b).totalPrincipal;
-        return direction == 'asc' ? aValue - bValue : bValue - aValue;
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
         <span className="font-semibold">
@@ -224,7 +224,7 @@ export function LoansTable({
       sortFn: (a, b, direction) => {
         const aValue = getStats(a).averageRate;
         const bValue = getStats(b).averageRate;
-        return direction == 'asc' ? aValue - bValue : bValue - aValue;
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => <span>{getStats(loan).averageRate.toFixed(2)}%</span>,
     },
@@ -237,7 +237,7 @@ export function LoansTable({
       sortFn: (a, b, direction) => {
         const aValue = getStats(a).totalInterest;
         const bValue = getStats(b).totalInterest;
-        return direction == 'asc' ? aValue - bValue : bValue - aValue;
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
         <span className="font-medium">
@@ -254,7 +254,7 @@ export function LoansTable({
       sortFn: (a, b, direction) => {
         const aValue = getStats(a).total;
         const bValue = getStats(b).total;
-        return direction == 'asc' ? aValue - bValue : bValue - aValue;
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
         <span className="font-bold">
@@ -273,7 +273,7 @@ export function LoansTable({
       sortFn: (a, b, direction) => {
         const aValue = a.freeLotSqm || 0;
         const bValue = b.freeLotSqm || 0;
-        return direction == 'asc' ? aValue - bValue : bValue - aValue;
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
         <span>{loan.freeLotSqm ? `${loan.freeLotSqm} sqm` : '-'}</span>

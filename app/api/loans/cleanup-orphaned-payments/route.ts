@@ -51,9 +51,9 @@ export async function POST() {
         if (!li.hasMultipleInterest || !li.interestPeriods?.length) continue;
 
         const completedPeriods = li.interestPeriods.filter(
-          (p) => p.status == 'Completed',
+          (p) => p.status === 'Completed',
         );
-        if (completedPeriods.length == 0) continue;
+        if (completedPeriods.length === 0) continue;
 
         // Which periods already have a linked payment?
         const linkedPeriodIds = new Set(
@@ -65,11 +65,11 @@ export async function POST() {
         const missingPeriods = completedPeriods.filter(
           (p) => !linkedPeriodIds.has(p.id),
         );
-        if (missingPeriods.length == 0) continue;
+        if (missingPeriods.length === 0) continue;
 
         const investorPrincipal = parseFloat(li.amount) || 0;
         const principalBase =
-          investorPrincipal == 0 ? loanTotalPrincipal : investorPrincipal;
+          investorPrincipal === 0 ? loanTotalPrincipal : investorPrincipal;
 
         for (const period of missingPeriods) {
           const interestAmount = calculateInterest(

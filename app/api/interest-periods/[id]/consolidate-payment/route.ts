@@ -35,11 +35,11 @@ export async function POST(
     const rawAmt = body.amount;
     const receivedDateRaw = body.receivedDate;
     const parsedAmount =
-      rawAmt == '' || rawAmt == null || rawAmt == undefined
+      rawAmt === '' || rawAmt === null || rawAmt === undefined
         ? NaN
         : parseFloat(String(rawAmt));
     const dateStr =
-      receivedDateRaw == null || receivedDateRaw == undefined
+      receivedDateRaw === null || receivedDateRaw === undefined
         ? ''
         : String(receivedDateRaw).trim();
 
@@ -81,7 +81,7 @@ export async function POST(
       );
     }
 
-    if (period.loanInvestor.loan.userId !==session.user.id) {
+    if (period.loanInvestor.loan.userId !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -94,7 +94,7 @@ export async function POST(
     );
     const investorPrincipal = parseFloat(period.loanInvestor.amount) || 0;
     const principalBase =
-      investorPrincipal == 0 ? loanTotalPrincipal : investorPrincipal;
+      investorPrincipal === 0 ? loanTotalPrincipal : investorPrincipal;
     const expectedInterest = calculateInterest(
       principalBase,
       period.interestRate,

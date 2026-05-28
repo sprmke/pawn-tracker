@@ -48,7 +48,7 @@ export async function recalculateInterestPeriodStatusFromLinkedPayments(
   );
   const investorPrincipal = parseFloat(period.loanInvestor.amount) || 0;
   const principalBase =
-    investorPrincipal == 0 ? loanTotalPrincipal : investorPrincipal;
+    investorPrincipal === 0 ? loanTotalPrincipal : investorPrincipal;
   const expectedInterest = calculateInterest(
     principalBase,
     period.interestRate,
@@ -87,7 +87,7 @@ export async function syncLoanStatusFromInterestPeriods(loanId: number) {
     if (li.hasMultipleInterest && li.interestPeriods) {
       for (const p of li.interestPeriods) {
         const periodDueDate = new Date(p.dueDate);
-        if (p.status == 'Pending' && now > periodDueDate) {
+        if (p.status === 'Pending' && now > periodDueDate) {
           await db
             .update(interestPeriods)
             .set({ status: 'Overdue', updatedAt: now })
@@ -111,13 +111,13 @@ export async function syncLoanStatusFromInterestPeriods(loanId: number) {
     }
   });
 
-  const hasOverduePeriod = allPeriods.some((p) => p.status == 'Overdue');
+  const hasOverduePeriod = allPeriods.some((p) => p.status === 'Overdue');
   const hasIncompletePeriod = allPeriods.some(
-    (p) => p.status == 'Incomplete',
+    (p) => p.status === 'Incomplete',
   );
   const allPeriodsCompleted =
     allPeriods.length > 0 &&
-    allPeriods.every((p) => p.status == 'Completed');
+    allPeriods.every((p) => p.status === 'Completed');
 
   const currentLoan = await db.query.loans.findFirst({
     where: eq(loans.id, loanId),
@@ -136,14 +136,14 @@ export async function syncLoanStatusFromInterestPeriods(loanId: number) {
       newLoanStatus = 'Completed';
     }
   } else if (
-    currentLoan.status == 'Overdue' &&
+    currentLoan.status === 'Overdue' &&
     !hasOverduePeriod &&
     !hasIncompletePeriod
   ) {
     newLoanStatus = 'Fully Funded';
   }
 
-  if (newLoanStatus !==currentLoan.status) {
+  if (newLoanStatus !== currentLoan.status) {
     await db
       .update(loans)
       .set({ status: newLoanStatus, updatedAt: new Date() })

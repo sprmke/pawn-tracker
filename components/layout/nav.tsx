@@ -104,7 +104,7 @@ export function Nav({
       if (item.subItems) {
         const isActiveSubItem = item.subItems.some(
           (subItem) =>
-            pathname == subItem.href ||
+            pathname === subItem.href ||
             pathname.startsWith(subItem.href + '/'),
         );
         if (isActiveSubItem) {
@@ -228,7 +228,7 @@ export function Nav({
                       <div className="ml-11 mt-1 space-y-1">
                         {item.subItems!.map((subItem) => {
                           const isActive =
-                            pathname == subItem.href ||
+                            pathname === subItem.href ||
                             pathname.startsWith(subItem.href + '/');
                           return (
                             <Link
@@ -252,8 +252,8 @@ export function Nav({
               }
 
               const isActive =
-                pathname == item.href ||
-                (item.href !=='/' && pathname.startsWith(item.href! + '/'));
+                pathname === item.href ||
+                (item.href !== '/' && pathname.startsWith(item.href! + '/'));
               return (
                 <Link
                   key={item.href}
@@ -414,7 +414,7 @@ export function Nav({
                         <div className="ml-11 mt-1 space-y-0.5">
                           {item.subItems!.map((subItem) => {
                             const isActive =
-                              pathname == subItem.href ||
+                              pathname === subItem.href ||
                               pathname.startsWith(subItem.href + '/');
                             return (
                               <Link
@@ -438,8 +438,8 @@ export function Nav({
                 }
 
                 const isActive =
-                  pathname == item.href ||
-                  (item.href !=='/' && pathname.startsWith(item.href! + '/'));
+                  pathname === item.href ||
+                  (item.href !== '/' && pathname.startsWith(item.href! + '/'));
                 return (
                   <Link
                     key={item.href}

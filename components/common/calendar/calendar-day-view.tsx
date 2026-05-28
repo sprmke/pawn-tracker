@@ -15,9 +15,9 @@ export function CalendarDayView({ cells, config }: CalendarDayViewProps) {
   const isToday = (date: Date) => {
     const today = new Date();
     return (
-      date.getDate() == today.getDate() &&
-      date.getMonth() == today.getMonth() &&
-      date.getFullYear() == today.getFullYear()
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
     );
   };
 
@@ -47,7 +47,7 @@ export function CalendarDayView({ cells, config }: CalendarDayViewProps) {
 
           {/* Events List */}
           <div className="space-y-2 md:space-y-3">
-            {cell.events.length == 0 ? (
+            {cell.events.length === 0 ? (
               <div className="text-center py-8 md:py-12 text-muted-foreground text-sm md:text-base">
                 No transactions on this day
               </div>

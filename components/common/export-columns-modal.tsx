@@ -72,8 +72,8 @@ export function ExportColumnsModal<T>({
     await onExport(selectedSections);
   };
 
-  const allSelected = selectedIndices.size == sections.length;
-  const noneSelected = selectedIndices.size == 0;
+  const allSelected = selectedIndices.size === sections.length;
+  const noneSelected = selectedIndices.size === 0;
 
   return (
     <Dialog open={open} onOpenChange={isGenerating ? undefined : onOpenChange}>

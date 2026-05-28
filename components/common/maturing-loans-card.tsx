@@ -36,7 +36,7 @@ export function MaturingLoansCard({
 }: MaturingLoansCardProps) {
   const totalAmount = loans.reduce((sum, loan) => {
     const filteredInvestors = investorId
-      ? loan.loanInvestors.filter((li) => li.investor.id == investorId)
+      ? loan.loanInvestors.filter((li) => li.investor.id === investorId)
       : loan.loanInvestors;
     return sum + calculateAmountDueOnDate(filteredInvestors);
   }, 0);
@@ -61,7 +61,7 @@ export function MaturingLoansCard({
       loadingVariant={loadingVariant}
       onViewAllClick={onViewAllClick}
     >
-      {loans.length == 0 ? (
+      {loans.length === 0 ? (
         <ActivityEmptyState message="No upcoming due dates" />
       ) : (
         <div className="space-y-3">
@@ -119,7 +119,7 @@ export function MaturingLoansCard({
           <div className={activityListScrollClassName}>
             {loans.map((loan) => {
               const filteredInvestors = investorId
-                ? loan.loanInvestors.filter((li) => li.investor.id == investorId)
+                ? loan.loanInvestors.filter((li) => li.investor.id === investorId)
                 : loan.loanInvestors;
               const amount = calculateAmountDueOnDate(filteredInvestors);
 

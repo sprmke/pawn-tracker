@@ -75,8 +75,8 @@ export function LoanDetailClient({ loan, investors }: LoanDetailClientProps) {
     router.refresh();
   };
 
-  const isOverdue = loan.status == 'Overdue';
-  const isPartiallyFunded = loan.status == 'Partially Funded';
+  const isOverdue = loan.status === 'Overdue';
+  const isPartiallyFunded = loan.status === 'Partially Funded';
 
   if (isEditing) {
     return (

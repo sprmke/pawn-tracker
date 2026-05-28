@@ -43,7 +43,7 @@ const nextAuth = NextAuth({
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const isOnAuth = nextUrl.pathname.startsWith('/auth');
-      const isOnPublic = nextUrl.pathname == '/';
+      const isOnPublic = nextUrl.pathname === '/';
 
       if (isOnAuth || isOnPublic) {
         return true;

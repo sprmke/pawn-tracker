@@ -147,9 +147,9 @@ export default function LoansPage() {
     const statusParams = searchParams.getAll('status');
 
     if (
-      viewParam == 'table' ||
-      viewParam == 'cards' ||
-      viewParam == 'calendar'
+      viewParam === 'table' ||
+      viewParam === 'cards' ||
+      viewParam === 'calendar'
     ) {
       setViewMode(viewParam);
     }
@@ -170,8 +170,8 @@ export default function LoansPage() {
   useEffect(() => {
     if (
       !loading &&
-      loansList.length == 0 &&
-      (viewMode == 'cards' || viewMode == 'calendar')
+      loansList.length === 0 &&
+      (viewMode === 'cards' || viewMode === 'calendar')
     ) {
       setViewMode('table');
     }
@@ -196,16 +196,16 @@ export default function LoansPage() {
 
       if (!response.ok) {
         // Session missing/expired — avoid noisy console; API returns JSON body.
-        if (response.status == 401) {
+        if (response.status === 401) {
           setLoans([]);
           return;
         }
         const errMsg =
           data &&
-          typeof data == 'object' &&
-          data !==null &&
+          typeof data === 'object' &&
+          data !== null &&
           'error' in data &&
-          typeof (data as { error: unknown }).error == 'string'
+          typeof (data as { error: unknown }).error === 'string'
             ? (data as { error: string }).error
             : '';
         console.warn(
@@ -288,8 +288,8 @@ export default function LoansPage() {
   };
 
   const handleSort = (field: SortField) => {
-    if (sortField == field) {
-      setSortDirection(sortDirection == 'asc' ? 'desc' : 'asc');
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
       setSortDirection('asc');
@@ -317,19 +317,19 @@ export default function LoansPage() {
   };
 
   const hasActiveAmountFilters =
-    minPrincipal !=='' ||
-    maxPrincipal !=='' ||
-    minAvgRate !=='' ||
-    maxAvgRate !=='' ||
-    minInterest !=='' ||
-    maxInterest !=='' ||
-    minTotalAmount !=='' ||
-    maxTotalAmount !=='' ||
-    freeLotFilter !=='all' ||
+    minPrincipal !== '' ||
+    maxPrincipal !== '' ||
+    minAvgRate !== '' ||
+    maxAvgRate !== '' ||
+    minInterest !== '' ||
+    maxInterest !== '' ||
+    minTotalAmount !== '' ||
+    maxTotalAmount !== '' ||
+    freeLotFilter !== 'all' ||
     selectedInvestors.length > 0;
 
   const hasActiveFilters =
-    searchQuery !=='' ||
+    searchQuery !== '' ||
     statusFilter.length > 0 ||
     typeFilter.length > 0 ||
     hasActiveAmountFilters ||
@@ -356,9 +356,9 @@ export default function LoansPage() {
     }
 
     // Free lot filter
-    if (freeLotFilter !=='all') {
-      if (freeLotFilter == 'with' && !loan.freeLotSqm) return false;
-      if (freeLotFilter == 'without' && loan.freeLotSqm) return false;
+    if (freeLotFilter !== 'all') {
+      if (freeLotFilter === 'with' && !loan.freeLotSqm) return false;
+      if (freeLotFilter === 'without' && loan.freeLotSqm) return false;
     }
 
     // Investor filter (multiple selection)
@@ -373,7 +373,7 @@ export default function LoansPage() {
     if (dueDateFilter) {
       // Check if the loan's main due date matches
       const loanDueDateStr = toLocalDateString(loan.dueDate);
-      let hasMatchingDueDate = loanDueDateStr == dueDateFilter;
+      let hasMatchingDueDate = loanDueDateStr === dueDateFilter;
 
       // Also check interest period due dates
       if (!hasMatchingDueDate) {
@@ -381,7 +381,7 @@ export default function LoansPage() {
           if (li.hasMultipleInterest && li.interestPeriods) {
             return li.interestPeriods.some((period) => {
               const periodDueDateStr = toLocalDateString(period.dueDate);
-              return periodDueDateStr == dueDateFilter;
+              return periodDueDateStr === dueDateFilter;
             });
           }
           return false;
@@ -398,34 +398,34 @@ export default function LoansPage() {
     const totalAmount = getTotalAmount(loan);
 
     // Principal range filter
-    if (minPrincipal !=='' && totalPrincipal < parseFloat(minPrincipal)) {
+    if (minPrincipal !== '' && totalPrincipal < parseFloat(minPrincipal)) {
       return false;
     }
-    if (maxPrincipal !=='' && totalPrincipal > parseFloat(maxPrincipal)) {
+    if (maxPrincipal !== '' && totalPrincipal > parseFloat(maxPrincipal)) {
       return false;
     }
 
     // Average rate range filter
-    if (minAvgRate !=='' && avgRate < parseFloat(minAvgRate)) {
+    if (minAvgRate !== '' && avgRate < parseFloat(minAvgRate)) {
       return false;
     }
-    if (maxAvgRate !=='' && avgRate > parseFloat(maxAvgRate)) {
+    if (maxAvgRate !== '' && avgRate > parseFloat(maxAvgRate)) {
       return false;
     }
 
     // Interest range filter
-    if (minInterest !=='' && totalInterest < parseFloat(minInterest)) {
+    if (minInterest !== '' && totalInterest < parseFloat(minInterest)) {
       return false;
     }
-    if (maxInterest !=='' && totalInterest > parseFloat(maxInterest)) {
+    if (maxInterest !== '' && totalInterest > parseFloat(maxInterest)) {
       return false;
     }
 
     // Total amount range filter
-    if (minTotalAmount !=='' && totalAmount < parseFloat(minTotalAmount)) {
+    if (minTotalAmount !== '' && totalAmount < parseFloat(minTotalAmount)) {
       return false;
     }
-    if (maxTotalAmount !=='' && totalAmount > parseFloat(maxTotalAmount)) {
+    if (maxTotalAmount !== '' && totalAmount > parseFloat(maxTotalAmount)) {
       return false;
     }
 
@@ -517,8 +517,8 @@ export default function LoansPage() {
         return 0;
     }
 
-    if (aValue < bValue) return sortDirection == 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection == 'asc' ? 1 : -1;
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
@@ -781,11 +781,11 @@ export default function LoansPage() {
                   <Select value="placeholder">
                     <SelectTrigger className="w-full h-9">
                       <span className="text-sm">
-                        {selectedInvestors.length == 0
+                        {selectedInvestors.length === 0
                           ? 'All Investors'
-                          : selectedInvestors.length == 1
+                          : selectedInvestors.length === 1
                             ? investors.find(
-                                (i) => i.id == selectedInvestors[0],
+                                (i) => i.id === selectedInvestors[0],
                               )?.name
                             : `${selectedInvestors.length} investors selected`}
                       </span>
@@ -818,7 +818,7 @@ export default function LoansPage() {
                                 setSelectedInvestors((prev) => {
                                   if (prev.includes(investor.id)) {
                                     return prev.filter(
-                                      (id) => id !==investor.id,
+                                      (id) => id !== investor.id,
                                     );
                                   } else {
                                     return [...prev, investor.id];
@@ -890,7 +890,7 @@ export default function LoansPage() {
         )}
       </div>
 
-      {loansList.length == 0 ? (
+      {loansList.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground mb-4">No loans found</p>
@@ -902,7 +902,7 @@ export default function LoansPage() {
             </Link>
           </CardContent>
         </Card>
-      ) : filteredLoans.length == 0 ? (
+      ) : filteredLoans.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground mb-4">
@@ -916,7 +916,7 @@ export default function LoansPage() {
         </Card>
       ) : (
         <>
-          {viewMode == 'calendar' && (
+          {viewMode === 'calendar' && (
             <>
               <LoanCalendarView
                 loans={filteredLoans}
@@ -933,7 +933,7 @@ export default function LoansPage() {
             </>
           )}
 
-          {viewMode == 'cards' && (
+          {viewMode === 'cards' && (
             <CardPagination
               items={sortedLoans}
               itemsPerPage={itemsPerPage}
@@ -1051,7 +1051,7 @@ export default function LoansPage() {
                                       (li) =>
                                         new Date(li.sentDate)
                                           .toISOString()
-                                          .split('T')[0] == dateStr &&
+                                          .split('T')[0] === dateStr &&
                                         !li.isPaid,
                                     );
                                   }}
@@ -1135,7 +1135,7 @@ export default function LoansPage() {
             />
           )}
 
-          {viewMode == 'table' && (
+          {viewMode === 'table' && (
             <LoansTable
               loans={sortedLoans}
               itemsPerPage={itemsPerPage}
@@ -1149,7 +1149,7 @@ export default function LoansPage() {
       )}
 
       {/* Quick View Modal for Cards and Table */}
-      {(viewMode == 'cards' || viewMode == 'table') && (
+      {(viewMode === 'cards' || viewMode === 'table') && (
         <LoanDetailModal
           loan={selectedLoan}
           open={isModalOpen}

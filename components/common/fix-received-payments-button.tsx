@@ -38,7 +38,7 @@ export function FixReceivedPaymentsButton({
 
       setJustDone(true);
 
-      if (data.createdPayments == 0 && data.orphanedPaymentsRemoved == 0) {
+      if (data.createdPayments === 0 && data.orphanedPaymentsRemoved === 0) {
         toast.success('All payments are consistent', {
           description: 'No missing or orphaned received payments found.',
         });

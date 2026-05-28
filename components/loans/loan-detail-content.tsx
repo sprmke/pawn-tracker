@@ -95,7 +95,7 @@ export function LoanDetailContent({
       />
 
       {/* Overdue Interest Computation */}
-      {loan.status == 'Overdue' && (
+      {loan.status === 'Overdue' && (
         <OverdueInterestCard loan={loan} onApply={() => onRefresh?.()} />
       )}
 
@@ -181,7 +181,7 @@ export function LoanDetailContent({
               /** Required so each period can show paid/remaining and payment rows */
               interestPeriodId: rp.interestPeriodId ?? null,
               receivedDate:
-                typeof rp.receivedDate == 'string'
+                typeof rp.receivedDate === 'string'
                   ? rp.receivedDate
                   : rp.receivedDate instanceof Date
                     ? rp.receivedDate.toISOString().slice(0, 10)

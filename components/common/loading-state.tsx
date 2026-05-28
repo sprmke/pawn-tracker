@@ -41,7 +41,7 @@ export function LoadingState({
   variant = 'default',
   size = 'md',
 }: LoadingStateProps) {
-  if (variant == 'minimal') {
+  if (variant === 'minimal') {
     return (
       <div className="flex items-center justify-center gap-3 py-8">
         <Spinner size={size} />
@@ -50,7 +50,7 @@ export function LoadingState({
     );
   }
 
-  if (variant == 'fullscreen') {
+  if (variant === 'fullscreen') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
         <div className="flex flex-col items-center gap-4 rounded-lg bg-card p-8 shadow-lg border">

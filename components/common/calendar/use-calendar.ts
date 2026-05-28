@@ -31,9 +31,9 @@ export function useCalendar({ events }: UseCalendarProps) {
   const isToday = (date: Date) => {
     const today = new Date();
     return (
-      date.getDate() == today.getDate() &&
-      date.getMonth() == today.getMonth() &&
-      date.getFullYear() == today.getFullYear()
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
     );
   };
 
@@ -41,14 +41,14 @@ export function useCalendar({ events }: UseCalendarProps) {
   const calendarData = useMemo(() => {
     const grid: CalendarCell[] = [];
 
-    if (viewMode == 'day') {
+    if (viewMode === 'day') {
       // Day view - show only the current day
       grid.push({
         date: new Date(currentDate),
         isCurrentMonth: true,
         events: [],
       });
-    } else if (viewMode == 'week') {
+    } else if (viewMode === 'week') {
       // Week view - show 7 days starting from Sunday
       const weekStart = new Date(currentDate);
       weekStart.setDate(currentDate.getDate() - currentDate.getDay());
@@ -58,7 +58,7 @@ export function useCalendar({ events }: UseCalendarProps) {
         date.setDate(weekStart.getDate() + i);
         grid.push({
           date,
-          isCurrentMonth: date.getMonth() == currentDate.getMonth(),
+          isCurrentMonth: date.getMonth() === currentDate.getMonth(),
           events: [],
         });
       }
@@ -116,7 +116,7 @@ export function useCalendar({ events }: UseCalendarProps) {
         const eventDate = new Date(event.date);
         eventDate.setHours(0, 0, 0, 0);
 
-        if (cellDate.getTime() == eventDate.getTime()) {
+        if (cellDate.getTime() === eventDate.getTime()) {
           cell.events.push(event);
         }
       });
@@ -126,7 +126,7 @@ export function useCalendar({ events }: UseCalendarProps) {
   }, [currentDate, events, viewMode]);
 
   const goToPreviousPeriod = () => {
-    if (viewMode == 'day') {
+    if (viewMode === 'day') {
       setCurrentDate(
         new Date(
           currentDate.getFullYear(),
@@ -134,7 +134,7 @@ export function useCalendar({ events }: UseCalendarProps) {
           currentDate.getDate() - 1
         )
       );
-    } else if (viewMode == 'week') {
+    } else if (viewMode === 'week') {
       setCurrentDate(
         new Date(
           currentDate.getFullYear(),
@@ -150,7 +150,7 @@ export function useCalendar({ events }: UseCalendarProps) {
   };
 
   const goToNextPeriod = () => {
-    if (viewMode == 'day') {
+    if (viewMode === 'day') {
       setCurrentDate(
         new Date(
           currentDate.getFullYear(),
@@ -158,7 +158,7 @@ export function useCalendar({ events }: UseCalendarProps) {
           currentDate.getDate() + 1
         )
       );
-    } else if (viewMode == 'week') {
+    } else if (viewMode === 'week') {
       setCurrentDate(
         new Date(
           currentDate.getFullYear(),
@@ -178,14 +178,14 @@ export function useCalendar({ events }: UseCalendarProps) {
   };
 
   const getViewTitle = () => {
-    if (viewMode == 'day') {
+    if (viewMode === 'day') {
       return currentDate.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       });
-    } else if (viewMode == 'week') {
+    } else if (viewMode === 'week') {
       const weekStart = new Date(currentDate);
       weekStart.setDate(currentDate.getDate() - currentDate.getDay());
       const weekEnd = new Date(weekStart);

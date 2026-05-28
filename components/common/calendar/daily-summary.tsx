@@ -25,24 +25,24 @@ export function DailySummary({
 
   // Calculate total OUT (sent + transaction Out)
   const totalOut = events.reduce((sum, e) => {
-    if (e.type == 'sent') {
+    if (e.type === 'sent') {
       return sum + (e as CalendarEventSent).totalAmount;
-    } else if (e.type == 'transaction') {
+    } else if (e.type === 'transaction') {
       const txEvent = e as CalendarEventTransaction;
-      return txEvent.direction == 'Out' ? sum + txEvent.amount : sum;
+      return txEvent.direction === 'Out' ? sum + txEvent.amount : sum;
     }
     return sum;
   }, 0);
 
   // Calculate total IN (due + interest_due + transaction In)
   const totalIn = events.reduce((sum, e) => {
-    if (e.type == 'due') {
+    if (e.type === 'due') {
       return sum + (e as CalendarEventDue).totalAmount;
-    } else if (e.type == 'interest_due') {
+    } else if (e.type === 'interest_due') {
       return sum + (e as CalendarEventInterestDue).totalAmount;
-    } else if (e.type == 'transaction') {
+    } else if (e.type === 'transaction') {
       const txEvent = e as CalendarEventTransaction;
-      return txEvent.direction == 'In' ? sum + txEvent.amount : sum;
+      return txEvent.direction === 'In' ? sum + txEvent.amount : sum;
     }
     return sum;
   }, 0);
@@ -75,11 +75,11 @@ export function DailySummary({
       {totalOut > 0 && (
         <div className="flex items-center justify-between">
           <span className="text-rose-600 dark:text-rose-400 font-semibold">
-            {size == 'lg' ? 'Total Out:' : 'Out:'}
+            {size === 'lg' ? 'Total Out:' : 'Out:'}
           </span>
           <span
             className={`font-bold text-rose-700 dark:text-rose-400 ${
-              size == 'lg' ? 'text-lg' : ''
+              size === 'lg' ? 'text-lg' : ''
             }`}
           >
             -{formatCurrency(totalOut)}
@@ -89,11 +89,11 @@ export function DailySummary({
       {totalIn > 0 && (
         <div className="flex items-center justify-between">
           <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-            {size == 'lg' ? 'Total In:' : 'In:'}
+            {size === 'lg' ? 'Total In:' : 'In:'}
           </span>
           <span
             className={`font-bold text-emerald-700 dark:text-emerald-400 ${
-              size == 'lg' ? 'text-lg' : ''
+              size === 'lg' ? 'text-lg' : ''
             }`}
           >
             +{formatCurrency(totalIn)}
@@ -103,7 +103,7 @@ export function DailySummary({
       {totalOut > 0 && totalIn > 0 && (
         <div
           className={`flex items-center justify-between ${
-            size == 'lg' ? 'pt-2' : 'pt-0.5'
+            size === 'lg' ? 'pt-2' : 'pt-0.5'
           } border-t border-border`}
         >
           <span className="text-foreground font-semibold">Net:</span>
@@ -112,7 +112,7 @@ export function DailySummary({
               totalIn - totalOut >= 0
                 ? 'text-emerald-700 dark:text-emerald-400'
                 : 'text-rose-700 dark:text-rose-400'
-            } ${size == 'lg' ? 'text-lg' : ''}`}
+            } ${size === 'lg' ? 'text-lg' : ''}`}
           >
             {formatCurrency(totalIn - totalOut)}
           </span>

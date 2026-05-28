@@ -131,7 +131,7 @@ export function SyncCalendarButton({
       />
 
       <AlertDialog
-        open={dialogMode !==null}
+        open={dialogMode !== null}
         onOpenChange={(open) => {
           if (!loading) setDialogMode(open ? dialogMode : null);
         }}
@@ -139,13 +139,13 @@ export function SyncCalendarButton({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {dialogMode == 'sync'
+              {dialogMode === 'sync'
                 ? 'Sync Loans to Google Calendar?'
                 : 'Clear All Calendar Events?'}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
-                {dialogMode == 'sync' ? (
+                {dialogMode === 'sync' ? (
                   <>
                     <div>
                       This will sync all your loans with Google Calendar. The
@@ -171,7 +171,7 @@ export function SyncCalendarButton({
                     <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 font-medium mb-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>
-                        {dialogMode == 'sync'
+                        {dialogMode === 'sync'
                           ? 'Syncing in progress...'
                           : 'Clearing events...'}
                       </span>
@@ -188,10 +188,10 @@ export function SyncCalendarButton({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={dialogMode == 'sync' ? handleSync : handleClear}
+              onClick={dialogMode === 'sync' ? handleSync : handleClear}
               disabled={loading}
               className={
-                dialogMode == 'clear'
+                dialogMode === 'clear'
                   ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
                   : undefined
               }
@@ -199,9 +199,9 @@ export function SyncCalendarButton({
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {dialogMode == 'sync' ? 'Syncing...' : 'Clearing...'}
+                  {dialogMode === 'sync' ? 'Syncing...' : 'Clearing...'}
                 </>
-              ) : dialogMode == 'sync' ? (
+              ) : dialogMode === 'sync' ? (
                 'Sync Now'
               ) : (
                 'Clear All Events'

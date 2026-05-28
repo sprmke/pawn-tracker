@@ -230,7 +230,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
   // Calculate completed loans stats (only from loans with status 'Completed')
   const completedLoanInvestors = investor.loanInvestors.filter(
-    (li) => li.loan.status == 'Completed',
+    (li) => li.loan.status === 'Completed',
   );
   const completedCapital = calculateTotalPrincipal(completedLoanInvestors);
   const completedInterest = calculateTotalInterest(completedLoanInvestors);
@@ -240,7 +240,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   // Count active and completed loans — active includes Fully Funded, Partially Funded, and Overdue
   const activeLoanIds = new Set(
     investor.loanInvestors
-      .filter((li) => li.loan.status !=='Completed')
+      .filter((li) => li.loan.status !== 'Completed')
       .map((li) => li.loan.id),
   );
   const completedLoanIds = new Set(
@@ -297,7 +297,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   };
 
   const canDelete =
-    investor.loanInvestors.length == 0 && investor.transactions.length == 0;
+    investor.loanInvestors.length === 0 && investor.transactions.length === 0;
 
   // Clear transaction filters
   const clearTransactionFilters = () => {
@@ -329,31 +329,31 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
   // Check if there are active filters
   const hasActiveAmountFilters =
-    minAmount !=='' ||
-    maxAmount !=='' ||
-    minBalance !=='' ||
-    maxBalance !=='';
+    minAmount !== '' ||
+    maxAmount !== '' ||
+    minBalance !== '' ||
+    maxBalance !== '';
 
   const hasActiveTransactionFilters =
-    transactionSearchQuery !=='' ||
+    transactionSearchQuery !== '' ||
     transactionTypeFilter.length > 0 ||
     transactionDirectionFilter.length > 0 ||
-    showPastTransactions !==false ||
+    showPastTransactions !== false ||
     hasActiveAmountFilters;
 
   const hasActiveLoanAmountFilters =
-    minPrincipal !=='' ||
-    maxPrincipal !=='' ||
-    minAvgRate !=='' ||
-    maxAvgRate !=='' ||
-    minInterest !=='' ||
-    maxInterest !=='' ||
-    minTotalAmount !=='' ||
-    maxTotalAmount !=='' ||
-    freeLotFilter !=='all';
+    minPrincipal !== '' ||
+    maxPrincipal !== '' ||
+    minAvgRate !== '' ||
+    maxAvgRate !== '' ||
+    minInterest !== '' ||
+    maxInterest !== '' ||
+    minTotalAmount !== '' ||
+    maxTotalAmount !== '' ||
+    freeLotFilter !== 'all';
 
   const hasActiveLoanFilters =
-    loanSearchQuery !=='' ||
+    loanSearchQuery !== '' ||
     loanTypeFilter.length > 0 ||
     loanStatusFilter.length > 0 ||
     hasActiveLoanAmountFilters;
@@ -413,19 +413,19 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
       // Amount range filter
       const amount = parseFloat(transaction.amount);
-      if (minAmount !=='' && amount < parseFloat(minAmount)) {
+      if (minAmount !== '' && amount < parseFloat(minAmount)) {
         return false;
       }
-      if (maxAmount !=='' && amount > parseFloat(maxAmount)) {
+      if (maxAmount !== '' && amount > parseFloat(maxAmount)) {
         return false;
       }
 
       // Balance range filter
       const balance = parseFloat(transaction.balance);
-      if (minBalance !=='' && balance < parseFloat(minBalance)) {
+      if (minBalance !== '' && balance < parseFloat(minBalance)) {
         return false;
       }
-      if (maxBalance !=='' && balance > parseFloat(maxBalance)) {
+      if (maxBalance !== '' && balance > parseFloat(maxBalance)) {
         return false;
       }
 
@@ -457,14 +457,14 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     }
 
     // Free lot filter
-    if (freeLotFilter !=='all') {
-      if (freeLotFilter == 'with' && !loan.freeLotSqm) return false;
-      if (freeLotFilter == 'without' && loan.freeLotSqm) return false;
+    if (freeLotFilter !== 'all') {
+      if (freeLotFilter === 'with' && !loan.freeLotSqm) return false;
+      if (freeLotFilter === 'without' && loan.freeLotSqm) return false;
     }
 
     // Calculate investor-specific amounts for filtering
     const investorLoanInvestors = loan.loanInvestors.filter(
-      (li) => li.investor.id == investor.id,
+      (li) => li.investor.id === investor.id,
     );
     const totalPrincipal = investorLoanInvestors.reduce(
       (sum, li) => sum + parseFloat(li.amount),
@@ -475,34 +475,34 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     const totalAmount = totalPrincipal + totalInterest;
 
     // Principal range filter
-    if (minPrincipal !=='' && totalPrincipal < parseFloat(minPrincipal)) {
+    if (minPrincipal !== '' && totalPrincipal < parseFloat(minPrincipal)) {
       return false;
     }
-    if (maxPrincipal !=='' && totalPrincipal > parseFloat(maxPrincipal)) {
+    if (maxPrincipal !== '' && totalPrincipal > parseFloat(maxPrincipal)) {
       return false;
     }
 
     // Average rate range filter
-    if (minAvgRate !=='' && avgRate < parseFloat(minAvgRate)) {
+    if (minAvgRate !== '' && avgRate < parseFloat(minAvgRate)) {
       return false;
     }
-    if (maxAvgRate !=='' && avgRate > parseFloat(maxAvgRate)) {
+    if (maxAvgRate !== '' && avgRate > parseFloat(maxAvgRate)) {
       return false;
     }
 
     // Interest range filter
-    if (minInterest !=='' && totalInterest < parseFloat(minInterest)) {
+    if (minInterest !== '' && totalInterest < parseFloat(minInterest)) {
       return false;
     }
-    if (maxInterest !=='' && totalInterest > parseFloat(maxInterest)) {
+    if (maxInterest !== '' && totalInterest > parseFloat(maxInterest)) {
       return false;
     }
 
     // Total amount range filter
-    if (minTotalAmount !=='' && totalAmount < parseFloat(minTotalAmount)) {
+    if (minTotalAmount !== '' && totalAmount < parseFloat(minTotalAmount)) {
       return false;
     }
-    if (maxTotalAmount !=='' && totalAmount > parseFloat(maxTotalAmount)) {
+    if (maxTotalAmount !== '' && totalAmount > parseFloat(maxTotalAmount)) {
       return false;
     }
 
@@ -515,7 +515,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
   // Completed loans (recently completed for this investor)
   const completedLoans = loans
-    .filter((loan) => loan.status == 'Completed')
+    .filter((loan) => loan.status === 'Completed')
     .sort(
       (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime(),
     );
@@ -524,8 +524,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
   const overdueLoans = loans
     .filter(
       (loan) =>
-        loan.status == 'Overdue' ||
-        (loan.status !=='Completed' && isPast(new Date(loan.dueDate))),
+        loan.status === 'Overdue' ||
+        (loan.status !== 'Completed' && isPast(new Date(loan.dueDate))),
     )
     .sort(
       (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
@@ -544,7 +544,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
   loans.forEach((loan) => {
     loan.loanInvestors
-      .filter((li) => !li.isPaid && li.investor.id == investor.id)
+      .filter((li) => !li.isPaid && li.investor.id === investor.id)
       .forEach((li) => {
         unpaidLoanTransactions.push({
           id: li.id,
@@ -567,8 +567,8 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     .filter((loan) => {
       const dueDate = new Date(loan.dueDate);
       return (
-        (loan.status == 'Fully Funded' ||
-          loan.status == 'Partially Funded') &&
+        (loan.status === 'Fully Funded' ||
+          loan.status === 'Partially Funded') &&
         isAfter(dueDate, now) &&
         isBefore(dueDate, fourteenDaysFromNow)
       );
@@ -737,7 +737,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
           loadingVariant="empty"
           onDisbursementClick={async (loanId) => {
             // Find the loan in the already loaded loans array
-            const loan = loans.find((l) => l.id == loanId);
+            const loan = loans.find((l) => l.id === loanId);
             if (loan) {
               setSelectedLoan(loan);
               setShowLoanDetailModal(true);
@@ -1009,13 +1009,13 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
           {/* Loans List */}
           {loansLoading || !isViewModeReady ? (
             <LoansTableSkeleton rows={6} />
-          ) : loans.length == 0 ? (
+          ) : loans.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground">No loans yet</p>
               </CardContent>
             </Card>
-          ) : filteredLoans.length == 0 ? (
+          ) : filteredLoans.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground mb-4">
@@ -1029,7 +1029,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
             </Card>
           ) : (
             <>
-              {loansViewMode == 'cards' && (
+              {loansViewMode === 'cards' && (
                 <CardPagination
                   items={filteredLoans}
                   itemsPerPage={10}
@@ -1040,7 +1040,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                       {paginatedLoans.map((loan) => {
                         // Filter to only this investor's entries
                         const investorLoanInvestors = loan.loanInvestors.filter(
-                          (li) => li.investor.id == investor.id,
+                          (li) => li.investor.id === investor.id,
                         );
                         const investorPrincipal = investorLoanInvestors.reduce(
                           (sum, li) => sum + parseFloat(li.amount),
@@ -1138,7 +1138,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                                 <Users className="h-4 w-4" />
                                 <span>
                                   {loan.loanInvestors.length} investor
-                                  {loan.loanInvestors.length !==1 ? 's' : ''}
+                                  {loan.loanInvestors.length !== 1 ? 's' : ''}
                                 </span>
                               </div>
                             </CardContent>
@@ -1150,7 +1150,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                 />
               )}
 
-              {loansViewMode == 'table' && (
+              {loansViewMode === 'table' && (
                 <LoansTable
                   loans={filteredLoans}
                   itemsPerPage={10}
@@ -1184,7 +1184,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                   <Select
                     value={showPastTransactions ? 'show' : 'hide'}
                     onValueChange={(value) =>
-                      setShowPastTransactions(value == 'show')
+                      setShowPastTransactions(value === 'show')
                     }
                   >
                     <SelectTrigger className="hidden xl:flex w-full xl:w-[200px]">
@@ -1278,7 +1278,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                         <Select
                           value={showPastTransactions ? 'show' : 'hide'}
                           onValueChange={(value) =>
-                            setShowPastTransactions(value == 'show')
+                            setShowPastTransactions(value === 'show')
                           }
                         >
                           <SelectTrigger className="w-full">
@@ -1369,13 +1369,13 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
           {/* Transactions Table */}
           {!isViewModeReady ? (
             <TransactionsTableSkeleton rows={6} />
-          ) : investor.transactions.length == 0 ? (
+          ) : investor.transactions.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground">No transactions yet</p>
               </CardContent>
             </Card>
-          ) : filteredTransactions.length == 0 ? (
+          ) : filteredTransactions.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground mb-4">
@@ -1389,7 +1389,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
             </Card>
           ) : (
             <>
-              {transactionsViewMode == 'cards' && (
+              {transactionsViewMode === 'cards' && (
                 <CardPagination
                   items={filteredTransactions}
                   itemsPerPage={10}
@@ -1413,7 +1413,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
                 />
               )}
 
-              {transactionsViewMode == 'table' && (
+              {transactionsViewMode === 'table' && (
                 <TransactionsTable
                   transactions={filteredTransactions}
                   itemsPerPage={10}

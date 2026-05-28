@@ -18,28 +18,28 @@ export function ToggleMoreButton({
   size = 'sm',
   className = '',
 }: ToggleMoreButtonProps) {
-  const buttonSize = size == 'md' ? 'sm' : size;
+  const buttonSize = size === 'md' ? 'sm' : size;
 
   return (
     <Button
       variant="ghost"
       size={buttonSize}
       className={`${
-        size == 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
+        size === 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
       } ${className}`}
       onClick={onToggle}
     >
       {isExpanded ? (
         <>
           <ChevronUp
-            className={`${size == 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
+            className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
           />
           <span className="hidden md:inline">Hide</span>
         </>
       ) : (
         <>
           <ChevronDown
-            className={`${size == 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
+            className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
           />
           <span className="hidden md:inline">More</span>
         </>
@@ -59,19 +59,19 @@ export function QuickViewButton({
   size = 'sm',
   className = '',
 }: QuickViewButtonProps) {
-  const buttonSize = size == 'md' ? 'sm' : size;
+  const buttonSize = size === 'md' ? 'sm' : size;
 
   return (
     <Button
       variant="ghost"
       size={buttonSize}
       className={`${
-        size == 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
+        size === 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
       } ${className}`}
       onClick={onClick}
     >
       <Maximize2
-        className={`${size == 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
+        className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
       />
       <span className="hidden md:inline">View</span>
     </Button>
@@ -93,7 +93,7 @@ export function ViewButton({
 }: ViewButtonProps) {
   const router = useRouter();
   const { startProgress } = useNavigationProgress();
-  const buttonSize = size == 'md' ? 'sm' : size;
+  const buttonSize = size === 'md' ? 'sm' : size;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -111,11 +111,11 @@ export function ViewButton({
       variant="ghost"
       size={buttonSize}
       className={`${
-        size == 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
+        size === 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
       } ${className}`}
       onClick={handleClick}
     >
-      <Eye className={`${size == 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`} />
+      <Eye className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`} />
       <span className="hidden md:inline">View</span>
     </Button>
   );
@@ -146,7 +146,7 @@ export function ActionButtonsGroup({
   size = 'sm',
   className = '',
 }: ActionButtonsGroupProps) {
-  const isCardSize = size == 'md';
+  const isCardSize = size === 'md';
 
   return (
     <div

@@ -281,12 +281,12 @@ const InvestorsPDFDocument = ({
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={styles.reportDate}>Generated: {dateStr} {timeStr}</Text>
-            <Text style={styles.reportCount}>{data.length} investor{data.length !==1 ? 's' : ''}</Text>
+            <Text style={styles.reportCount}>{data.length} investor{data.length !== 1 ? 's' : ''}</Text>
           </View>
         </View>
 
         {/* Table */}
-        {data.length == 0 ? (
+        {data.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No investors to display.</Text>
           </View>
@@ -306,8 +306,8 @@ const InvestorsPDFDocument = ({
 
             {/* Data rows */}
             {data.map((investor, idx) => {
-              const isLast = idx == data.length - 1;
-              const isAlt = idx % 2 == 1;
+              const isLast = idx === data.length - 1;
+              const isAlt = idx % 2 === 1;
               const rowStyle = isLast ? styles.tableRowLast : isAlt ? styles.tableRowAlt : styles.tableRow;
 
               return (
@@ -316,7 +316,7 @@ const InvestorsPDFDocument = ({
                     <Text
                       key={col.key}
                       style={[
-                        col.key == 'name' ? styles.tableCellBold : styles.tableCell,
+                        col.key === 'name' ? styles.tableCellBold : styles.tableCell,
                         { flex: col.flex },
                       ]}
                     >

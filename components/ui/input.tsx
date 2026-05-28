@@ -6,7 +6,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
   ({ className, type, ...props }, ref) => {
     // Prevent scroll/wheel from changing number input values
     const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
-      if (type == 'number') {
+      if (type === 'number') {
         e.currentTarget.blur();
       }
     };
@@ -17,7 +17,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
         className={cn(
           'flex h-11 w-full rounded-2xl border border-border/50 bg-muted/40 px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:border-primary/40 focus-visible:bg-background disabled:cursor-not-allowed disabled:opacity-50 transition-colors',
           // Hide number input spinner arrows
-          type == 'number' &&
+          type === 'number' &&
             '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
           className
         )}
