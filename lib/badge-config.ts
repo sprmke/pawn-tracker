@@ -6,42 +6,36 @@ import {
   InterestPeriodStatus,
 } from './types';
 
-/**
- * Badge configuration for consistent styling across the application
- */
-
-// Loan Status Badge Configuration (Pastel Colors)
 export const loanStatusConfig: Record<
   LoanStatus,
   {
     variant: 'default' | 'secondary' | 'destructive' | 'outline';
     className?: string;
-    dotColor?: string; // For status indicators
+    dotColor?: string;
   }
 > = {
   'Fully Funded': {
     variant: 'default',
-    className: 'bg-emerald-400 hover:bg-emerald-500 text-emerald-950',
-    dotColor: 'bg-emerald-400',
+    className: 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-200',
+    dotColor: 'bg-emerald-500',
   },
   'Partially Funded': {
     variant: 'secondary',
-    className: 'bg-amber-300 hover:bg-amber-400 text-amber-950',
-    dotColor: 'bg-amber-300',
+    className: 'bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-200',
+    dotColor: 'bg-amber-500',
   },
   Completed: {
     variant: 'default',
-    className: 'bg-sky-400 hover:bg-sky-500 text-sky-950',
-    dotColor: 'bg-sky-400',
+    className: 'bg-sky-100 hover:bg-sky-200 text-sky-700 border-sky-200',
+    dotColor: 'bg-sky-500',
   },
   Overdue: {
     variant: 'destructive',
-    className: 'bg-rose-400 hover:bg-rose-500 text-rose-950',
-    dotColor: 'bg-rose-400',
+    className: 'bg-rose-100 hover:bg-rose-200 text-rose-700 border-rose-200',
+    dotColor: 'bg-rose-500',
   },
 };
 
-// Loan Type Badge Configuration
 export const loanTypeConfig: Record<
   LoanType,
   {
@@ -52,21 +46,20 @@ export const loanTypeConfig: Record<
   'Lot Title': {
     variant: 'outline',
     className:
-      'border-orange-400 text-orange-700 bg-orange-100 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-600',
+      'border-orange-200 text-orange-700 bg-orange-50 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-700',
   },
   'OR/CR': {
     variant: 'outline',
     className:
-      'border-indigo-400 text-indigo-700 bg-indigo-100 dark:bg-indigo-900 dark:text-indigo-300 dark:border-indigo-600',
+      'border-violet-200 text-violet-700 bg-violet-50 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-700',
   },
   Agent: {
     variant: 'outline',
     className:
-      'border-fuchsia-400 text-fuchsia-700 bg-fuchsia-100 dark:bg-fuchsia-900 dark:text-fuchsia-300 dark:border-fuchsia-600',
+      'border-pink-200 text-pink-700 bg-pink-50 dark:bg-pink-950 dark:text-pink-300 dark:border-pink-700',
   },
 };
 
-// Transaction Type Badge Configuration
 export const transactionTypeConfig: Record<
   TransactionType,
   {
@@ -77,11 +70,10 @@ export const transactionTypeConfig: Record<
   Investment: {
     variant: 'outline',
     className:
-      'border-violet-400 text-violet-700 bg-violet-100 dark:bg-violet-900 dark:text-violet-300 dark:border-violet-600',
+      'border-violet-200 text-violet-700 bg-violet-50 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-700',
   },
 };
 
-// Transaction Direction Badge Configuration (Pastel Colors)
 export const transactionDirectionConfig: Record<
   TransactionDirection,
   {
@@ -91,15 +83,14 @@ export const transactionDirectionConfig: Record<
 > = {
   In: {
     variant: 'success',
-    className: 'bg-emerald-400 hover:bg-emerald-500 text-emerald-950',
+    className: 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-200',
   },
   Out: {
     variant: 'destructive',
-    className: 'bg-rose-400 hover:bg-rose-500 text-rose-950',
+    className: 'bg-rose-100 hover:bg-rose-200 text-rose-700 border-rose-200',
   },
 };
 
-// Interest Period Status Badge Configuration (Pastel Colors)
 export const interestPeriodStatusConfig: Record<
   InterestPeriodStatus,
   {
@@ -110,28 +101,27 @@ export const interestPeriodStatusConfig: Record<
 > = {
   Pending: {
     variant: 'secondary',
-    className: 'bg-amber-300 hover:bg-amber-400 text-amber-950',
-    dotColor: 'bg-amber-300',
+    className: 'bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-200',
+    dotColor: 'bg-amber-500',
   },
   Incomplete: {
     variant: 'outline',
     className:
-      'border-orange-400 text-orange-800 bg-orange-100 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-600',
-    dotColor: 'bg-orange-400',
+      'border-orange-200 text-orange-700 bg-orange-50 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-700',
+    dotColor: 'bg-orange-500',
   },
   Completed: {
     variant: 'default',
-    className: 'bg-emerald-400 hover:bg-emerald-500 text-emerald-950',
-    dotColor: 'bg-emerald-400',
+    className: 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-200',
+    dotColor: 'bg-emerald-500',
   },
   Overdue: {
     variant: 'destructive',
-    className: 'bg-rose-400 hover:bg-rose-500 text-rose-950',
-    dotColor: 'bg-rose-400',
+    className: 'bg-rose-100 hover:bg-rose-200 text-rose-700 border-rose-200',
+    dotColor: 'bg-rose-500',
   },
 };
 
-// Helper functions to get badge properties
 export function getLoanStatusBadge(status: LoanStatus) {
   return loanStatusConfig[status];
 }
