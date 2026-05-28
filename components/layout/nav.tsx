@@ -142,9 +142,12 @@ export function Nav({
     });
   };
 
+  const isLandingPage = !user && pathname === '/';
+
   return (
     <>
       {/* Mobile Header */}
+      {!isLandingPage && (
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 border-b bg-card/95 backdrop-blur-xl">
         <div className="flex h-full items-center justify-between px-4">
           <Link
@@ -177,6 +180,7 @@ export function Nav({
           </div>
         </div>
       </header>
+      )}
 
       {/* Mobile Menu Overlay */}
       {user && isMobileMenuOpen && (
@@ -519,8 +523,8 @@ export function Nav({
             )}
           </div>
         </aside>
-      ) : (
-        /* Desktop Header for Unauthenticated Users */
+      ) : !isLandingPage ? (
+        /* Desktop Header for Unauthenticated Users (non-landing) */
         <header className="hidden lg:block fixed top-0 left-0 right-0 z-50 h-14 border-b bg-card/80 backdrop-blur-xl">
           <div className="flex h-full items-center justify-between px-6 mx-auto max-w-7xl">
             <Link href="/" className="group transition-all duration-200">
@@ -538,18 +542,20 @@ export function Nav({
             </Link>
           </div>
         </header>
-      )}
+      ) : null}
 
       {/* Main content area */}
       <div
         className={cn(
           'transition-all duration-300',
-          'pt-14',
+          isLandingPage ? 'pt-0' : 'pt-14',
           user && !isCollapsed
             ? 'lg:pt-0 lg:ml-[19rem]'
             : user && isCollapsed
               ? 'lg:pt-0 lg:ml-[7.5rem]'
-              : 'lg:pt-14 lg:ml-0',
+              : isLandingPage
+                ? 'lg:pt-0 lg:ml-0'
+                : 'lg:pt-14 lg:ml-0',
         )}
       >
         {children}

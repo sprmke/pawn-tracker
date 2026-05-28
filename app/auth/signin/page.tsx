@@ -30,7 +30,7 @@ export default async function SignInPage({
       </div>
 
       <Card className="w-full max-w-md border-border/40 shadow-[var(--shadow-elevated-lg)]">
-        <CardHeader className="space-y-4 text-center pb-2 pt-8">
+        <CardHeader className="space-y-12 text-center pb-2 pt-8">
           <div className="flex justify-center">
             <Logo size="xl" showIcon={true} gradient={true} />
           </div>
@@ -46,9 +46,9 @@ export default async function SignInPage({
             <Button
               type="submit"
               variant="outline"
-              className="w-full h-12 rounded-2xl text-sm font-semibold"
+              className="h-12 w-full rounded-2xl text-sm font-semibold [&_svg]:size-5"
             >
-              <svg className="mr-2 h-4 w-4 mb-5" viewBox="0 0 24 24">
+              <svg viewBox="0 0 24 24" aria-hidden>
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   fill="#4285F4"

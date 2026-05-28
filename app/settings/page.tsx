@@ -24,6 +24,7 @@ export default async function SettingsPage() {
       <PageHeader
         title="Settings"
         description="Maintenance tools and data exports for your workspace."
+        showPriceToggle={false}
       />
 
       <Card>

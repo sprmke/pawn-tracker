@@ -419,6 +419,222 @@
   .animate-shimmer {
     animation: shimmer 1.5s infinite linear;
   }
+
+  /* Landing page */
+  .landing-gradient-text {
+    background: linear-gradient(
+      135deg,
+      oklch(0.67 0.17 52) 0%,
+      oklch(0.72 0.18 62) 40%,
+      oklch(0.78 0.14 85) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .landing-mesh {
+    background:
+      radial-gradient(
+        ellipse 90% 60% at 10% -10%,
+        oklch(0.67 0.17 52 / 0.14),
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 70% 50% at 90% 20%,
+        oklch(0.78 0.14 85 / 0.1),
+        transparent 50%
+      ),
+      radial-gradient(
+        ellipse 50% 40% at 50% 100%,
+        oklch(0.62 0.18 25 / 0.06),
+        transparent 50%
+      );
+  }
+
+  .landing-grid {
+    background-image: linear-gradient(
+        oklch(0.67 0.17 52 / 0.04) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, oklch(0.67 0.17 52 / 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black, transparent);
+  }
+
+  .landing-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(60px);
+    pointer-events: none;
+  }
+
+  .landing-orb-1 {
+    top: -10%;
+    right: -5%;
+    width: 280px;
+    height: 280px;
+    background: oklch(0.67 0.17 52 / 0.25);
+    animation: landing-pulse 8s ease-in-out infinite;
+  }
+
+  .landing-orb-2 {
+    bottom: 10%;
+    left: -8%;
+    width: 200px;
+    height: 200px;
+    background: oklch(0.78 0.14 85 / 0.2);
+    animation: landing-pulse 10s ease-in-out infinite reverse;
+  }
+
+  .landing-float-delayed {
+    animation: float 7s ease-in-out infinite;
+    animation-delay: 1.5s;
+  }
+
+  .landing-shimmer-badge {
+    background-size: 200% 100%;
+    animation: landing-badge-shimmer 4s ease-in-out infinite;
+  }
+
+  .landing-marquee {
+    animation: landing-marquee 35s linear infinite;
+  }
+
+  .landing-ticker {
+    animation: landing-marquee 25s linear infinite;
+  }
+
+  .landing-dark-section {
+    background: oklch(0.14 0.02 55);
+  }
+
+  .landing-dark-mesh {
+    background: radial-gradient(
+      ellipse 80% 60% at 50% 0%,
+      oklch(0.67 0.17 52 / 0.15),
+      transparent 60%
+    );
+  }
+
+  .landing-cta-banner {
+    background: linear-gradient(
+      135deg,
+      oklch(0.58 0.19 48) 0%,
+      oklch(0.67 0.17 52) 45%,
+      oklch(0.72 0.16 62) 100%
+    );
+    box-shadow: 0 24px 60px -12px oklch(0.67 0.17 52 / 0.45);
+  }
+
+  .landing-cta-orbs::before,
+  .landing-cta-orbs::after {
+    content: '';
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(40px);
+  }
+
+  .landing-cta-orbs::before {
+    top: -20%;
+    right: 10%;
+    width: 200px;
+    height: 200px;
+    background: oklch(1 0 0 / 0.15);
+  }
+
+  .landing-cta-orbs::after {
+    bottom: -30%;
+    left: 15%;
+    width: 260px;
+    height: 260px;
+    background: oklch(0.78 0.14 85 / 0.2);
+  }
+
+  .landing-showcase-glow {
+    background: radial-gradient(
+      ellipse at center,
+      oklch(0.67 0.17 52 / 0.2),
+      transparent 70%
+    );
+  }
+
+  .landing-philosophy-pattern {
+    background-image: radial-gradient(
+        circle at 20% 30%,
+        oklch(0.67 0.17 52 / 0.12),
+        transparent 40%
+      ),
+      radial-gradient(
+        circle at 80% 70%,
+        oklch(0.78 0.14 85 / 0.1),
+        transparent 35%
+      );
+  }
+
+  .landing-tab-enter {
+    animation: landing-tab-enter 0.45s ease-out forwards;
+  }
+
+  @keyframes landing-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    50% {
+      transform: scale(1.08);
+      opacity: 0.9;
+    }
+  }
+
+  @keyframes landing-badge-shimmer {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  @keyframes landing-marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes landing-tab-enter {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-marquee,
+    .landing-ticker,
+    .landing-shimmer-badge,
+    .landing-orb-1,
+    .landing-orb-2,
+    .animate-float,
+    .landing-float-delayed,
+    .landing-tab-enter {
+      animation: none !important;
+    }
+
+    .scroll-reveal-reduced {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
 }
 
 /* React Day Picker Custom Styles */
