@@ -323,7 +323,7 @@ export default function InvestorsPage() {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4 mb-6">
           <div className="space-y-1">
-            <h1 className="text-xl md:text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight">
               Investors
             </h1>
             <p className="text-sm text-muted-foreground">Track investor portfolios and balances</p>
@@ -366,7 +366,7 @@ export default function InvestorsPage() {
         description="Track investor portfolios and balances"
         actions={
           <>
-            <div className="flex items-center border-2 rounded-lg p-1">
+            <div className="flex items-center border rounded-xl p-1">
               {/* Table view button - hidden on mobile, visible from tablet (md) and up */}
               <Button
                 variant={viewMode == 'table' ? 'secondary' : 'ghost'}
