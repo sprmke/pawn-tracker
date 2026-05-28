@@ -12,8 +12,7 @@ Built with Next.js 15, React 19, and a polished UI for day-to-day operations —
   <a href="#features">Features</a> ·
   <a href="#screenshots">Screenshots</a> ·
   <a href="#tech-stack">Tech Stack</a> ·
-  <a href="#getting-started">Getting Started</a> ·
-  <a href="#deployment">Deployment</a>
+  <a href="#getting-started">Getting Started</a>
 </p>
 
 <p align="center">
@@ -72,20 +71,6 @@ Optional sync powered by a **Google Cloud service account** and the Calendar API
 - Investor emails can be added as attendees on events (when configured)
 
 Requires `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`, and `GOOGLE_CALENDAR_ID` in `env.example`.
-
-### Neon (database)
-
-- **[Neon](https://neon.tech/)** serverless PostgreSQL — scales with traffic and works well on serverless platforms
-- **[Drizzle ORM](https://orm.drizzle.team/)** with the [`@neondatabase/serverless`](https://neon.tech/docs/serverless/serverless-driver) HTTP driver ([`db/index.ts`](./db/index.ts)) for low-latency queries from Next.js
-- Schema managed via `bun run db:push` / migrations under `db/`
-- SQL migrations and Neon SQL Editor supported for production upgrades
-
-### Vercel (hosting)
-
-- Production deployment on **[Vercel](https://vercel.com/)** with the Next.js App Router
-- Environment variables for Neon, Google OAuth, Calendar, and optional backups configured in the Vercel dashboard
-- **Cron jobs** via [`vercel.json`](./vercel.json) — daily automated backup endpoint (`/api/cron/backup` at 06:00 UTC)
-- Preview deployments on every push; production URL used for OAuth redirects and calendar event links (`NEXT_PUBLIC_APP_URL`)
 
 ### Operations & data
 
@@ -226,40 +211,6 @@ hooks/               # Shared React hooks (filters, pagination, sorting)
 lib/                 # Calculations, formatting, calendar, PDF/CSV export
 docs/screenshots/    # README and portfolio images
 ```
-
----
-
-## Deployment
-
-### Neon
-
-1. Create a project at [neon.tech](https://neon.tech)
-2. Copy the **connection string** (`postgresql://...?sslmode=require`)
-3. Set `DATABASE_URL` locally and in Vercel
-4. Run `bun run db:push` (or apply `db/migrations/*.sql` in the Neon SQL Editor)
-
-### Vercel
-
-1. Import this repository on [Vercel](https://vercel.com)
-2. Add all variables from `env.example` in **Project → Settings → Environment Variables**
-3. Deploy — Vercel builds Next.js and connects to Neon via `DATABASE_URL`
-4. Set `NEXT_PUBLIC_APP_URL` to your production domain (e.g. `https://pawn-tracker.vercel.app`)
-
-**Google OAuth:** add `https://your-app.vercel.app/api/auth/callback/google` to **Authorized redirect URIs** in Google Cloud Console.
-
-**Google Calendar:** share the target calendar with the service account email (Editor access) so sync can create and update events.
-
-**Cron backups (optional):** enable Vercel Cron and set `CRON_SECRET` + `RESEND_API_KEY` for the daily backup job defined in `vercel.json`.
-
----
-
-## Security note
-
-This app is designed for **private business use**. Before going public:
-
-- Never commit `.env.local` or production secrets
-- Restrict Google OAuth to trusted users if needed
-- Rotate API keys if the repository was ever shared
 
 ---
 
