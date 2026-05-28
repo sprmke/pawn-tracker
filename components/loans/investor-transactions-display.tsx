@@ -554,10 +554,10 @@ export function InvestorTransactionsDisplay({
           return (
             <div
               key={investor.id}
-              className="rounded-xl border-2 border-border/80 bg-card shadow-sm overflow-hidden"
+              className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden"
             >
               {/* ── Header ───────────────────────────────────────── */}
-              <div className="flex items-center justify-between gap-2 px-4 py-3 bg-muted/50 border-b-2 border-border/60">
+              <div className="flex items-center justify-between gap-2 px-4 py-3 bg-muted/50 border-b border-border/60">
                 <div className="min-w-0">
                   <p className="font-semibold text-base leading-tight truncate">
                     {investor.name}
@@ -578,7 +578,7 @@ export function InvestorTransactionsDisplay({
               <div className="space-y-4 p-4 bg-muted/20">
                 {/* ── Principal disbursements ───────────────────── */}
                 <section
-                  className="rounded-xl border-2 border-border/70 bg-background shadow-sm overflow-hidden ring-1 ring-black/4 dark:ring-white/6"
+                  className="rounded-xl border border-border/70 bg-background shadow-sm overflow-hidden ring-1 ring-black/4 dark:ring-white/6"
                   aria-label="Principal disbursements"
                 >
                   <Collapsible
@@ -587,7 +587,7 @@ export function InvestorTransactionsDisplay({
                       setSectionOpen(investor.id, 'principal', open)
                     }
                   >
-                    <CollapsibleTrigger className="flex w-full items-center gap-3 px-3 py-3 text-left border-b-2 border-border/50 bg-muted/40 hover:bg-muted/55 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
+                    <CollapsibleTrigger className="flex w-full items-center gap-3 px-3 py-3 text-left border-b border-border/50 bg-muted/40 hover:bg-muted/55 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300">
                         <ArrowUpRight className="h-5 w-5" />
                       </div>
@@ -619,7 +619,7 @@ export function InvestorTransactionsDisplay({
                             <div
                               key={transaction.id || `t-${index}`}
                               className={cn(
-                                'rounded-lg border-2 border-border/60 bg-card p-3 shadow-sm',
+                                'rounded-lg border border-border/60 bg-card p-3 shadow-sm',
                                 isUnpaid &&
                                   'border-amber-300/80 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/25',
                               )}
@@ -680,7 +680,7 @@ export function InvestorTransactionsDisplay({
                 {/* ── Interest: multiple periods ─────────────────── */}
                 {hasMultiplePeriods && (
                   <section
-                    className="rounded-xl border-2 border-border/70 bg-background shadow-sm overflow-hidden ring-1 ring-black/4 dark:ring-white/6"
+                    className="rounded-xl border border-border/70 bg-background shadow-sm overflow-hidden ring-1 ring-black/4 dark:ring-white/6"
                     aria-label="Interest periods"
                   >
                     <Collapsible
@@ -689,7 +689,7 @@ export function InvestorTransactionsDisplay({
                         setSectionOpen(investor.id, 'interest', open)
                       }
                     >
-                      <CollapsibleTrigger className="flex w-full items-center gap-3 px-3 py-3 text-left border-b-2 border-border/50 bg-muted/40 hover:bg-muted/55 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
+                      <CollapsibleTrigger className="flex w-full items-center gap-3 px-3 py-3 text-left border-b border-border/50 bg-muted/40 hover:bg-muted/55 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
                           <CalendarRange className="h-5 w-5" />
                         </div>
@@ -782,7 +782,7 @@ export function InvestorTransactionsDisplay({
                             return (
                               <div
                                 key={period.id || `p-${pIndex}`}
-                                className="rounded-lg border-2 border-border/60 bg-card px-3 py-3 shadow-sm"
+                                className="rounded-lg border border-border/60 bg-card px-3 py-3 shadow-sm"
                               >
                                 <div className="flex items-center justify-between mb-1.5">
                                   <span className="text-xs font-semibold text-muted-foreground">
@@ -984,7 +984,7 @@ export function InvestorTransactionsDisplay({
                 {/* ── Interest: single term ───────────────────────── */}
                 {!hasMultiplePeriods && (
                   <section
-                    className="rounded-xl border-2 border-border/70 bg-background shadow-sm overflow-hidden ring-1 ring-black/4 dark:ring-white/6"
+                    className="rounded-xl border border-border/70 bg-background shadow-sm overflow-hidden ring-1 ring-black/4 dark:ring-white/6"
                     aria-label="Interest terms"
                   >
                     <Collapsible
@@ -993,7 +993,7 @@ export function InvestorTransactionsDisplay({
                         setSectionOpen(investor.id, 'interest', open)
                       }
                     >
-                      <CollapsibleTrigger className="flex w-full items-center gap-3 px-3 py-3 text-left border-b-2 border-border/50 bg-muted/40 hover:bg-muted/55 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
+                      <CollapsibleTrigger className="flex w-full items-center gap-3 px-3 py-3 text-left border-b border-border/50 bg-muted/40 hover:bg-muted/55 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
                           <CalendarRange className="h-5 w-5" />
                         </div>
@@ -1017,7 +1017,7 @@ export function InvestorTransactionsDisplay({
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <div className="p-3 sm:p-4 space-y-3 bg-muted/10">
-                          <div className="rounded-lg border-2 bg-violet-500/3 dark:bg-violet-950/20 p-4 space-y-3">
+                          <div className="rounded-lg border bg-violet-500/3 dark:bg-violet-950/20 p-4 space-y-3">
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 text-sm">
                               <div>
                                 <p className="text-[11px] font-medium text-muted-foreground">
@@ -1045,7 +1045,7 @@ export function InvestorTransactionsDisplay({
                               </div>
                             </div>
                             {transactions.length > 1 && (
-                              <div className="space-y-2 border-t-2 border-border/40 pt-3">
+                              <div className="space-y-2 border-t border-border/40 pt-3">
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                                   By disbursement
                                 </p>
@@ -1073,7 +1073,7 @@ export function InvestorTransactionsDisplay({
                               </div>
                             )}
                             {receivedCount > 0 && (
-                              <div className="space-y-2 border-t-2 border-border/40 pt-3">
+                              <div className="space-y-2 border-t border-border/40 pt-3">
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                                   Payments received
                                 </p>
@@ -1105,7 +1105,7 @@ export function InvestorTransactionsDisplay({
               </div>
 
               {/* ── Summary (totals) ──────────────────────────────── */}
-              <div className="border-t-2 border-border/60 bg-muted/40 px-4 py-3">
+              <div className="border-t border-border/60 bg-muted/40 px-4 py-3">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                   Investor totals
                 </p>

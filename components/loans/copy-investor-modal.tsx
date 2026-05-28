@@ -375,7 +375,7 @@ export function CopyInvestorModal({
                           <div className="flex items-center gap-2 flex-wrap">
                             <span>{investor.name}</span>
                             {isAlreadyAdded && (
-                              <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
+                              <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
                                 Added
                               </span>
                             )}

@@ -186,7 +186,7 @@ export function LoanInvestorCard({
                     (t) =>
                       t.sentDate && isMoreThanOneMonthAndFifteenDays(t.sentDate, watchDueDate)
                   )
-                    ? 'border-blue-400'
+                    ? 'border-amber-400'
                     : ''
                 }`}
               >
@@ -399,13 +399,13 @@ export function LoanInvestorCard({
                     (t) =>
                       t.sentDate && isMoreThanOneMonthAndFifteenDays(t.sentDate, watchDueDate)
                   )) && (
-                  <div className="space-y-3 p-4 border rounded-lg bg-muted/30 border-blue-400">
+                  <div className="space-y-3 p-4 border rounded-lg bg-muted/30 border-amber-400">
                     <Label className="text-sm font-semibold inline-flex">
                       Interest Configuration
                     </Label>
-                    <Alert className="bg-blue-50 border-blue-200">
-                      <AlertCircle className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-xs text-blue-800">
+                    <Alert className="bg-amber-50 border-amber-200">
+                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <AlertDescription className="text-xs text-amber-800">
                         <strong>Notice:</strong> We detected that this investor
                         has a transaction spanning more than 1 month and 15 days. 
                         The "Multiple Interest" tab has been automatically selected 

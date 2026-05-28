@@ -338,9 +338,9 @@ export function MultipleInterestManager({
         value={mode}
         onValueChange={(v) => handleModeChange(v as 'single' | 'multiple')}
       >
-        <TabsList className={`grid w-full grid-cols-2 ${shouldHighlightMultiple && mode == 'multiple' ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}>
+        <TabsList className={`grid w-full grid-cols-2 ${shouldHighlightMultiple && mode == 'multiple' ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
           <TabsTrigger value="single">One Time Interest</TabsTrigger>
-          <TabsTrigger value="multiple" className={shouldHighlightMultiple && mode == 'multiple' ? 'data-[state=active]:bg-blue-500 data-[state=active]:text-white' : ''}>
+          <TabsTrigger value="multiple" className={shouldHighlightMultiple && mode == 'multiple' ? 'data-[state=active]:bg-primary data-[state=active]:text-white' : ''}>
             Multiple Interest
           </TabsTrigger>
         </TabsList>
