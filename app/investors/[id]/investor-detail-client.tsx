@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useResponsiveViewMode } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +46,9 @@ import {
   MultiSelectFilter,
   CollapsibleSection,
   CollapsibleContent,
-  InlineLoader,
+  InvestorLoansFiltersSkeleton,
+  LoansTableSkeleton,
+  TransactionsTableSkeleton,
   CompletedLoansCard,
   PastDueLoansCard,
   PendingDisbursementsCard,
@@ -63,6 +65,7 @@ import {
 import { LoanCreateModal, LoanDetailModal } from '@/components/loans';
 import { useLoanDuplicateStore } from '@/stores/loan-duplicate-store';
 import type { TransactionWithInvestor } from '@/lib/types';
+import { INVESTOR_DETAIL_SUMMARY_GRID } from '@/lib/summary-grid';
 import { addDays, isAfter, isBefore, isPast } from 'date-fns';
 import { loanPDFSections, transactionPDFSections } from '@/lib/pdf-sections';
 import { renderLoansPDF } from '@/components/pdf/loans-pdf-document';
@@ -257,12 +260,23 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
     return match ? parseFloat(match[1]) : 0;
   };
 
-  // Calculate total lot and total lot with depacto
-  const totalLot = loans.reduce((sum, loan) => {
-    return sum + (loan.freeLotSqm || 0);
-  }, 0);
+  // Lot totals from investor's loans (available on first paint — do not wait for /api/loans)
+  const uniqueInvestorLoans = useMemo(() => {
+    const byId = new Map<number, (typeof investor.loanInvestors)[0]['loan']>();
+    for (const li of investor.loanInvestors) {
+      if (!byId.has(li.loan.id)) {
+        byId.set(li.loan.id, li.loan);
+      }
+    }
+    return Array.from(byId.values());
+  }, [investor.loanInvestors]);
 
-  const totalLotWithDepacto = loans.reduce((sum, loan) => {
+  const totalLot = uniqueInvestorLoans.reduce(
+    (sum, loan) => sum + (loan.freeLotSqm || 0),
+    0
+  );
+
+  const totalLotWithDepacto = uniqueInvestorLoans.reduce((sum, loan) => {
     const lotValue = loan.freeLotSqm || 0;
     const depactoValue = extractDepactoFromNotes(loan.notes);
     return sum + lotValue + depactoValue;
@@ -635,6 +649,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
       {/* Summary Card - Compact horizontal layout */}
       <SummaryCard
+        className={INVESTOR_DETAIL_SUMMARY_GRID}
         metrics={[
           {
             label: 'Total Capital',
@@ -681,10 +696,11 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
       />
 
       {/* Activity Cards */}
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         <MaturingLoansCard
           loans={maturingLoans}
           loading={loansLoading}
+          loadingVariant="empty"
           investorId={investor.id}
           onLoanClick={(loan) => {
             setSelectedLoan(loan);
@@ -703,6 +719,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         <PastDueLoansCard
           loans={overdueLoans}
           loading={loansLoading}
+          loadingVariant="list"
           investorId={investor.id}
           onLoanClick={(loan) => {
             setSelectedLoan(loan);
@@ -716,6 +733,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         <PendingDisbursementsCard
           disbursements={pendingDisbursements}
           loading={loansLoading}
+          loadingVariant="empty"
           onDisbursementClick={async (loanId) => {
             // Find the loan in the already loaded loans array
             const loan = loans.find((l) => l.id == loanId);
@@ -737,6 +755,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
         <CompletedLoansCard
           loans={completedLoans}
           loading={loansLoading}
+          loadingVariant="list"
           investorId={investor.id}
           onLoanClick={(loan) => {
             setSelectedLoan(loan);
@@ -760,7 +779,9 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
         <TabsContent value="loans" className="mt-6 space-y-4">
           {/* Search and Filters Section */}
-          {!loansLoading && (
+          {loansLoading ? (
+            <InvestorLoansFiltersSkeleton />
+          ) : (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-3">
                 {/* Search and Basic Filters Row */}
@@ -986,11 +1007,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
           {/* Loans List */}
           {loansLoading || !isViewModeReady ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
-                <InlineLoader size="md" />
-              </CardContent>
-            </Card>
+            <LoansTableSkeleton rows={6} />
           ) : loans.length == 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -1350,11 +1367,7 @@ export function InvestorDetailClient({ investor }: InvestorDetailClientProps) {
 
           {/* Transactions Table */}
           {!isViewModeReady ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
-                <InlineLoader size="md" />
-              </CardContent>
-            </Card>
+            <TransactionsTableSkeleton rows={6} />
           ) : investor.transactions.length == 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
