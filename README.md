@@ -211,11 +211,3 @@ hooks/               # Shared React hooks (filters, pagination, sorting)
 lib/                 # Calculations, formatting, calendar, PDF/CSV export
 docs/screenshots/    # README and portfolio images
 ```
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE) if present, or use this project as a portfolio reference with attribution.
-
----
