@@ -219,7 +219,3 @@ docs/screenshots/    # README and portfolio images
 MIT — see [LICENSE](LICENSE) if present, or use this project as a portfolio reference with attribution.
 
 ---
-
-<p align="center">
-  Built for pawn operators who want clarity on loans, investors, and cashflow — without spreadsheets.
-</p>
