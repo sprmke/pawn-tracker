@@ -70,11 +70,18 @@ export async function POST(
       return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
     }
 
-    // Keep status as Overdue (do not update the original due date)
+    const sortedEntries = (entries as EntryPayload[]).sort(
+      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
+    );
+    const latestDueDate = new Date(
+      sortedEntries[sortedEntries.length - 1].dueDate,
+    );
+
     await db
       .update(loans)
       .set({
         status: 'Overdue',
+        dueDate: latestDueDate,
         updatedAt: new Date(),
       })
       .where(eq(loans.id, loanId));
@@ -154,7 +161,7 @@ export async function POST(
       }
 
       // Build new periods from entries
-      const newPeriods = (entries as EntryPayload[]).map((entry) => {
+      const newPeriods = sortedEntries.map((entry) => {
         const isEdited =
           Math.abs(entry.totalAmount - entry.originalAmount) > 0.01;
 

@@ -16,7 +16,7 @@ const stats = [
 
 export function HeroSection() {
   return (
-    <section className="landing-hero relative overflow-x-hidden pt-28 pb-16 sm:pt-32 sm:pb-24 lg:pb-32">
+    <section className="landing-hero relative overflow-x-hidden pt-28 pb-16 sm:pb-24 lg:pb-32">
       <div className="landing-mesh pointer-events-none absolute inset-0 -z-10" />
       <div className="landing-grid pointer-events-none absolute inset-0 -z-10 opacity-[0.35]" />
 
