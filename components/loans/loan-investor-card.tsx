@@ -26,6 +26,7 @@ import { toast } from '@/lib/toast';
 import {
   MultipleInterestManager,
   InterestPeriodData,
+  hasDuplicateInterestDueDates,
 } from './multiple-interest-manager';
 import type { Investor } from '@/lib/types';
 
@@ -107,6 +108,9 @@ export function LoanInvestorCard({
   );
   const maxAllowed = totalAmountDue ?? principalTotal;
   const receivedExceedsMax = maxAllowed > 0 && receivedTotal > maxAllowed + 0.01;
+  const hasDuplicateInterestDates =
+    si.hasMultipleInterest &&
+    hasDuplicateInterestDueDates(si.interestPeriods);
 
   return (
     <Collapsible defaultOpen={true}>
@@ -400,10 +404,25 @@ export function LoanInvestorCard({
                     (t) =>
                       t.sentDate && isMoreThanOneMonthAndFifteenDays(t.sentDate, watchDueDate)
                   )) && (
-                  <div className="space-y-3 p-4 border rounded-lg bg-muted/30 border-amber-400">
+                  <div
+                    className={`space-y-3 p-4 border rounded-lg bg-muted/30 ${
+                      hasDuplicateInterestDates
+                        ? 'border-destructive'
+                        : 'border-amber-400'
+                    }`}
+                  >
                     <Label className="text-sm font-semibold inline-flex">
                       Interest Configuration
                     </Label>
+                    {hasDuplicateInterestDates && (
+                      <Alert className="bg-destructive/10 border-destructive/50">
+                        <AlertCircle className="h-4 w-4 text-destructive" />
+                        <AlertDescription className="text-xs text-destructive">
+                          This loan contains interests with duplicated/same due
+                          date. Each period must have a unique due date.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <Alert className="bg-amber-50 border-amber-200">
                       <AlertCircle className="h-4 w-4 text-amber-600" />
                       <AlertDescription className="text-xs text-amber-800">

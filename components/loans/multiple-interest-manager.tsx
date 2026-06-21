@@ -31,6 +31,31 @@ export interface InterestPeriodData {
   status?: 'Pending' | 'Incomplete' | 'Completed' | 'Overdue';
 }
 
+/** Keep the final period (loan due date) last; sort all others by due date ascending. */
+function sortInterestPeriodsByDueDate(
+  periods: InterestPeriodData[],
+): InterestPeriodData[] {
+  if (periods.length <= 1) {
+    return periods;
+  }
+
+  const finalPeriod = periods[periods.length - 1];
+  const intermediatePeriods = periods.slice(0, -1);
+
+  const sortedIntermediate = [...intermediatePeriods].sort((a, b) =>
+    a.dueDate.localeCompare(b.dueDate),
+  );
+
+  return [...sortedIntermediate, finalPeriod];
+}
+
+export function hasDuplicateInterestDueDates(
+  periods: InterestPeriodData[],
+): boolean {
+  const dates = periods.map((p) => p.dueDate).filter(Boolean);
+  return new Set(dates).size !== dates.length;
+}
+
 interface MultipleInterestManagerProps {
   sentDate: string;
   loanDueDate: string;
@@ -62,7 +87,7 @@ export function MultipleInterestManager({
   );
   const [periods, setPeriods] = useState<InterestPeriodData[]>(() => {
     if (initialPeriods && initialPeriods.length > 0) {
-      return initialPeriods;
+      return sortInterestPeriodsByDueDate(initialPeriods);
     }
 
     // Generate default periods based on sent date and due date
@@ -82,6 +107,12 @@ export function MultipleInterestManager({
 
     return [];
   });
+
+  const commitPeriods = (nextPeriods: InterestPeriodData[]) => {
+    const sorted = sortInterestPeriodsByDueDate(nextPeriods);
+    setPeriods(sorted);
+    onPeriodsChange(sorted);
+  };
 
   // Automatically switch to multiple interest mode if dates span more than 1 month + 15 days
   // Only do this if the user hasn't manually overridden the automatic behavior
@@ -220,8 +251,7 @@ export function MultipleInterestManager({
       newPeriod,
       periods[periods.length - 1],
     ];
-    setPeriods(newPeriods);
-    onPeriodsChange(newPeriods);
+    commitPeriods(newPeriods);
   };
 
   const removePeriod = (id: string) => {
@@ -230,8 +260,7 @@ export function MultipleInterestManager({
     if (periodIndex === periods.length - 1) return;
 
     const newPeriods = periods.filter((p) => p.id !== id);
-    setPeriods(newPeriods);
-    onPeriodsChange(newPeriods);
+    commitPeriods(newPeriods);
   };
 
   const updatePeriod = (
@@ -263,8 +292,12 @@ export function MultipleInterestManager({
       return updatedPeriod;
     });
 
-    setPeriods(newPeriods);
-    onPeriodsChange(newPeriods);
+    if (field === 'dueDate') {
+      commitPeriods(newPeriods);
+    } else {
+      setPeriods(newPeriods);
+      onPeriodsChange(newPeriods);
+    }
   };
 
   // Calculate totals for multiple interest mode
