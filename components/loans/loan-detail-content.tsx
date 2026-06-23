@@ -92,6 +92,7 @@ export function LoanDetailContent({
         status={loan.status}
         balance={balance}
         showStatus={false}
+        updatedAt={loan.updatedAt}
       />
 
       {/* Overdue Interest Computation */}

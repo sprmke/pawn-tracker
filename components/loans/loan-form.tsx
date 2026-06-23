@@ -48,7 +48,7 @@ import {
 } from '@/components/ui/collapsible';
 import { CopyInvestorModal } from './copy-investor-modal';
 import { DuplicateLoanData } from '@/stores/loan-duplicate-store';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, formatDate } from '@/lib/format';
 
 const loanSchema = z.object({
   loanName: z.string().min(1, 'Loan name is required'),
@@ -1593,6 +1593,7 @@ export function LoanForm({
           status={summary.status}
           balance={summary.balance}
           showStatus={false}
+          updatedAt={existingLoan?.updatedAt}
         />
       )}
 

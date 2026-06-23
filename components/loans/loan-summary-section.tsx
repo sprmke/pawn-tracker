@@ -5,6 +5,7 @@ import {
   formatPercentage,
   formatText,
   formatCount,
+  formatDateShort,
 } from '@/lib/format';
 import { getLoanStatusBadge } from '@/lib/badge-config';
 import { LoanStatus } from '@/lib/types';
@@ -21,6 +22,7 @@ interface LoanSummarySectionProps {
   balance?: number;
   showStatus?: boolean;
   title?: string;
+  updatedAt?: Date | string;
 }
 
 export function LoanSummarySection({
@@ -35,6 +37,7 @@ export function LoanSummarySection({
   balance,
   showStatus = true,
   title = 'Summary',
+  updatedAt,
 }: LoanSummarySectionProps) {
   const rateDisplay =
     totalPrincipal > 0
@@ -142,6 +145,16 @@ export function LoanSummarySection({
                 </p>
               </div>
             )}
+          {updatedAt && (
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+                Last Edited
+              </p>
+              <p className="text-base font-semibold">
+                {formatDateShort(updatedAt)}
+              </p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
