@@ -3,7 +3,7 @@
 import { InvestorWithLoans, LoanWithInvestors, LoanType } from '@/lib/types';
 import { DataTable, ColumnDef } from './data-table';
 import { ActionButtonsGroup } from './action-buttons';
-import { formatCurrency, formatText, formatPercentage } from '@/lib/format';
+import { formatCurrencyCompact, formatText, formatPercentage } from '@/lib/format';
 import { getTodayAtMidnight, normalizeToMidnight } from '@/lib/date-utils';
 import {
   calculateInvestorStats,
@@ -44,12 +44,17 @@ export function InvestorsTable({
       accessorKey: 'name',
       sortable: true,
       cell: (investor) => (
-        <span className="font-medium">{formatText(investor.name)}</span>
+        <span
+          className="block truncate font-medium"
+          title={formatText(investor.name)}
+        >
+          {formatText(investor.name)}
+        </span>
       ),
     },
     {
       id: 'totalCapital',
-      header: 'Total Capital',
+      header: 'Capital',
       accessorFn: (investor) => calculateInvestorStats(investor).totalCapital,
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -58,14 +63,14 @@ export function InvestorsTable({
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (investor) => (
-        <span className="font-medium text-xs">
-          {formatCurrency(calculateInvestorStats(investor).totalCapital)}
+        <span className="font-medium tabular-nums">
+          {formatCurrencyCompact(calculateInvestorStats(investor).totalCapital)}
         </span>
       ),
     },
     {
       id: 'avgRate',
-      header: 'Avg. Rate',
+      header: 'Rate',
       accessorFn: (investor) => calculateAverageRate(investor.loanInvestors),
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -74,14 +79,14 @@ export function InvestorsTable({
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (investor) => (
-        <span>
+        <span className="tabular-nums">
           {formatPercentage(calculateAverageRate(investor.loanInvestors))}
         </span>
       ),
     },
     {
       id: 'totalInterest',
-      header: 'Total Interest',
+      header: 'Interest',
       accessorFn: (investor) => calculateInvestorStats(investor).totalInterest,
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -90,14 +95,14 @@ export function InvestorsTable({
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (investor) => (
-        <span className="font-medium">
-          {formatCurrency(calculateInvestorStats(investor).totalInterest)}
+        <span className="font-medium tabular-nums">
+          {formatCurrencyCompact(calculateInvestorStats(investor).totalInterest)}
         </span>
       ),
     },
     {
       id: 'totalAmount',
-      header: 'Total Amount',
+      header: 'Amount',
       accessorFn: (investor) => {
         const stats = calculateInvestorStats(investor);
         return stats.totalCapital + stats.totalInterest;
@@ -113,17 +118,17 @@ export function InvestorsTable({
       cell: (investor) => {
         const stats = calculateInvestorStats(investor);
         return (
-          <span className="font-medium text-xs">
-            {formatCurrency(stats.totalCapital + stats.totalInterest)}
+          <span className="font-semibold tabular-nums">
+            {formatCurrencyCompact(stats.totalCapital + stats.totalInterest)}
           </span>
         );
       },
     },
     {
       id: 'actions',
-      header: 'Actions',
-      className: 'hidden 2xl:table-cell',
-      headerClassName: 'hidden 2xl:table-cell text-center',
+      header: '',
+      className: 'hidden 2xl:table-cell w-[5%]',
+      headerClassName: 'hidden 2xl:table-cell w-[5%] text-center',
       cell: (investor) => (
         <ActionButtonsGroup
           isExpanded={expandedRows?.has(investor.id)}

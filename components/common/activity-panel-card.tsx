@@ -61,7 +61,7 @@ export function ActivityPanelCard({
                   type="button"
                   onClick={onViewAllClick}
                   className={cn(
-                    'rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground transition-colors',
+                    'rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground transition-colors',
                     onViewAllClick &&
                       'hover:bg-primary/10 hover:text-primary cursor-pointer',
                   )}
@@ -156,12 +156,12 @@ export function ActivityListRow({
   return (
     <>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-0.5">
-        <p className="min-w-0 text-xs font-semibold leading-snug line-clamp-2 text-left">
+        <p className="min-w-0 text-sm font-semibold leading-snug line-clamp-2 text-left">
           {title}
         </p>
         <p
           className={cn(
-            'text-right text-xs font-bold tabular-nums whitespace-nowrap',
+            'text-right text-sm font-bold tabular-nums whitespace-nowrap',
             amountClassName,
           )}
         >

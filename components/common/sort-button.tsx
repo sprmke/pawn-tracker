@@ -10,13 +10,14 @@ interface SortButtonProps {
 export function SortButton({ children, onClick, className }: SortButtonProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex items-center gap-1 hover:text-foreground transition-colors ${
+      className={`inline-flex max-w-full items-center gap-1 text-left leading-tight hover:text-foreground transition-colors ${
         className || ''
       }`}
     >
-      {children}
-      <ArrowUpDown className="h-3 w-3" />
+      <span className="min-w-0">{children}</span>
+      <ArrowUpDown className="h-2.5 w-2.5 shrink-0 opacity-70" />
     </button>
   );
 }

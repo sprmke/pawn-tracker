@@ -6,7 +6,8 @@ import { DataTable, ColumnDef } from './data-table';
 import { Badge } from '@/components/ui/badge';
 import { ActionButtonsGroup } from './action-buttons';
 import {
-  formatCurrency,
+  formatCurrencyCompact,
+  formatDateVeryShort,
   formatText,
   formatPercentage,
   formatSqm,
@@ -48,26 +49,33 @@ export function LoansTable({
   const columns: ColumnDef<LoanWithInvestors>[] = [
     {
       id: 'loanName',
-      header: 'Loan Name',
+      header: 'Loan',
       hidden: hideFields.includes('loanName'),
       accessorKey: 'loanName',
       sortable: true,
+      headerClassName: 'w-[12%]',
+      className: 'w-[12%]',
       cell: (loan) => (
-        <span className="font-medium">{formatText(loan.loanName)}</span>
+        <span
+          className="block truncate font-medium"
+          title={formatText(loan.loanName)}
+        >
+          {formatText(loan.loanName)}
+        </span>
       ),
     },
     {
       id: 'type',
       header: 'Type',
       hidden: hideFields.includes('type'),
-      className: 'hidden 2xl:table-cell',
-      headerClassName: 'hidden 2xl:table-cell',
+      className: 'hidden 2xl:table-cell w-[7%]',
+      headerClassName: 'hidden 2xl:table-cell w-[7%]',
       accessorKey: 'type',
       sortable: true,
       cell: (loan) => (
         <Badge
           variant={getLoanTypeBadge(loan.type).variant}
-          className={`text-[10px] flex justify-center w-15 truncate ${
+          className={`text-[10px] px-1.5 flex justify-center max-w-full truncate ${
             getLoanTypeBadge(loan.type).className
           }`}
         >
@@ -79,14 +87,14 @@ export function LoansTable({
       id: 'status',
       header: 'Status',
       hidden: hideFields.includes('status'),
-      className: 'hidden 2xl:table-cell',
-      headerClassName: 'hidden 2xl:table-cell',
+      className: 'hidden 2xl:table-cell w-[7%]',
+      headerClassName: 'hidden 2xl:table-cell w-[7%]',
       accessorKey: 'status',
       sortable: true,
       cell: (loan) => (
         <Badge
           variant={getLoanStatusBadge(loan.status).variant}
-          className={`text-[10px] flex justify-center w-25 truncate ${
+          className={`text-[10px] px-1.5 flex justify-center max-w-full truncate ${
             getLoanStatusBadge(loan.status).className
           }`}
         >
@@ -96,10 +104,10 @@ export function LoansTable({
     },
     {
       id: 'sentDates',
-      header: 'Sent Dates',
+      header: 'Sent',
       hidden: hideFields.includes('sentDates'),
-      className: 'hidden 2xl:table-cell',
-      headerClassName: 'hidden 2xl:table-cell',
+      className: 'hidden 2xl:table-cell w-[8%]',
+      headerClassName: 'hidden 2xl:table-cell w-[8%]',
       accessorFn: (loan) => {
         const dates = loan.loanInvestors.map((li) =>
           new Date(li.sentDate).getTime(),
@@ -133,13 +141,12 @@ export function LoansTable({
         return (
           <DateListWithViewMore
             dates={uniqueDates}
-            limit={3}
+            limit={2}
             dialogTitle="All Sent Dates"
             title={loan.loanName}
+            formatDate={formatDateVeryShort}
             getItemClassName={(date, hasUnpaid) =>
-              `${
-                uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'
-              } px-2 py-0.5 rounded inline-block ${
+              `text-[10px] px-1 py-0.5 rounded inline-block ${
                 hasUnpaid ? 'bg-yellow-200' : ''
               }`
             }
@@ -157,10 +164,10 @@ export function LoansTable({
     },
     {
       id: 'dueDate',
-      header: 'Due Dates',
+      header: 'Due',
       hidden: hideFields.includes('dueDate'),
-      className: 'hidden 2xl:table-cell',
-      headerClassName: 'hidden 2xl:table-cell',
+      className: 'hidden 2xl:table-cell w-[8%]',
+      headerClassName: 'hidden 2xl:table-cell w-[8%]',
       accessorKey: 'dueDate',
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -193,13 +200,12 @@ export function LoansTable({
         return (
           <DateListWithViewMore
             dates={uniqueDates}
-            limit={3}
+            limit={2}
             dialogTitle="All Due Dates"
             title={loan.loanName}
-            getItemClassName={(date) =>
-              `${
-                uniqueDates.length > 1 ? 'text-[10px]' : 'text-xs'
-              } px-2 py-0.5 rounded inline-block`
+            formatDate={formatDateVeryShort}
+            getItemClassName={() =>
+              'text-[10px] px-1 py-0.5 rounded inline-block'
             }
           />
         );
@@ -207,8 +213,10 @@ export function LoansTable({
     },
     {
       id: 'totalPrincipal',
-      header: investorId ? 'Inv. Principal' : 'Total Principal',
+      header: 'Principal',
       hidden: hideFields.includes('totalPrincipal'),
+      headerClassName: 'w-[10%]',
+      className: 'w-[10%]',
       accessorFn: (loan) => getStats(loan).totalPrincipal,
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -217,15 +225,17 @@ export function LoansTable({
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
-        <span className="font-semibold">
-          {formatCurrency(getStats(loan).totalPrincipal)}
+        <span className="font-medium tabular-nums">
+          {formatCurrencyCompact(getStats(loan).totalPrincipal)}
         </span>
       ),
     },
     {
       id: 'avgRate',
-      header: investorId ? 'Inv. Rate' : 'Avg. Rate',
+      header: 'Rate',
       hidden: hideFields.includes('avgRate'),
+      headerClassName: 'w-[7%]',
+      className: 'w-[7%]',
       accessorFn: (loan) => getStats(loan).averageRate,
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -234,13 +244,17 @@ export function LoansTable({
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
-        <span>{formatPercentage(getStats(loan).averageRate)}</span>
+        <span className="tabular-nums">
+          {formatPercentage(getStats(loan).averageRate)}
+        </span>
       ),
     },
     {
       id: 'totalInterest',
-      header: investorId ? 'Inv. Interest' : 'Total Interest',
+      header: 'Interest',
       hidden: hideFields.includes('totalInterest'),
+      headerClassName: 'w-[10%]',
+      className: 'w-[10%]',
       accessorFn: (loan) => getStats(loan).totalInterest,
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -249,15 +263,17 @@ export function LoansTable({
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
-        <span className="font-medium">
-          {formatCurrency(getStats(loan).totalInterest)}
+        <span className="font-medium tabular-nums">
+          {formatCurrencyCompact(getStats(loan).totalInterest)}
         </span>
       ),
     },
     {
       id: 'totalAmount',
-      header: investorId ? 'Inv. Total' : 'Total Amount',
+      header: investorId ? 'Total' : 'Amount',
       hidden: hideFields.includes('totalAmount'),
+      headerClassName: 'w-[10%]',
+      className: 'w-[10%]',
       accessorFn: (loan) => getStats(loan).total,
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -266,17 +282,17 @@ export function LoansTable({
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
-        <span className="font-bold">
-          {formatCurrency(getStats(loan).total)}
+        <span className="font-semibold tabular-nums">
+          {formatCurrencyCompact(getStats(loan).total)}
         </span>
       ),
     },
     {
       id: 'freeLotSqm',
-      header: 'Free Lot',
+      header: 'Lot',
       hidden: hideFields.includes('freeLotSqm'),
-      className: 'hidden 2xl:table-cell',
-      headerClassName: 'hidden 2xl:table-cell',
+      className: 'hidden 2xl:table-cell w-[7%]',
+      headerClassName: 'hidden 2xl:table-cell w-[7%]',
       accessorKey: 'freeLotSqm',
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -285,14 +301,16 @@ export function LoansTable({
         return direction === 'asc' ? aValue - bValue : bValue - aValue;
       },
       cell: (loan) => (
-        <span>{loan.freeLotSqm ? formatSqm(loan.freeLotSqm) : '—'}</span>
+        <span>
+          {loan.freeLotSqm ? formatSqm(loan.freeLotSqm) : '—'}
+        </span>
       ),
     },
     {
       id: 'actions',
-      header: 'Actions',
-      className: 'hidden 2xl:table-cell',
-      headerClassName: 'hidden 2xl:table-cell text-center',
+      header: '',
+      className: 'hidden 2xl:table-cell w-[5%]',
+      headerClassName: 'hidden 2xl:table-cell w-[5%] text-center',
       cell: (loan) => (
         <ActionButtonsGroup
           viewHref={`/loans/${loan.id}`}

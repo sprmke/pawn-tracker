@@ -143,7 +143,7 @@ export function CompletedLoansCard({
                     </Badge>
                   }
                   footer={
-                    <span className="text-[11px] font-medium text-muted-foreground">
+                    <span className="text-sm font-medium text-muted-foreground">
                       Due {formatDateShort(loan.dueDate)}
                     </span>
                   }

@@ -980,7 +980,7 @@ export default function LoansPage() {
                         {/* Summary Section */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           <div className="p-2 bg-muted/50 rounded-lg">
-                            <p className="text-[10px] text-muted-foreground mb-1">
+                            <p className="text-caption mb-1">
                               Total Principal
                             </p>
                             <p className="text-sm font-medium break-words">
@@ -990,7 +990,7 @@ export default function LoansPage() {
                             </p>
                           </div>
                           <div className="p-2 bg-muted/50 rounded-lg">
-                            <p className="text-[10px] text-muted-foreground mb-1">
+                            <p className="text-caption mb-1">
                               Avg. Rate
                             </p>
                             <p className="text-sm font-medium">
@@ -998,7 +998,7 @@ export default function LoansPage() {
                             </p>
                           </div>
                           <div className="p-2 bg-muted/50 rounded-lg">
-                            <p className="text-[10px] text-muted-foreground mb-1">
+                            <p className="text-caption mb-1">
                               Total Interest
                             </p>
                             <p className="text-sm font-medium break-words">
@@ -1008,7 +1008,7 @@ export default function LoansPage() {
                             </p>
                           </div>
                           <div className="p-2 bg-muted/50 rounded-lg">
-                            <p className="text-[10px] text-muted-foreground mb-1">
+                            <p className="text-caption mb-1">
                               Total Amount
                             </p>
                             <p className="text-sm font-medium break-words">
@@ -1016,7 +1016,7 @@ export default function LoansPage() {
                             </p>
                           </div>
                           <div className="p-2 bg-muted/50 rounded-lg">
-                            <p className="text-[10px] text-muted-foreground mb-1">
+                            <p className="text-caption mb-1">
                               Sent Date
                             </p>
                             {(() => {
@@ -1066,7 +1066,7 @@ export default function LoansPage() {
                             })()}
                           </div>
                           <div className="p-2 bg-muted/50 rounded-lg">
-                            <p className="text-[10px] text-muted-foreground mb-1">
+                            <p className="text-caption mb-1">
                               Due Date
                             </p>
                             {(() => {

@@ -108,12 +108,12 @@ export function LoanDetailContent({
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Loan Name</p>
+              <p className="text-caption">Loan Name</p>
               <p className="text-sm font-medium">{formatText(loan.loanName)}</p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Type</p>
+              <p className="text-caption">Type</p>
               <Badge
                 variant={getLoanTypeBadge(loan.type).variant}
                 className={getLoanTypeBadge(loan.type).className}
@@ -123,16 +123,16 @@ export function LoanDetailContent({
             </div>
 
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Due Date</p>
+              <p className="text-caption">Due Date</p>
               <div className="flex items-center gap-2">
-                <span className="font-sm font-medium">
+                <span className="text-sm font-medium">
                   {formatDate(loan.dueDate)}
                 </span>
               </div>
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Status</p>
+              <p className="text-caption">Status</p>
               <Badge
                 variant={getLoanStatusBadge(loan.status).variant}
                 className={getLoanStatusBadge(loan.status).className}
@@ -142,23 +142,23 @@ export function LoanDetailContent({
             </div>
 
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Free Lot (sqm)</p>
+              <p className="text-caption">Free Lot (sqm)</p>
               <div className="flex items-center gap-2">
-                <span className="font-sm font-medium">
+                <span className="text-sm font-medium">
                   {loan.freeLotSqm ? formatSqm(loan.freeLotSqm) : '-'}
                 </span>
               </div>
             </div>
 
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Duration</p>
-              <span className="font-sm font-medium">{formatText(duration)}</span>
+              <p className="text-caption">Duration</p>
+              <span className="text-sm font-medium">{formatText(duration)}</span>
             </div>
           </div>
 
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Notes</p>
-            <p className="font-sm font-medium whitespace-pre-wrap">
+            <p className="text-caption">Notes</p>
+            <p className="text-sm font-medium whitespace-pre-wrap">
               {loan.notes ? formatText(loan.notes) : '-'}
             </p>
           </div>

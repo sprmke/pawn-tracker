@@ -185,7 +185,7 @@ export function DetailHeader({
               {showPriceToggle && <PriceVisibilityToggle />}
             </div>
             {description && (
-              <p className="text-sm sm:text-base text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {formatText(description)}
               </p>
             )}

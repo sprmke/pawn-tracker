@@ -168,7 +168,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-sm text-foreground font-sans antialiased;
     font-feature-settings: 'rlig' 1, 'calt' 1;
     letter-spacing: -0.011em;
   }
@@ -304,6 +304,11 @@
 
   .section-eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.14em] text-primary;
+  }
+
+  /* Secondary labels: field captions, table headers, metric labels */
+  .text-caption {
+    @apply text-xs text-muted-foreground;
   }
 
   .pill-segment {

@@ -110,7 +110,7 @@ export function SummaryCard({ metrics, className }: SummaryCardProps) {
               </div>
               <p
                 className={cn(
-                  'text-base font-bold tabular-nums leading-snug break-words sm:text-lg',
+                  'text-sm font-bold tabular-nums leading-snug break-words',
                   metric.valueClassName,
                 )}
               >
@@ -120,7 +120,7 @@ export function SummaryCard({ metrics, className }: SummaryCardProps) {
                 const subValue = resolveMetricSubValue(metric);
                 return (
                   subValue && (
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground break-words">
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground break-words">
                       {subValue}
                     </p>
                   )
@@ -157,8 +157,8 @@ export function MetricDisplay({
     },
     md: {
       label: 'text-xs',
-      value: 'text-base sm:text-lg',
-      subValue: 'text-xs',
+      value: 'text-sm',
+      subValue: 'text-sm',
     },
     lg: {
       label: 'text-sm',

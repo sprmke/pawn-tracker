@@ -157,11 +157,12 @@ export function DataTable<TData>({
 
     return (
       <button
+        type="button"
         onClick={() => handleSort(columnId)}
-        className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
+        className="inline-flex max-w-full items-center gap-1 text-left leading-tight hover:text-foreground transition-colors cursor-pointer"
       >
-        {children}
-        <ArrowUpDown className="h-3 w-3" />
+        <span className="min-w-0">{children}</span>
+        <ArrowUpDown className="h-2.5 w-2.5 shrink-0 opacity-70" />
       </button>
     );
   };
@@ -173,20 +174,19 @@ export function DataTable<TData>({
   return (
     <Card>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {visibleColumns.map((column) => (
-                  <TableHead key={column.id} className={column.headerClassName}>
-                    <SortButton columnId={column.id}>
-                      {column.header}
-                    </SortButton>
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {visibleColumns.map((column) => (
+                <TableHead key={column.id} className={column.headerClassName}>
+                  <SortButton columnId={column.id}>
+                    {column.header}
+                  </SortButton>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
               {paginatedData.map((row, index) => {
                 const rowId = getRowId ? getRowId(row) : index;
                 const isExpanded = expandedRows?.has(rowId);
@@ -239,7 +239,6 @@ export function DataTable<TData>({
               })}
             </TableBody>
           </Table>
-        </div>
 
         <Pagination
           currentPage={currentPage}

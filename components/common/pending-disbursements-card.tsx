@@ -143,7 +143,7 @@ export function PendingDisbursementsCard({
                     </Badge>
                   }
                   footer={
-                    <span className="text-[11px] font-medium text-muted-foreground">
+                    <span className="text-sm font-medium text-muted-foreground">
                       {formatDateShort(item.sentDate)}
                     </span>
                   }

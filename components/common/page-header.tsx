@@ -35,7 +35,7 @@ export function PageHeader({
           {showPriceToggle && <PriceVisibilityToggle />}
         </div>
         {description && (
-          <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             {description}
           </p>
         )}

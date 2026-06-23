@@ -54,51 +54,51 @@ export function LoanSummarySection({
       <CardContent className="space-y-4">
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <div className="p-3 bg-muted rounded-lg">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+            <p className="text-caption mb-1">
               Total Principal
             </p>
-            <p className="text-base font-semibold">
+            <p className="text-sm font-semibold">
               {formatCurrency(totalPrincipal)}
             </p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+            <p className="text-caption mb-1">
               Avg. Rate
             </p>
-            <p className="text-base font-semibold">{rateDisplay}</p>
+            <p className="text-sm font-semibold">{rateDisplay}</p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+            <p className="text-caption mb-1">
               Total Interest
             </p>
-            <p className="text-base font-semibold">
+            <p className="text-sm font-semibold">
               {formatCurrency(totalInterest)}
             </p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+            <p className="text-caption mb-1">
               Total Amount
             </p>
-            <p className="text-base font-semibold">
+            <p className="text-sm font-semibold">
               {formatCurrency(totalAmount)}
             </p>
           </div>
           {totalReceived !== undefined && (
             <div className="p-3 bg-muted rounded-lg">
-              <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+              <p className="text-caption mb-1">
                 Total Received
               </p>
-              <p className="text-base font-semibold">
+              <p className="text-sm font-semibold">
                 {formatCurrency(totalReceived)}
               </p>
             </div>
           )}
           {totalBalance !== undefined && (
             <div className="p-3 bg-muted rounded-lg">
-              <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+              <p className="text-caption mb-1">
                 Total Balance
               </p>
-              <p className="text-base font-semibold">
+              <p className="text-sm font-semibold">
                 {formatCurrency(totalBalance)}
               </p>
             </div>
@@ -107,17 +107,17 @@ export function LoanSummarySection({
             balance !== undefined &&
             balance > 0 && (
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-xs sm:text-sm text-yellow-800 font-semibold mb-1">
+                <p className="text-xs text-yellow-800 font-semibold mb-1">
                   Pending Balance
                 </p>
-                <p className="text-base font-semibold text-yellow-900">
+                <p className="text-sm font-semibold text-yellow-900">
                   {formatCurrency(balance)}
                 </p>
               </div>
             )}
           {showStatus && status && (
             <div className="p-3 bg-muted rounded-lg">
-              <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+              <p className="text-caption mb-1">
                 Status
               </p>
               <div className="mt-1">
@@ -137,20 +137,20 @@ export function LoanSummarySection({
           ) &&
             !showStatus && (
               <div className="p-3 bg-muted rounded-lg">
-                <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+                <p className="text-caption mb-1">
                   Investors
                 </p>
-                <p className="text-base font-semibold">
+                <p className="text-sm font-semibold">
                   {formatCount(uniqueInvestors)}
                 </p>
               </div>
             )}
           {updatedAt && (
             <div className="p-3 bg-muted rounded-lg">
-              <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+              <p className="text-caption mb-1">
                 Last Edited
               </p>
-              <p className="text-base font-semibold">
+              <p className="text-sm font-semibold">
                 {formatDateShort(updatedAt)}
               </p>
             </div>

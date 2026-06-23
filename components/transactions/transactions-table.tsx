@@ -5,8 +5,8 @@ import { DataTable, ColumnDef } from '@/components/common/data-table';
 import { Badge } from '@/components/ui/badge';
 import { ActionButtonsGroup } from '@/components/common';
 import {
-  formatCurrency,
-  formatDateShort,
+  formatCurrencyCompact,
+  formatDateVeryShort,
   formatText,
 } from '@/lib/format';
 import {
@@ -38,7 +38,7 @@ export function TransactionsTable({
         return direction === 'asc' ? aTime - bTime : bTime - aTime;
       },
       cell: (transaction) => (
-        <span className="text-xs">{formatDateShort(transaction.date)}</span>
+        <span>{formatDateVeryShort(transaction.date)}</span>
       ),
     },
     {
@@ -48,7 +48,7 @@ export function TransactionsTable({
       sortable: true,
       cell: (transaction) => (
         <p
-          className="font-medium max-w-50 break-words"
+          className="font-medium truncate"
           title={formatText(transaction.name)}
         >
           {formatText(transaction.name)}
@@ -61,7 +61,9 @@ export function TransactionsTable({
       accessorFn: (transaction) => transaction.investor.name,
       sortable: true,
       cell: (transaction) => (
-        <span className="text-xs">{formatText(transaction.investor.name)}</span>
+        <span className="block truncate">
+          {formatText(transaction.investor.name)}
+        </span>
       ),
     },
     {
@@ -110,22 +112,22 @@ export function TransactionsTable({
       },
       cell: (transaction) => (
         <span
-          className={`font-semibold truncate ${
+          className={`font-medium tabular-nums truncate ${
             transaction.direction === 'In'
               ? 'text-emerald-600'
               : 'text-rose-600'
           }`}
         >
           {transaction.direction === 'In' ? '+' : '-'}
-          {formatCurrency(transaction.amount)}
+          {formatCurrencyCompact(transaction.amount)}
         </span>
       ),
     },
     {
       id: 'actions',
-      header: 'Actions',
-      className: 'hidden 2xl:table-cell',
-      headerClassName: 'hidden 2xl:table-cell text-center',
+      header: '',
+      className: 'hidden 2xl:table-cell w-[5%]',
+      headerClassName: 'hidden 2xl:table-cell w-[5%] text-center',
       cell: (transaction) => (
         <ActionButtonsGroup
           onQuickView={

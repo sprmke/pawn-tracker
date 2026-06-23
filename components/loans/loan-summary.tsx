@@ -38,34 +38,34 @@ export function LoanSummary({
       <CardContent>
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
           <div className="p-3 bg-muted rounded-lg">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+            <p className="text-caption mb-1">
               Total Principal
             </p>
-            <p className="text-base font-semibold">
+            <p className="text-sm font-semibold">
               {formatCurrency(totalPrincipal)}
             </p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+            <p className="text-caption mb-1">
               Avg. Rate
             </p>
-            <p className="text-base font-semibold">
+            <p className="text-sm font-semibold">
               {formatPercentage(averageRate)}
             </p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+            <p className="text-caption mb-1">
               Total Interest
             </p>
-            <p className="text-base font-semibold">
+            <p className="text-sm font-semibold">
               {formatCurrency(totalInterest)}
             </p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+            <p className="text-caption mb-1">
               Total Amount
             </p>
-            <p className="text-base font-semibold">
+            <p className="text-sm font-semibold">
               {formatCurrency(totalAmount)}
             </p>
           </div>
@@ -73,17 +73,17 @@ export function LoanSummary({
             balance !== undefined &&
             balance > 0 && (
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-xs sm:text-sm text-yellow-800 font-semibold mb-1">
+                <p className="text-xs text-yellow-800 font-semibold mb-1">
                   Pending Balance
                 </p>
-                <p className="text-base font-semibold text-yellow-900">
+                <p className="text-sm font-semibold text-yellow-900">
                   {formatCurrency(balance)}
                 </p>
               </div>
             )}
           {showStatus && status && (
             <div className="p-3 bg-muted rounded-lg">
-              <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+              <p className="text-caption mb-1">
                 Status
               </p>
               <div className="mt-1">
@@ -102,10 +102,10 @@ export function LoanSummary({
             balance > 0
           ) && (
             <div className="p-3 bg-muted rounded-lg">
-              <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+              <p className="text-caption mb-1">
                 Investors
               </p>
-              <p className="text-base font-semibold">
+              <p className="text-sm font-semibold">
                 {formatCount(uniqueInvestors)}
               </p>
             </div>

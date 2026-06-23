@@ -76,11 +76,11 @@ export function StatCard({
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {title}
             </p>
-            <p className="text-base sm:text-lg font-semibold break-words">
+            <p className="text-sm font-semibold break-words">
               {value}
             </p>
             {subtitle && (
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-sm text-muted-foreground mt-1">
                 {subtitle}
               </div>
             )}
