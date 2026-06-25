@@ -8,8 +8,8 @@ export function getSummaryMetricGridCols(count: number) {
   return 'grid-cols-2 md:grid-cols-3';
 }
 
-/** Max metrics on investor detail (5 base + optional Total Lot). */
-export const INVESTOR_DETAIL_METRIC_COUNT = 6;
+/** Max metrics on investor detail (3 loan + 3 debt + interest + earnings + lot). */
+export const INVESTOR_DETAIL_METRIC_COUNT = 9;
 
 /** Investor detail always uses 3 columns on md+ regardless of metric count. */
 export const INVESTOR_DETAIL_SUMMARY_GRID =

@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { loans, loanInvestors, investors, transactions } from '@/db/schema';
+import { loans, loanInvestors, investors, transactions, debts } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 /**
@@ -63,6 +63,38 @@ export async function hasTransactionAccess(transactionId: number, userId: string
     });
 
     if (investorTransaction) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Check if a user has access to a debt (either owns it or is the investor)
+ */
+export async function hasDebtAccess(debtId: number, userId: string): Promise<boolean> {
+  const ownedDebt = await db.query.debts.findFirst({
+    where: and(eq(debts.id, debtId), eq(debts.userId, userId)),
+  });
+
+  if (ownedDebt) {
+    return true;
+  }
+
+  const investorRecord = await db.query.investors.findFirst({
+    where: eq(investors.investorUserId, userId),
+  });
+
+  if (investorRecord) {
+    const investorDebt = await db.query.debts.findFirst({
+      where: and(
+        eq(debts.id, debtId),
+        eq(debts.investorId, investorRecord.id),
+      ),
+    });
+
+    if (investorDebt) {
       return true;
     }
   }

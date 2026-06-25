@@ -12,6 +12,12 @@ export type InterestPeriodStatus =
   | 'Incomplete'
   | 'Completed'
   | 'Overdue';
+export type DebtInterestInterval = 'Daily' | 'Weekly' | 'Monthly' | 'Annually';
+
+export interface DebtAdditionalFee {
+  label: string;
+  amount: string;
+}
 
 export interface Investor {
   id: number;
@@ -96,10 +102,62 @@ export interface LoanWithInvestors extends Loan {
 export interface InvestorWithLoans extends Investor {
   loanInvestors: (LoanInvestor & { loan: Loan })[];
   transactions: Transaction[];
+  debts?: DebtWithPeriods[];
 }
+
+export type DebtWithPeriods = Debt & {
+  interestPeriods?: DebtInterestPeriodWithPayments[];
+};
 
 export interface TransactionWithInvestor extends Transaction {
   investor: Investor;
+}
+
+export interface Debt {
+  id: number;
+  investorId: number;
+  name: string;
+  amount: string;
+  date: Date;
+  interestRate: string;
+  interestInterval: DebtInterestInterval;
+  durationMonths: number;
+  additionalFees: DebtAdditionalFee[] | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DebtWithInvestor extends Debt {
+  investor: Investor;
+}
+
+export interface DebtReceivedPayment {
+  id: number;
+  debtInterestPeriodId: number;
+  amount: string;
+  receivedDate: Date | string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DebtInterestPeriod {
+  id: number;
+  debtId: number;
+  periodNumber: number;
+  dueDate: Date | string;
+  expectedInterest: string;
+  status: InterestPeriodStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DebtInterestPeriodWithPayments extends DebtInterestPeriod {
+  receivedPayments: DebtReceivedPayment[];
+}
+
+export interface DebtWithInvestorAndPeriods extends DebtWithInvestor {
+  interestPeriods?: DebtInterestPeriodWithPayments[];
 }
 
 export interface LoanPreview {
