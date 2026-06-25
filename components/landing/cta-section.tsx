@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { ScrollReveal } from './scroll-reveal';
+import { SHOW_TRANSACTIONS_UI } from '@/lib/feature-flags';
 
 export function CtaSection() {
   return (
@@ -17,8 +18,8 @@ export function CtaSection() {
                 Ready to take control of your pawn business?
               </h2>
               <p className="mx-auto mt-6 max-w-lg text-lg text-primary-foreground/85">
-                Join operators who run smarter with loans, investors, and
-                transactions in one place.
+                Join operators who run smarter with loans, investors, and{' '}
+                {SHOW_TRANSACTIONS_UI ? 'transactions' : 'borrowings'} in one place.
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link href="/auth/signin">

@@ -32,6 +32,7 @@ export { CompletedLoansCard } from './completed-loans-card';
 export { PastDueLoansCard } from './past-due-loans-card';
 export { PendingDisbursementsCard } from './pending-disbursements-card';
 export { MaturingLoansCard } from './maturing-loans-card';
+export { ActivityCardSlot } from './activity-panel-card';
 export { DashboardActivityCards } from './dashboard-activity-cards';
 export { OverdueChecker } from './overdue-checker';
 export { DateListWithViewMore } from './date-list-with-view-more';
@@ -40,6 +41,7 @@ export {
   QuickViewButton,
   ViewButton,
   ActionButtonsGroup,
+  CardActionFooter,
 } from './action-buttons';
 export { Logo } from './logo';
 export { ExportButton } from './export-button';

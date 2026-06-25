@@ -40,6 +40,12 @@ export const interestPeriodStatusEnum = pgEnum('interest_period_status', [
   'Completed',
   'Overdue',
 ]);
+export const debtInterestIntervalEnum = pgEnum('debt_interest_interval', [
+  'Daily',
+  'Weekly',
+  'Monthly',
+  'Annually',
+]);
 
 // Investors Table
 export const investors = pgTable('investors', {
@@ -120,6 +126,60 @@ export const receivedPayments = pgTable('received_payments', {
     () => interestPeriods.id,
     { onDelete: 'set null' },
   ),
+  amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+  receivedDate: timestamp('received_date').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Debts Table
+export const debts = pgTable('debts', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  investorId: integer('investor_id')
+    .references(() => investors.id, { onDelete: 'cascade' })
+    .notNull(),
+  name: text('name').notNull(),
+  amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+  date: timestamp('date').notNull(),
+  interestRate: decimal('interest_rate', { precision: 15, scale: 2 }).notNull(),
+  interestInterval: debtInterestIntervalEnum('interest_interval')
+    .notNull()
+    .default('Monthly'),
+  durationMonths: integer('duration_months').notNull().default(12),
+  additionalFees: jsonb('additional_fees')
+    .$type<Array<{ label: string; amount: string }>>()
+    .default([]),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Debt interest periods (scheduled interest due per payment period)
+export const debtInterestPeriods = pgTable('debt_interest_periods', {
+  id: serial('id').primaryKey(),
+  debtId: integer('debt_id')
+    .references(() => debts.id, { onDelete: 'cascade' })
+    .notNull(),
+  periodNumber: integer('period_number').notNull(),
+  dueDate: timestamp('due_date').notNull(),
+  expectedInterest: decimal('expected_interest', {
+    precision: 15,
+    scale: 2,
+  }).notNull(),
+  status: interestPeriodStatusEnum('status').notNull().default('Pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Debt received payments (interest payments per debt period)
+export const debtReceivedPayments = pgTable('debt_received_payments', {
+  id: serial('id').primaryKey(),
+  debtInterestPeriodId: integer('debt_interest_period_id')
+    .references(() => debtInterestPeriods.id, { onDelete: 'cascade' })
+    .notNull(),
   amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
   receivedDate: timestamp('received_date').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -219,6 +279,7 @@ export const investorsRelations = relations(investors, ({ one, many }) => ({
   }),
   loanInvestors: many(loanInvestors),
   transactions: many(transactions),
+  debts: many(debts),
 }));
 
 export const loansRelations = relations(loans, ({ one, many }) => ({
@@ -271,6 +332,39 @@ export const interestPeriodsRelations = relations(
   })
 );
 
+export const debtsRelations = relations(debts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [debts.userId],
+    references: [users.id],
+  }),
+  investor: one(investors, {
+    fields: [debts.investorId],
+    references: [investors.id],
+  }),
+  interestPeriods: many(debtInterestPeriods),
+}));
+
+export const debtInterestPeriodsRelations = relations(
+  debtInterestPeriods,
+  ({ one, many }) => ({
+    debt: one(debts, {
+      fields: [debtInterestPeriods.debtId],
+      references: [debts.id],
+    }),
+    receivedPayments: many(debtReceivedPayments),
+  }),
+);
+
+export const debtReceivedPaymentsRelations = relations(
+  debtReceivedPayments,
+  ({ one }) => ({
+    debtInterestPeriod: one(debtInterestPeriods, {
+      fields: [debtReceivedPayments.debtInterestPeriodId],
+      references: [debtInterestPeriods.id],
+    }),
+  }),
+);
+
 export const transactionsRelations = relations(transactions, ({ one }) => ({
   user: one(users, {
     fields: [transactions.userId],
@@ -292,6 +386,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   investors: many(investors),
   loans: many(loans),
   transactions: many(transactions),
+  debts: many(debts),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({

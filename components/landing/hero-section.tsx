@@ -6,6 +6,7 @@ import { ArrowRight, Play, Sparkles } from 'lucide-react';
 import { HeroFloatingAccents } from './hero-floating-accents';
 import { DashboardPreview } from './mockups/dashboard-preview';
 import { ScrollReveal } from './scroll-reveal';
+import { SHOW_TRANSACTIONS_UI } from '@/lib/feature-flags';
 
 const stats = [
   { value: '127+', label: 'Loans tracked' },
@@ -40,7 +41,8 @@ export function HeroSection() {
 
             <ScrollReveal delay={200}>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-                PawnTracker unifies loans, investors, and transactions in one
+                PawnTracker unifies loans, investors, and{' '}
+                {SHOW_TRANSACTIONS_UI ? 'transactions' : 'borrowings'} in one
                 beautiful system, so always know what&apos;s due, what&apos;s
                 collected, and what&apos;s next.
               </p>

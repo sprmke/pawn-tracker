@@ -78,7 +78,7 @@ export function DateListWithViewMore({
               e.stopPropagation();
               setShowAllModal(true);
             }}
-            className="h-auto p-0 text-sm text-primary hover:underline"
+            className="h-auto p-0 text-xs px-2 text-primary hover:underline"
           >
             View {formatCount(dates.length - limit)} more
           </Button>

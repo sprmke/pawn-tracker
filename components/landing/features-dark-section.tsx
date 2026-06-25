@@ -20,7 +20,7 @@ const principles = [
     icon: Zap,
     title: 'Speed',
     description:
-      'Record loans and transactions in seconds. Spend time growing, not typing.',
+      'Record loans and borrowings in seconds. Spend time growing, not typing.',
   },
 ];
 

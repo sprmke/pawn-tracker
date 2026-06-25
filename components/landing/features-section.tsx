@@ -9,8 +9,9 @@ import {
   Users,
 } from 'lucide-react';
 import { ScrollReveal } from './scroll-reveal';
+import { SHOW_TRANSACTIONS_UI } from '@/lib/feature-flags';
 
-const features = [
+const allFeatures = [
   {
     icon: FileText,
     title: 'Loan Management',
@@ -54,6 +55,11 @@ const features = [
     accent: 'bg-primary/12 text-primary',
   },
 ];
+
+const features = allFeatures.filter(
+  (feature) =>
+    SHOW_TRANSACTIONS_UI || feature.title !== 'Transaction Ledger',
+);
 
 export function FeaturesSection() {
   return (

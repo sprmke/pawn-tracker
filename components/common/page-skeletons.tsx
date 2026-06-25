@@ -292,6 +292,35 @@ export function TransactionsPageSkeleton({
   );
 }
 
+export function DebtsPageSkeleton({
+  showTitle = false,
+}: {
+  showTitle?: boolean;
+}) {
+  return (
+    <div className="space-y-6">
+      {showTitle ? (
+        <div className="mb-8 space-y-2 md:mb-10">
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
+            Borrowings
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Track borrowings and projected interest costs
+          </p>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Skeleton className="h-9 w-28 rounded-2xl" />
+            <Skeleton className="h-9 w-32 rounded-2xl" />
+          </div>
+        </div>
+      ) : (
+        <ListPageHeaderSkeleton actionCount={2} />
+      )}
+      <ListPageFiltersSkeleton />
+      <TransactionsTableSkeleton />
+    </div>
+  );
+}
+
 export function InvestorDetailHeaderSkeleton() {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -367,6 +396,13 @@ export function InvestorDetailPageSkeleton({
   return (
     <div className="space-y-6">
       <InvestorDetailHeaderSkeleton />
+
+      <div className="flex gap-2">
+        <Skeleton className="h-9 w-28 rounded-xl" />
+        <Skeleton className="h-9 w-24 rounded-xl" />
+        <Skeleton className="h-9 w-24 rounded-xl" />
+      </div>
+
       <InvestorContactCardSkeleton />
 
       <div

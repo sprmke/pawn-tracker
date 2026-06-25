@@ -133,6 +133,21 @@ export function ActivityEmptyState({ message }: { message: string }) {
   );
 }
 
+/** Hide empty activity cards below 2xl; always show the full set on large screens. */
+export function ActivityCardSlot({
+  visibleBelowLarge,
+  children,
+}: {
+  visibleBelowLarge: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className={cn('min-w-0', !visibleBelowLarge && 'hidden 2xl:block')}>
+      {children}
+    </div>
+  );
+}
+
 export const activityItemClassName =
   'flex w-full min-w-0 flex-col gap-2 overflow-hidden rounded-2xl border border-border/50 bg-muted/30 p-3 transition-all duration-200 hover:border-primary/20 hover:bg-background hover:shadow-[var(--shadow-elevated)] cursor-pointer';
 

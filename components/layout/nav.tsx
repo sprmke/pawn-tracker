@@ -17,6 +17,7 @@ import {
   Landmark,
   LogOut,
   Settings,
+  HandCoins,
 } from 'lucide-react';
 import { useState, ReactNode, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
@@ -31,6 +32,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/common';
+import { SHOW_TRANSACTIONS_UI } from '@/lib/feature-flags';
 
 interface SubMenuItem {
   title: string;
@@ -61,10 +63,19 @@ const navItems: NavItem[] = [
     href: '/loans',
     icon: FileText,
   },
+  ...(SHOW_TRANSACTIONS_UI
+    ? [
+        {
+          title: 'Transactions',
+          href: '/transactions',
+          icon: ArrowLeftRight,
+        } as NavItem,
+      ]
+    : []),
   {
-    title: 'Transactions',
-    href: '/transactions',
-    icon: ArrowLeftRight,
+    title: 'Borrowings',
+    href: '/debts',
+    icon: HandCoins,
   },
   {
     title: 'Investors',

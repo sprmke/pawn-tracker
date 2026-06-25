@@ -1,5 +1,7 @@
+import { SHOW_TRANSACTIONS_UI } from '@/lib/feature-flags';
+
 export function LogoMarquee() {
-  const items = [
+  const allItems = [
     'Loan Tracking',
     'Investor Management',
     'Transaction Ledger',
@@ -8,6 +10,10 @@ export function LogoMarquee() {
     'Multi Loan Types',
     'Secure & Private',
   ];
+
+  const items = allItems.filter(
+    (item) => SHOW_TRANSACTIONS_UI || item !== 'Transaction Ledger',
+  );
 
   const repeated = [...items, ...items];
 

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Logo } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { SHOW_TRANSACTIONS_UI } from '@/lib/feature-flags';
 
 const navigateLinks = [
   { href: '#features', label: 'Features' },
@@ -19,7 +20,8 @@ export function LandingFooter() {
             <Logo size="lg" showIcon gradient />
             <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
               Professional pawn business management. Track loans, investors,
-              and transactions in one modern platform.
+              and {SHOW_TRANSACTIONS_UI ? 'transactions' : 'borrowings'} in one
+              modern platform.
             </p>
             <Link href="/auth/signin" className="mt-6 inline-block">
               <Button className="group rounded-2xl shadow-[var(--shadow-soft)]">

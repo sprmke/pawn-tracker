@@ -1,9 +1,17 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Eye, Maximize2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useNavigationProgress } from './navigation-progress';
+import { cn } from '@/lib/utils';
+
+/** Full-bleed footer actions pinned to the card edge */
+const cardActionButtonClass =
+  'h-9 min-h-9 w-full flex-1 rounded-none px-4 text-xs font-medium gap-1.5 hover:bg-muted/60 shadow-none [&_svg]:size-3.5 only:rounded-b-3xl first:rounded-bl-3xl last:rounded-br-3xl';
+
+const tableActionButtonClass = 'h-7 text-xs px-2 gap-1 [&_svg]:size-3';
 
 interface ToggleMoreButtonProps {
   isExpanded: boolean;
@@ -18,30 +26,31 @@ export function ToggleMoreButton({
   size = 'sm',
   className = '',
 }: ToggleMoreButtonProps) {
-  const buttonSize = size === 'md' ? 'sm' : size;
+  const isCardSize = size === 'md';
 
   return (
     <Button
       variant="ghost"
-      size={buttonSize}
-      className={`${
-        size === 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
-      } ${className}`}
+      size="sm"
+      className={cn(
+        isCardSize ? cardActionButtonClass : tableActionButtonClass,
+        className,
+      )}
       onClick={onToggle}
     >
       {isExpanded ? (
         <>
-          <ChevronUp
-            className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
-          />
-          <span className="hidden md:inline">Hide</span>
+          <ChevronUp />
+          <span className={isCardSize ? 'inline' : 'hidden md:inline'}>
+            Hide
+          </span>
         </>
       ) : (
         <>
-          <ChevronDown
-            className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
-          />
-          <span className="hidden md:inline">More</span>
+          <ChevronDown />
+          <span className={isCardSize ? 'inline' : 'hidden md:inline'}>
+            More
+          </span>
         </>
       )}
     </Button>
@@ -59,21 +68,20 @@ export function QuickViewButton({
   size = 'sm',
   className = '',
 }: QuickViewButtonProps) {
-  const buttonSize = size === 'md' ? 'sm' : size;
+  const isCardSize = size === 'md';
 
   return (
     <Button
       variant="ghost"
-      size={buttonSize}
-      className={`${
-        size === 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
-      } ${className}`}
+      size="sm"
+      className={cn(
+        isCardSize ? cardActionButtonClass : tableActionButtonClass,
+        className,
+      )}
       onClick={onClick}
     >
-      <Maximize2
-        className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`}
-      />
-      <span className="hidden md:inline">View</span>
+      <Maximize2 />
+      <span className={isCardSize ? 'inline' : 'hidden md:inline'}>View</span>
     </Button>
   );
 }
@@ -93,7 +101,7 @@ export function ViewButton({
 }: ViewButtonProps) {
   const router = useRouter();
   const { startProgress } = useNavigationProgress();
-  const buttonSize = size === 'md' ? 'sm' : size;
+  const isCardSize = size === 'md';
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -109,14 +117,15 @@ export function ViewButton({
   return (
     <Button
       variant="ghost"
-      size={buttonSize}
-      className={`${
-        size === 'sm' ? 'h-7 text-xs px-2' : 'h-8 text-xs px-2 md:px-3'
-      } ${className}`}
+      size="sm"
+      className={cn(
+        isCardSize ? cardActionButtonClass : tableActionButtonClass,
+        className,
+      )}
       onClick={handleClick}
     >
-      <Eye className={`${size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} md:mr-1`} />
-      <span className="hidden md:inline">View</span>
+      <Eye />
+      <span className={isCardSize ? 'inline' : 'hidden md:inline'}>View</span>
     </Button>
   );
 }
@@ -150,16 +159,18 @@ export function ActionButtonsGroup({
 
   return (
     <div
-      className={`flex items-center ${
-        isCardSize ? 'gap-1.5 md:gap-2' : 'justify-end gap-1 md:gap-1.5'
-      } ${className}`}
+      className={cn(
+        'flex items-stretch',
+        isCardSize ? 'w-full' : 'justify-end gap-1 md:gap-1.5',
+        className,
+      )}
     >
       {showToggle && onToggle && (
         <ToggleMoreButton
           isExpanded={isExpanded}
           onToggle={onToggle}
           size={size}
-          className={`${isCardSize ? 'flex-1' : ''} hidden md:flex`}
+          className={isCardSize ? 'flex-1' : 'hidden md:inline-flex'}
         />
       )}
       {onQuickView && (
@@ -174,9 +185,26 @@ export function ActionButtonsGroup({
           href={viewHref}
           size={size}
           onClick={onViewClick}
-          className={`${isCardSize ? 'flex-1' : ''} ${hideViewOnMobile ? 'hidden md:flex' : ''}`}
+          className={cn(
+            isCardSize && 'flex-1',
+            !isCardSize && hideViewOnMobile && 'hidden md:inline-flex',
+          )}
         />
       )}
+    </div>
+  );
+}
+
+export function CardActionFooter({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn('mt-auto border-t border-border/50', className)}>
+      {children}
     </div>
   );
 }

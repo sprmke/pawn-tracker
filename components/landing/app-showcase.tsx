@@ -7,8 +7,9 @@ import { DashboardPreview } from './mockups/dashboard-preview';
 import { LoansPreview } from './mockups/loans-preview';
 import { InvestorsPreview } from './mockups/investors-preview';
 import { TransactionsPreview } from './mockups/transactions-preview';
+import { SHOW_TRANSACTIONS_UI } from '@/lib/feature-flags';
 
-const tabs = [
+const allTabs = [
   {
     id: 'dashboard',
     label: 'Dashboard',
@@ -34,6 +35,10 @@ const tabs = [
     component: TransactionsPreview,
   },
 ] as const;
+
+const tabs = allTabs.filter(
+  (tab) => SHOW_TRANSACTIONS_UI || tab.id !== 'transactions',
+);
 
 export function AppShowcase() {
   const [active, setActive] =

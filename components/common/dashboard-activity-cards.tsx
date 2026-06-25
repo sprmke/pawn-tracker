@@ -6,9 +6,11 @@ import { CompletedLoansCard } from './completed-loans-card';
 import { PastDueLoansCard } from './past-due-loans-card';
 import { PendingDisbursementsCard } from './pending-disbursements-card';
 import { MaturingLoansCard } from './maturing-loans-card';
+import { ActivityCardSlot } from './activity-panel-card';
 import { LoanDetailModal, LoanCreateModal } from '@/components/loans';
 import { useLoanDuplicateStore } from '@/stores/loan-duplicate-store';
 import type { LoanWithInvestors, LoanType, LoanStatus } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface PendingDisbursement {
   id: number;
@@ -106,41 +108,64 @@ export function DashboardActivityCards({
     (state) => state.closeCreateModal,
   );
 
+  const hasUpcomingPayouts = upcomingPaymentsDue.length > 0;
+  const hasOverdueLoans = overdueLoans.length > 0;
+  const hasPendingDisbursements = pendingDisbursements.length > 0;
+  const hasCompletedLoans = completedLoans.length > 0;
+  const hasAnyActivity =
+    hasUpcomingPayouts ||
+    hasOverdueLoans ||
+    hasPendingDisbursements ||
+    hasCompletedLoans;
+
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-        <MaturingLoansCard
-          loans={upcomingPaymentsDue}
-          onLoanClick={handleLoanClick}
-          onTypeFilterClick={(type) =>
-            handleTypeFilterClick(type, ['Fully Funded', 'Partially Funded'])
-          }
-          onViewAllClick={() =>
-            handleViewAllClick(['Fully Funded', 'Partially Funded'])
-          }
-        />
-        <PastDueLoansCard
-          loans={overdueLoans}
-          onLoanClick={handleLoanClick}
-          onTypeFilterClick={(type) => handleTypeFilterClick(type, 'Overdue')}
-          onViewAllClick={() => handleViewAllClick('Overdue')}
-        />
-        <PendingDisbursementsCard
-          disbursements={pendingDisbursements}
-          onDisbursementClick={handleDisbursementClick}
-          onTypeFilterClick={(type) =>
-            handleTypeFilterClick(type, ['Fully Funded', 'Partially Funded'])
-          }
-          onViewAllClick={() =>
-            handleViewAllClick(['Fully Funded', 'Partially Funded'])
-          }
-        />
-        <CompletedLoansCard
-          loans={completedLoans}
-          onLoanClick={handleLoanClick}
-          onTypeFilterClick={(type) => handleTypeFilterClick(type, 'Completed')}
-          onViewAllClick={() => handleViewAllClick('Completed')}
-        />
+      <div
+        className={cn(
+          'grid gap-4 md:grid-cols-2 2xl:grid-cols-4',
+          !hasAnyActivity && 'hidden 2xl:grid',
+        )}
+      >
+        <ActivityCardSlot visibleBelowLarge={hasUpcomingPayouts}>
+          <MaturingLoansCard
+            loans={upcomingPaymentsDue}
+            onLoanClick={handleLoanClick}
+            onTypeFilterClick={(type) =>
+              handleTypeFilterClick(type, ['Fully Funded', 'Partially Funded'])
+            }
+            onViewAllClick={() =>
+              handleViewAllClick(['Fully Funded', 'Partially Funded'])
+            }
+          />
+        </ActivityCardSlot>
+        <ActivityCardSlot visibleBelowLarge={hasOverdueLoans}>
+          <PastDueLoansCard
+            loans={overdueLoans}
+            onLoanClick={handleLoanClick}
+            onTypeFilterClick={(type) => handleTypeFilterClick(type, 'Overdue')}
+            onViewAllClick={() => handleViewAllClick('Overdue')}
+          />
+        </ActivityCardSlot>
+        <ActivityCardSlot visibleBelowLarge={hasPendingDisbursements}>
+          <PendingDisbursementsCard
+            disbursements={pendingDisbursements}
+            onDisbursementClick={handleDisbursementClick}
+            onTypeFilterClick={(type) =>
+              handleTypeFilterClick(type, ['Fully Funded', 'Partially Funded'])
+            }
+            onViewAllClick={() =>
+              handleViewAllClick(['Fully Funded', 'Partially Funded'])
+            }
+          />
+        </ActivityCardSlot>
+        <ActivityCardSlot visibleBelowLarge={hasCompletedLoans}>
+          <CompletedLoansCard
+            loans={completedLoans}
+            onLoanClick={handleLoanClick}
+            onTypeFilterClick={(type) => handleTypeFilterClick(type, 'Completed')}
+            onViewAllClick={() => handleViewAllClick('Completed')}
+          />
+        </ActivityCardSlot>
       </div>
 
       <LoanDetailModal

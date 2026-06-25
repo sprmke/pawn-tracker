@@ -34,6 +34,14 @@ export interface MetricItem {
   valueClassName?: string;
   icon?: LucideIcon;
   accentClassName?: string;
+  /** When true, the card is hidden below lg and still shown on large screens. */
+  empty?: boolean;
+}
+
+export function isMetricEmpty(metric: MetricItem): boolean {
+  if (metric.empty !== undefined) return metric.empty;
+  if (metric.amount !== undefined) return metric.amount === 0;
+  return false;
 }
 
 function resolveMetricValue(metric: MetricItem): string | ReactNode {
@@ -89,10 +97,15 @@ export function SummaryCard({ metrics, className }: SummaryCardProps) {
         const accentClassName =
           metric.accentClassName ?? defaults.accentClassName;
 
+        const empty = isMetricEmpty(metric);
+
         return (
           <Card
-            key={index}
-            className="group border-border/40 surface-card-interactive"
+            key={metric.label}
+            className={cn(
+              'group border-border/40 surface-card-interactive',
+              empty && 'hidden lg:block',
+            )}
           >
             <CardContent className="p-4 md:p-5">
               <div className="flex items-center justify-between gap-2">
@@ -110,7 +123,7 @@ export function SummaryCard({ metrics, className }: SummaryCardProps) {
               </div>
               <p
                 className={cn(
-                  'text-sm font-bold tabular-nums leading-snug break-words',
+                  'text-lg font-bold tabular-nums leading-snug break-words',
                   metric.valueClassName,
                 )}
               >

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ActionButtonsGroup } from '@/components/common';
+import { ActionButtonsGroup, CardActionFooter } from '@/components/common';
 import {
   formatCurrency,
   formatDateShort,
@@ -27,8 +27,8 @@ export function TransactionCard({
   viewHref,
 }: TransactionCardProps) {
   return (
-    <Card className="hover:shadow-lg transition-shadow h-full">
-      <CardHeader className="pb-1">
+    <Card className="hover:shadow-lg transition-shadow h-full flex flex-col overflow-hidden">
+      <CardHeader className="pb-1 px-4 pt-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <CardTitle className="text-sm sm:text-base truncate mb-2">
@@ -56,7 +56,7 @@ export function TransactionCard({
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4 px-4">
+      <CardContent className="flex-1 space-y-3 px-4 pb-3 pt-0">
         {/* Summary Section */}
         <div className="grid grid-cols-3 gap-2">
           <div className="p-2 bg-muted/50 rounded-lg">
@@ -85,21 +85,19 @@ export function TransactionCard({
             </p>
           </div>
         </div>
-
-        {/* Action Buttons */}
-        <div className="pt-2 border-t">
-          <ActionButtonsGroup
-            onQuickView={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onQuickView(transaction);
-            }}
-            viewHref={viewHref}
-            showView={false}
-            size="md"
-          />
-        </div>
       </CardContent>
+      <CardActionFooter>
+        <ActionButtonsGroup
+          onQuickView={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onQuickView(transaction);
+          }}
+          viewHref={viewHref}
+          showView={false}
+          size="md"
+        />
+      </CardActionFooter>
     </Card>
   );
 }

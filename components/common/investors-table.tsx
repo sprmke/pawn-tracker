@@ -240,6 +240,16 @@ export function InvestorsTable({
       };
     })();
 
+    const hasActivity =
+      activityData.maturingLoans.length > 0 ||
+      activityData.overdueLoans.length > 0 ||
+      activityData.pendingDisbursements.length > 0 ||
+      activityData.completedLoans.length > 0;
+
+    if (!hasActivity) {
+      return null;
+    }
+
     return (
       <div className="grid gap-2 grid-cols-1 lg:grid-cols-2 xl:grid-cols-4">
         <MaturingLoansCard
