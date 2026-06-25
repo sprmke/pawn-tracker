@@ -53,6 +53,7 @@ import { renderLoansPDF } from '@/components/pdf/loans-pdf-document';
 import {
   LoansTable,
   ActionButtonsGroup,
+  CardActionFooter,
   SearchFilter,
   RangeFilter,
   MultiSelectFilter,
@@ -949,9 +950,9 @@ export default function LoansPage() {
                   {paginatedLoans.map((loan) => (
                     <Card
                       key={loan.id}
-                      className="hover:shadow-lg transition-shadow h-full"
+                      className="hover:shadow-lg transition-shadow h-full flex flex-col overflow-hidden"
                     >
-                      <CardHeader className="pb-1">
+                      <CardHeader className="pb-1 px-4 pt-4">
                         <div className="flex items-start justify-between gap-2">
                           <div className="space-y-1 flex-1 min-w-0">
                             <CardTitle className="text-sm sm:text-base truncate">
@@ -976,7 +977,7 @@ export default function LoansPage() {
                           </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-4 px-4">
+                      <CardContent className="flex-1 space-y-3 px-4 pb-3 pt-0">
                         {/* Summary Section */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           <div className="p-2 bg-muted/50 rounded-lg">
@@ -1119,21 +1120,20 @@ export default function LoansPage() {
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="pt-2 border-t">
-                          <ActionButtonsGroup
-                            viewHref={`/loans/${loan.id}`}
-                            onQuickView={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setSelectedLoan(loan);
-                              setIsModalOpen(true);
-                            }}
-                            showView={false}
-                            size="md"
-                          />
-                        </div>
                       </CardContent>
+                      <CardActionFooter>
+                        <ActionButtonsGroup
+                          viewHref={`/loans/${loan.id}`}
+                          onQuickView={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedLoan(loan);
+                            setIsModalOpen(true);
+                          }}
+                          showView={false}
+                          size="md"
+                        />
+                      </CardActionFooter>
                     </Card>
                   ))}
                 </div>

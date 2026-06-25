@@ -47,8 +47,10 @@ import {
   isPast,
 } from 'date-fns';
 import { getCachedAuth } from '@/auth';
+import { SHOW_TRANSACTIONS_UI } from '@/lib/feature-flags';
 import { eq } from 'drizzle-orm';
 import { loans, investors, transactions, loanInvestors } from '@/db/schema';
+import { cn } from '@/lib/utils';
 
 async function getDashboardData(userId: string) {
   try {
@@ -542,6 +544,11 @@ export default async function DashboardPage() {
   const data = await getDashboardData(session.user.id);
   const totalEarnings = data.completedPrincipal + data.completedInterestEarned;
   const activePrincipal = data.totalPrincipal - data.completedPrincipal;
+  const hasAnyActivity =
+    data.upcomingPaymentsDue.length > 0 ||
+    data.overdueLoansData.length > 0 ||
+    data.upcomingPaymentsToSend.length > 0 ||
+    data.completedLoansData.length > 0;
 
   return (
     <div className="space-y-8 md:space-y-10">
@@ -588,7 +595,9 @@ export default async function DashboardPage() {
         ]}
       />
 
-      <section className="space-y-4">
+      <section
+        className={cn('space-y-4', !hasAnyActivity && 'hidden 2xl:block')}
+      >
         <div>
           <p className="section-eyebrow">Activity</p>
           <h2 className="text-lg font-semibold tracking-tight">
@@ -610,15 +619,18 @@ export default async function DashboardPage() {
             Trends & insights
           </h2>
         </div>
-        <div className="grid gap-5 lg:grid-cols-2">
-          {/* Cashflow Trend */}
-          <CashflowTrendChart
-            dailyData={data.dailyData}
-            weeklyData={data.weeklyData}
-            monthlyData={data.monthlyData}
-            title="Cashflow Trend"
-            emptyMessage="No cashflow data"
-          />
+        <div
+          className={`grid gap-5 ${SHOW_TRANSACTIONS_UI ? 'lg:grid-cols-2' : 'lg:grid-cols-1'}`}
+        >
+          {SHOW_TRANSACTIONS_UI && (
+            <CashflowTrendChart
+              dailyData={data.dailyData}
+              weeklyData={data.weeklyData}
+              monthlyData={data.monthlyData}
+              title="Cashflow Trend"
+              emptyMessage="No cashflow data"
+            />
+          )}
 
           {/* Top Investors by Capital */}
           <CurrencyBarChart

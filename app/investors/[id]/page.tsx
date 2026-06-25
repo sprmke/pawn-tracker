@@ -18,6 +18,15 @@ async function getInvestor(id: number, userId: string) {
         transactions: {
           orderBy: (transactions, { desc }) => [desc(transactions.date)],
         },
+        debts: {
+          orderBy: (debts, { desc }) => [desc(debts.date)],
+          with: {
+            interestPeriods: {
+              with: { receivedPayments: true },
+              orderBy: (periods, { asc }) => [asc(periods.periodNumber)],
+            },
+          },
+        },
       },
     });
     return investor;

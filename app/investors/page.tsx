@@ -29,6 +29,7 @@ import {
   CollapsibleContent,
   InvestorsTable,
   ActionButtonsGroup,
+  CardActionFooter,
   SearchFilter,
   RangeFilter,
   MultiSelectFilter,
@@ -616,7 +617,7 @@ export default function InvestorsPage() {
                     return (
                       <Card
                         key={investor.id}
-                        className="hover:shadow-lg transition-shadow h-full cursor-pointer lg:cursor-default"
+                        className="hover:shadow-lg transition-shadow h-full flex flex-col overflow-hidden cursor-pointer lg:cursor-default"
                         onClick={(e) => {
                           // Only navigate on mobile (below lg breakpoint)
                           // Check if click is on the card itself, not on buttons
@@ -628,7 +629,7 @@ export default function InvestorsPage() {
                           }
                         }}
                       >
-                        <CardHeader className="pb-3">
+                        <CardHeader className="pb-3 px-4 pt-4">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <CardTitle className="text-sm sm:text-base truncate">
@@ -640,7 +641,7 @@ export default function InvestorsPage() {
                             </div>
                           </div>
                         </CardHeader>
-                        <CardContent className="space-y-4 px-4">
+                        <CardContent className="flex-1 space-y-3 px-4 pb-3 pt-0">
                           {/* Summary Section */}
                           <div className="grid grid-cols-2 gap-2">
                             <div className="p-3 bg-muted/50 rounded-lg">
@@ -679,35 +680,33 @@ export default function InvestorsPage() {
                             </div>
                           </div>
 
-                          {/* Action Buttons */}
-                          <div className="pt-2 border-t">
-                            <ActionButtonsGroup
-                              isExpanded={expandedInvestors.has(investor.id)}
-                              onToggle={(e) => toggleInvestor(investor.id, e)}
-                              viewHref={`/investors/${investor.id}`}
-                              showToggle={true}
-                              hideViewOnMobile={false}
-                              size="md"
-                            />
-                          </div>
-
                           {/* Activity Cards - Only shown when expanded */}
-                          {expandedInvestors.has(investor.id) && (
-                            <div className="pt-2 border-t">
-                              {(() => {
-                                const activityData =
-                                  allLoans.length === 0
-                                    ? {
-                                        overdueLoans: [],
-                                        pendingDisbursements: [],
-                                        maturingLoans: [],
-                                      }
-                                    : getInvestorActivityData(
-                                        investor,
-                                        allLoans,
-                                      );
+                          {expandedInvestors.has(investor.id) &&
+                            (() => {
+                              const activityData =
+                                allLoans.length === 0
+                                  ? {
+                                      overdueLoans: [],
+                                      pendingDisbursements: [],
+                                      maturingLoans: [],
+                                    }
+                                  : getInvestorActivityData(
+                                      investor,
+                                      allLoans,
+                                    );
 
-                                return (
+                              const hasActivity =
+                                loading ||
+                                activityData.maturingLoans.length > 0 ||
+                                activityData.overdueLoans.length > 0 ||
+                                activityData.pendingDisbursements.length > 0;
+
+                              if (!hasActivity) {
+                                return null;
+                              }
+
+                              return (
+                                <div className="border-t border-border/50 pt-2">
                                   <div className="grid gap-2 grid-cols-1">
                                     <MaturingLoansCard
                                       loans={activityData.maturingLoans}
@@ -726,11 +725,20 @@ export default function InvestorsPage() {
                                       loading={loading}
                                     />
                                   </div>
-                                );
-                              })()}
-                            </div>
-                          )}
+                                </div>
+                              );
+                            })()}
                         </CardContent>
+                        <CardActionFooter>
+                          <ActionButtonsGroup
+                            isExpanded={expandedInvestors.has(investor.id)}
+                            onToggle={(e) => toggleInvestor(investor.id, e)}
+                            viewHref={`/investors/${investor.id}`}
+                            showToggle={true}
+                            hideViewOnMobile={false}
+                            size="md"
+                          />
+                        </CardActionFooter>
                       </Card>
                     );
                   })}

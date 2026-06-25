@@ -164,6 +164,7 @@ export async function DELETE(
       with: {
         loanInvestors: true,
         transactions: true,
+        debts: true,
       },
     });
 
@@ -174,11 +175,16 @@ export async function DELETE(
       );
     }
 
-    if (investor.loanInvestors.length > 0 || investor.transactions.length > 0) {
+    const debtCount = investor.debts?.length ?? 0;
+    if (
+      investor.loanInvestors.length > 0 ||
+      investor.transactions.length > 0 ||
+      debtCount > 0
+    ) {
       return NextResponse.json(
         {
-          error: 'Cannot delete investor with existing loans or transactions',
-          details: `This investor has ${investor.loanInvestors.length} loan(s) and ${investor.transactions.length} transaction(s)`,
+          error: 'Cannot delete investor with existing loans, transactions, or borrowings',
+          details: `This investor has ${investor.loanInvestors.length} loan(s), ${investor.transactions.length} transaction(s), and ${debtCount} borrowing(s)`,
         },
         { status: 400 }
       );
