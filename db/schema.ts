@@ -144,7 +144,7 @@ export const debts = pgTable('debts', {
   name: text('name').notNull(),
   amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
   date: timestamp('date').notNull(),
-  interestRate: decimal('interest_rate', { precision: 15, scale: 2 }).notNull(),
+  interestRate: decimal('interest_rate', { precision: 15, scale: 6 }).notNull(),
   interestInterval: debtInterestIntervalEnum('interest_interval')
     .notNull()
     .default('Monthly'),

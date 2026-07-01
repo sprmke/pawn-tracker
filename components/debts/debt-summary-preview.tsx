@@ -62,7 +62,7 @@ export function DebtSummaryPreview({
   const intervalLabel = getIntervalLabel(interestInterval);
   const paymentsMade = calculateDebtPaymentsTotal(interestPeriods);
   const amountOutstanding = calculateDebtInterestOutstanding(
-    summary.totalRepayment,
+    summary.scheduledRepayment,
     interestPeriods,
   );
 
@@ -104,7 +104,7 @@ export function DebtSummaryPreview({
               {formatCurrency(summary.perPeriodInterest)}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              at {summary.interestRate}% per {intervalLabel}
+              First period at {summary.interestRate}% per {intervalLabel}
             </p>
           </div>
           <div className="p-3 rounded-lg bg-background border">
@@ -128,7 +128,7 @@ export function DebtSummaryPreview({
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {summary.additionalFeesTotal > 0
-                ? 'One-time fees on first period'
+                ? 'Paid at disbursement, not part of installments'
                 : 'No additional fees'}
             </p>
           </div>
@@ -180,7 +180,7 @@ export function DebtSummaryPreview({
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {amountOutstanding > 0
-                ? 'Remaining principal, interest, and fees'
+                ? 'Remaining principal and interest'
                 : 'Fully paid'}
             </p>
           </div>

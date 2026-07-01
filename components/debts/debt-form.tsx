@@ -18,7 +18,7 @@ import {
 import { useRegisterDialogFormState } from '@/components/ui/dialog';
 import { FormHeader } from '@/components/common';
 import { toLocalDateString } from '@/lib/date-utils';
-import { normalizeDebtFees } from '@/lib/debt-calculations';
+import { normalizeDebtFees, normalizeInterestRate } from '@/lib/debt-calculations';
 import { Plus, Trash2, UserPlus, X } from 'lucide-react';
 import type {
   DebtInterestInterval,
@@ -67,7 +67,7 @@ function debtToEntry(debt: DebtWithInvestor, id: string): DebtEntry {
     name: debt.name,
     amount: String(debt.amount),
     debtDate: toLocalDateString(dateValue),
-    interestRate: String(debt.interestRate),
+    interestRate: normalizeInterestRate(debt.interestRate),
     interestInterval: debt.interestInterval,
     durationMonths: String(debt.durationMonths ?? 12),
     additionalFees: (debt.additionalFees ?? []).map((fee, index) => ({
@@ -210,15 +210,15 @@ function DebtEntryCard({
               <Label>Interest Rate (%) *</Label>
               <Input
                 type="number"
-                step="0.01"
+                step="0.000001"
                 value={entry.interestRate}
                 onChange={(e) =>
                   onChange(entry.id, 'interestRate', e.target.value)
                 }
-                placeholder="e.g., 2.5"
+                placeholder="e.g., 1.8612"
               />
               <p className="text-xs text-muted-foreground">
-                Percentage applied each accrual period.
+                Percentage applied each accrual period. Up to 6 decimal places.
               </p>
               {errors.interestRate && (
                 <p className="text-sm text-red-600">{errors.interestRate}</p>
@@ -287,7 +287,8 @@ function DebtEntryCard({
             </div>
             {entry.additionalFees.length === 0 ? (
               <p className="text-xs text-muted-foreground">
-                One-time fees such as processing or service charges.
+                One-time fees such as processing or service charges. Counted in
+                total cost but not added to installment payments.
               </p>
             ) : (
               <div className="space-y-2">
@@ -364,6 +365,7 @@ export function DebtForm({
   onPaymentsChange,
 }: DebtFormProps) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const baseId = useId();
   const entryCounterRef = useRef(1);
   const feeCounterRef = useRef(0);
@@ -570,7 +572,7 @@ export function DebtForm({
         name: entry.name.trim(),
         amount: parseFloat(entry.amount).toFixed(2),
         date: new Date(entry.debtDate).toISOString(),
-        interestRate: parseFloat(entry.interestRate).toFixed(2),
+        interestRate: normalizeInterestRate(entry.interestRate),
         interestInterval: entry.interestInterval,
         durationMonths: parseInt(entry.durationMonths),
         additionalFees: validFees,
@@ -610,7 +612,7 @@ export function DebtForm({
               name: debtEntry.name.trim(),
               amount: parseFloat(debtEntry.amount).toFixed(2),
               date: new Date(debtEntry.debtDate).toISOString(),
-              interestRate: parseFloat(debtEntry.interestRate).toFixed(2),
+              interestRate: normalizeInterestRate(debtEntry.interestRate),
               interestInterval: debtEntry.interestInterval,
               durationMonths: parseInt(debtEntry.durationMonths),
               additionalFees: fees,
@@ -677,10 +679,14 @@ export function DebtForm({
     }
   };
 
+  const handleFormSubmit = () => {
+    formRef.current?.requestSubmit();
+  };
+
   const totalDebtCount = entries.length * Math.max(selectedInvestorIds.length, 1);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
       <FormHeader
         title={isEditMode ? 'Edit Borrowing' : 'Create Borrowing'}
         description={
@@ -689,7 +695,7 @@ export function DebtForm({
             : 'Record a borrowing and preview expected interest costs'
         }
         onCancel={handleCancelClick}
-        onSubmit={() => {}}
+        onSubmit={handleFormSubmit}
         isSubmitting={isSubmitting}
         isEditMode={isEditMode}
         submitLabel={

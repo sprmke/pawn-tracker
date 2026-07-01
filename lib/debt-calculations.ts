@@ -23,13 +23,44 @@ function safeParseFloat(value: string | number): number {
   return isNaN(parsed) ? 0 : parsed;
 }
 
+/** Keep enough precision for amortized payment matching (up to 6 decimal places). */
+export function normalizeInterestRate(value: string | number): string {
+  const parsed = safeParseFloat(value);
+  if (parsed < 0) return '0';
+  return parsed.toFixed(6).replace(/\.?0+$/, '');
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function periodRateFromPercent(interestRate: string | number): number {
+  return safeParseFloat(interestRate) / 100;
+}
+
+/** Fixed installment for declining-balance (amortized) repayment. */
+export function calculateAmortizedPayment(
+  principal: string | number,
+  interestRate: string | number,
+  periodCount: number,
+): number {
+  const principalAmount = safeParseFloat(principal);
+  if (principalAmount <= 0 || periodCount <= 0) return 0;
+
+  const rate = periodRateFromPercent(interestRate);
+  if (rate === 0) return principalAmount / periodCount;
+
+  const growth = Math.pow(1 + rate, periodCount);
+  return principalAmount * ((rate * growth) / (growth - 1));
+}
+
 export function calculatePerPeriodInterest(
   principal: string | number,
   interestRate: string | number,
 ): number {
   const capital = safeParseFloat(principal);
-  const rate = safeParseFloat(interestRate);
-  return capital * (rate / 100);
+  const rate = periodRateFromPercent(interestRate);
+  return roundMoney(capital * rate);
 }
 
 export function calculateAdditionalFeesTotal(
@@ -56,9 +87,17 @@ export function calculateAnnualInterest(
   principal: string | number,
   interestRate: string | number,
   interval: DebtInterestInterval,
+  debtDate: string | Date = new Date(),
 ): number {
-  const perPeriod = calculatePerPeriodInterest(principal, interestRate);
-  return perPeriod * PERIODS_PER_YEAR[interval];
+  const periodsInYear = PERIODS_PER_YEAR[interval];
+  const schedule = generateInterestSchedule(
+    debtDate,
+    principal,
+    interestRate,
+    interval,
+    periodsInYear,
+  );
+  return schedule.reduce((sum, entry) => sum + entry.interest, 0);
 }
 
 export function getIntervalLabel(interval: DebtInterestInterval): string {
@@ -74,9 +113,9 @@ export interface InterestScheduleEntry {
   date: Date;
   interest: number;
   cumulativeInterest: number;
-  /** Principal portion repaid this period (equal split over the term). */
+  /** Principal portion repaid this period (amortized over the term). */
   principalPortion: number;
-  /** One-time fees applied this period (first period only). */
+  /** One-time fees applied this period (not included in the payment schedule). */
   feesPortion: number;
   /** Total due this period (principal + interest + fees). */
   periodDue: number;
@@ -90,15 +129,19 @@ export function generateInterestSchedule(
   interestRate: string | number,
   interval: DebtInterestInterval,
   periodCount = 12,
-  additionalFeesTotal = 0,
 ): InterestScheduleEntry[] {
   const start = new Date(startDate);
   const principalAmount = safeParseFloat(principal);
-  const perPeriodInterest = calculatePerPeriodInterest(principal, interestRate);
-  const principalPortion = principalAmount / periodCount;
+  const rate = periodRateFromPercent(interestRate);
+  const installment = calculateAmortizedPayment(
+    principalAmount,
+    interestRate,
+    periodCount,
+  );
   const schedule: InterestScheduleEntry[] = [];
   let cumulativeInterest = 0;
   let cumulativePaid = 0;
+  let remainingBalance = principalAmount;
 
   for (let i = 0; i < periodCount; i++) {
     const date = new Date(start);
@@ -116,17 +159,24 @@ export function generateInterestSchedule(
         date.setFullYear(date.getFullYear() + i);
         break;
     }
-    cumulativeInterest += perPeriodInterest;
-    const feesThisPeriod = i === 0 ? additionalFeesTotal : 0;
-    const periodDue = perPeriodInterest + principalPortion + feesThisPeriod;
-    cumulativePaid += periodDue;
+
+    const isLastPeriod = i === periodCount - 1;
+    const interest = roundMoney(remainingBalance * rate);
+    const principalPortion = isLastPeriod
+      ? roundMoney(remainingBalance)
+      : roundMoney(installment - interest);
+    const periodDue = roundMoney(interest + principalPortion);
+    remainingBalance = roundMoney(remainingBalance - principalPortion);
+
+    cumulativeInterest = roundMoney(cumulativeInterest + interest);
+    cumulativePaid = roundMoney(cumulativePaid + periodDue);
     schedule.push({
       period: i + 1,
       date,
-      interest: perPeriodInterest,
+      interest,
       cumulativeInterest,
       principalPortion,
-      feesPortion: feesThisPeriod,
+      feesPortion: 0,
       periodDue,
       cumulativePaid,
     });
@@ -148,6 +198,8 @@ export interface DebtSummary {
   scheduleInterestTotal: number;
   totalInterestIncludingFees: number;
   totalFeesAndFirstPeriodInterest: number;
+  /** Principal plus interest due through the payment schedule. */
+  scheduledRepayment: number;
   /** Principal + total interest and fees over the full term. */
   totalRepayment: number;
   schedule: InterestScheduleEntry[];
@@ -164,15 +216,6 @@ export function calculateDebtSummary(input: {
 }): DebtSummary {
   const principal = safeParseFloat(input.principal);
   const interestRate = safeParseFloat(input.interestRate);
-  const perPeriodInterest = calculatePerPeriodInterest(
-    principal,
-    interestRate,
-  );
-  const annualInterest = calculateAnnualInterest(
-    principal,
-    interestRate,
-    input.interestInterval,
-  );
   const additionalFeesTotal = calculateAdditionalFeesTotal(
     normalizeDebtFees(input.additionalFees),
   );
@@ -188,14 +231,20 @@ export function calculateDebtSummary(input: {
     interestRate,
     input.interestInterval,
     schedulePeriods,
-    additionalFeesTotal,
   );
   const scheduleInterestTotal =
     schedule[schedule.length - 1]?.cumulativeInterest ?? 0;
-  const perPeriodPrincipal =
-    schedulePeriods > 0 ? principal / schedulePeriods : 0;
-  const perPeriodDue = perPeriodInterest + perPeriodPrincipal;
-  const totalRepayment = principal + scheduleInterestTotal + additionalFeesTotal;
+  const perPeriodInterest = schedule[0]?.interest ?? 0;
+  const perPeriodPrincipal = schedule[0]?.principalPortion ?? 0;
+  const perPeriodDue = schedule[0]?.periodDue ?? 0;
+  const annualInterest = calculateAnnualInterest(
+    principal,
+    interestRate,
+    input.interestInterval,
+    input.debtDate,
+  );
+  const scheduledRepayment = principal + scheduleInterestTotal;
+  const totalRepayment = scheduledRepayment + additionalFeesTotal;
 
   return {
     principal,
@@ -209,8 +258,8 @@ export function calculateDebtSummary(input: {
     scheduleInterestTotal,
     totalInterestIncludingFees:
       scheduleInterestTotal + additionalFeesTotal,
-    totalFeesAndFirstPeriodInterest:
-      perPeriodInterest + additionalFeesTotal,
+    totalFeesAndFirstPeriodInterest: perPeriodInterest + additionalFeesTotal,
+    scheduledRepayment,
     totalRepayment,
     schedule,
   };
@@ -348,21 +397,21 @@ export function calculateDebtInterestCostPaid(
     );
     if (paid <= 0) continue;
 
-    const interestAndFees = entry.interest + entry.feesPortion;
+    const interestPortion = entry.interest;
     const paidShare = Math.min(1, paid / entry.periodDue);
-    cost += interestAndFees * paidShare;
+    cost += interestPortion * paidShare;
   }
 
   return cost;
 }
 
-/** Remaining amount still owed (total repayment minus payments made). */
+/** Remaining scheduled amount still owed (principal + interest minus payments made). */
 export function calculateDebtInterestOutstanding(
-  totalRepayment: number,
+  scheduledRepayment: number,
   periods: DebtInterestPeriodWithPayments[] | undefined,
 ): number {
   const paid = calculateDebtPaymentsTotal(periods);
-  return Math.max(0, totalRepayment - paid);
+  return Math.max(0, scheduledRepayment - paid);
 }
 
 /** Interest accrued through today based on the debt schedule (0 if not yet started). */
@@ -385,7 +434,7 @@ export function calculateDebtAccruedInterest(
   }
 
   if (!hasPeriod) return 0;
-  return accruedInterest + summary.additionalFeesTotal;
+  return accruedInterest;
 }
 
 /** Debt is fully paid when recorded payments cover the total repayment amount. */
@@ -394,7 +443,7 @@ export function isFullyPaidDebt(
 ): boolean {
   const summary = calculateDebtSummary(debtSummaryInput(debt));
   const outstanding = calculateDebtInterestOutstanding(
-    summary.totalRepayment,
+    summary.scheduledRepayment,
     debt.interestPeriods,
   );
   return outstanding <= PAYMENT_TOLERANCE;

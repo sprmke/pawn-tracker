@@ -1,5 +1,5 @@
 import type { DebtInterestInterval } from '@/lib/types';
-import { normalizeDebtFees } from '@/lib/debt-calculations';
+import { normalizeDebtFees, normalizeInterestRate } from '@/lib/debt-calculations';
 
 const VALID_INTERVALS: DebtInterestInterval[] = [
   'Daily',
@@ -12,7 +12,7 @@ export function parseDebtBody(body: Record<string, unknown>) {
   const investorId = Number(body.investorId);
   const name = String(body.name ?? '').trim();
   const amount = String(body.amount ?? '');
-  const interestRate = String(body.interestRate ?? '');
+  const interestRate = normalizeInterestRate(String(body.interestRate ?? ''));
   const parsedDuration = parseInt(String(body.durationMonths ?? 12), 10);
   const durationMonths =
     Number.isFinite(parsedDuration) && parsedDuration >= 1 ? parsedDuration : 12;
