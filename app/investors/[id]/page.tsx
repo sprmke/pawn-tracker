@@ -11,21 +11,13 @@ async function getInvestor(id: number, userId: string) {
       where: and(eq(investors.id, id), eq(investors.userId, userId)),
       with: {
         loanInvestors: {
-          with: {
-            loan: true,
-          },
+          columns: { id: true },
         },
         transactions: {
-          orderBy: (transactions, { desc }) => [desc(transactions.date)],
+          columns: { id: true },
         },
         debts: {
-          orderBy: (debts, { desc }) => [desc(debts.date)],
-          with: {
-            interestPeriods: {
-              with: { receivedPayments: true },
-              orderBy: (periods, { asc }) => [asc(periods.periodNumber)],
-            },
-          },
+          columns: { id: true },
         },
       },
     });
@@ -47,9 +39,9 @@ export default async function InvestorDetailPage({
   }
 
   const resolvedParams = await params;
-  const investorId = parseInt(resolvedParams.id);
+  const investorId = parseInt(resolvedParams.id, 10);
 
-  if (isNaN(investorId)) {
+  if (Number.isNaN(investorId)) {
     notFound();
   }
 
@@ -59,5 +51,5 @@ export default async function InvestorDetailPage({
     notFound();
   }
 
-  return <InvestorDetailClient investor={investor as any} />;
+  return <InvestorDetailClient investor={investor} />;
 }

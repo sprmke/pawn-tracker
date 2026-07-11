@@ -194,10 +194,22 @@ export default function InvestorsPage() {
       ]);
       const investorsData = await investorsResponse.json();
       const loansData = await loansResponse.json();
-      setInvestors(investorsData);
-      setAllLoans(loansData);
+
+      if (!investorsResponse.ok) {
+        throw new Error(
+          investorsData.error || 'Failed to fetch investors',
+        );
+      }
+      if (!loansResponse.ok) {
+        throw new Error(loansData.error || 'Failed to fetch loans');
+      }
+
+      setInvestors(Array.isArray(investorsData) ? investorsData : []);
+      setAllLoans(Array.isArray(loansData) ? loansData : []);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setInvestors([]);
+      setAllLoans([]);
     } finally {
       setLoading(false);
     }
