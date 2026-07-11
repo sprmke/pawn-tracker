@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { investors, users } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { normalizeValidIdUrl, normalizeSignatureImageUrl } from '@/lib/valid-id-document';
 
 export async function GET(
   request: Request,
@@ -124,6 +125,9 @@ export async function PUT(
         name: body.name,
         email: body.email,
         contactNumber: body.contactNumber || null,
+        address: body.address || null,
+        validIdUrl: normalizeValidIdUrl(body.validIdUrl),
+        eSignatureUrl: normalizeSignatureImageUrl(body.eSignatureUrl),
         investorUserId: investorUserId,
         updatedAt: new Date(),
       })

@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { investors, users, loanInvestors } from '@/db/schema';
 import { auth } from '@/auth';
 import { eq } from 'drizzle-orm';
+import { normalizeValidIdUrl, normalizeSignatureImageUrl } from '@/lib/valid-id-document';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
     if (simple) {
       const ownedInvestors = await db.query.investors.findMany({
         where: eq(investors.userId, session.user.id),
-        columns: { id: true, name: true, email: true, contactNumber: true },
+        columns: { id: true, name: true, email: true, contactNumber: true, address: true, validIdUrl: true, eSignatureUrl: true },
       });
 
       const userAsInvestor = await db.query.investors.findFirst({
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
                 columns: {},
                 with: {
                   investor: {
-                    columns: { id: true, name: true, email: true, contactNumber: true },
+                    columns: { id: true, name: true, email: true, contactNumber: true, address: true, validIdUrl: true, eSignatureUrl: true },
                   },
                 },
               },
@@ -162,8 +163,13 @@ export async function POST(request: Request) {
     // Create the investor record linked to both the admin user and investor user
     const newInvestor = await db
       .insert(investors)
-      .values({ 
-        ...body, 
+      .values({
+        name: body.name,
+        email: body.email,
+        contactNumber: body.contactNumber || null,
+        address: body.address || null,
+        validIdUrl: normalizeValidIdUrl(body.validIdUrl),
+        eSignatureUrl: normalizeSignatureImageUrl(body.eSignatureUrl),
         userId: session.user.id,
         investorUserId: investorUser.id,
       })
