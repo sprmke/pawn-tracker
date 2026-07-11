@@ -24,12 +24,29 @@ export interface Investor {
   name: string;
   email: string;
   contactNumber: string | null;
+  address: string | null;
+  validIdUrl: string | null;
+  eSignatureUrl: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Borrower {
+  id: number;
+  name: string;
+  contactNumber: string | null;
+  email: string | null;
+  address: string | null;
+  notes: string | null;
+  validIdUrl: string | null;
+  eSignatureUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface Loan {
   id: number;
+  borrowerId: number | null;
   loanName: string;
   type: LoanType;
   status: LoanStatus;
@@ -95,6 +112,7 @@ export interface Transaction {
 }
 
 export interface LoanWithInvestors extends Loan {
+  borrower?: Borrower | null;
   loanInvestors: (LoanInvestor & { investor: Investor })[];
   transactions?: Transaction[];
 }

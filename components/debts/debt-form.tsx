@@ -500,10 +500,17 @@ export function DebtForm({
     id: number;
     name: string;
     email: string;
+    contactNumber?: string;
+    address?: string;
+    validIdUrl?: string | null;
+    eSignatureUrl?: string | null;
   }) => {
     const fullInvestor: Investor = {
       ...newInvestor,
-      contactNumber: null,
+      contactNumber: newInvestor.contactNumber ?? null,
+      address: newInvestor.address ?? null,
+      validIdUrl: newInvestor.validIdUrl ?? null,
+      eSignatureUrl: newInvestor.eSignatureUrl ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

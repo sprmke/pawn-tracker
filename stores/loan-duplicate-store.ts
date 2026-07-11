@@ -3,6 +3,7 @@ import { LoanWithInvestors, InterestType, InterestPeriodStatus } from '@/lib/typ
 
 export interface DuplicateLoanData {
   name: string;
+  borrowerId: number | null;
   type: 'Lot Title' | 'OR/CR' | 'Agent';
   dueDate: string | Date;
   freeLotSqm: number | null;
@@ -62,6 +63,7 @@ export const useLoanDuplicateStore = create<LoanDuplicateState>((set) => ({
 export function createDuplicateDataFromLoan(loan: LoanWithInvestors): DuplicateLoanData {
   return {
     name: loan.loanName,
+    borrowerId: loan.borrowerId,
     type: loan.type,
     dueDate: loan.dueDate,
     freeLotSqm: loan.freeLotSqm,

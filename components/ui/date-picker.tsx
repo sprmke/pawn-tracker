@@ -25,6 +25,13 @@ interface DatePickerProps {
   name?: string;
 }
 
+function formatDateForInput(value?: string): string {
+  if (!value) return '';
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return '';
+  return `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year}`;
+}
+
 export function DatePicker({
   value,
   onChange,
@@ -35,7 +42,9 @@ export function DatePicker({
   name,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const [inputValue, setInputValue] = React.useState('');
+  const [inputValue, setInputValue] = React.useState(() =>
+    formatDateForInput(value),
+  );
 
   // Convert YYYY-MM-DD to Date object
   const selectedDate = React.useMemo(() => {
@@ -44,14 +53,9 @@ export function DatePicker({
     return new Date(year, month - 1, day);
   }, [value]);
 
-  // Convert YYYY-MM-DD to MM/DD/YYYY for display
+  // Keep display text in sync when the value prop changes externally.
   React.useEffect(() => {
-    if (value) {
-      const [year, month, day] = value.split('-').map(Number);
-      setInputValue(`${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year}`);
-    } else {
-      setInputValue('');
-    }
+    setInputValue(formatDateForInput(value));
   }, [value]);
 
   const handleSelect = (date: Date | undefined) => {
@@ -94,13 +98,7 @@ export function DatePicker({
   };
 
   const handleInputBlur = () => {
-    // If input is invalid, reset to the current value
-    if (value) {
-      const [year, month, day] = value.split('-').map(Number);
-      setInputValue(`${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year}`);
-    } else {
-      setInputValue('');
-    }
+    setInputValue(formatDateForInput(value));
   };
 
   const handleClear = () => {

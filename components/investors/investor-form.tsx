@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Investor } from '@/lib/types';
 import { FormHeader } from '@/components/common';
 import { InvestorFormFields, InvestorFormData } from './investor-form-fields';
+import { normalizeValidIdUrl, normalizeSignatureImageUrl } from '@/lib/valid-id-document';
 
 const investorSchema = z.object({
   name: z
@@ -19,6 +20,7 @@ const investorSchema = z.object({
     .min(2, 'Name must be at least 2 characters'),
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
   contactNumber: z.string().optional(),
+  address: z.string().optional(),
 });
 
 interface InvestorFormProps {
@@ -34,6 +36,12 @@ export function InvestorForm({
 }: InvestorFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validIdUrl, setValidIdUrl] = useState<string | null>(
+    existingInvestor?.validIdUrl ?? null,
+  );
+  const [eSignatureUrl, setESignatureUrl] = useState<string | null>(
+    existingInvestor?.eSignatureUrl ?? null,
+  );
   const isEditMode = !!existingInvestor;
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -48,11 +56,13 @@ export function InvestorForm({
           name: existingInvestor.name,
           email: existingInvestor.email,
           contactNumber: existingInvestor.contactNumber || '',
+          address: existingInvestor.address || '',
         }
       : {
           name: '',
           email: '',
           contactNumber: '',
+          address: '',
         },
   });
 
@@ -68,7 +78,11 @@ export function InvestorForm({
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          validIdUrl: normalizeValidIdUrl(validIdUrl),
+          eSignatureUrl: normalizeSignatureImageUrl(eSignatureUrl),
+        }),
       });
 
       if (!response.ok) {
@@ -149,6 +163,10 @@ export function InvestorForm({
             register={register}
             errors={errors}
             isSubmitting={isSubmitting}
+            validIdUrl={validIdUrl}
+            onValidIdUrlChange={setValidIdUrl}
+            eSignatureUrl={eSignatureUrl}
+            onESignatureUrlChange={setESignatureUrl}
           />
 
           {isEditMode && (

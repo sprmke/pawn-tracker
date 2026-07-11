@@ -8,9 +8,10 @@ export default auth((req) => {
   // Public routes that don't require authentication
   const isPublicRoute = nextUrl.pathname === '/';
   const isAuthRoute = nextUrl.pathname.startsWith('/auth');
+  const isSigningRoute = nextUrl.pathname.startsWith('/sign');
 
   // Allow access to public routes and auth routes
-  if (isPublicRoute || isAuthRoute) {
+  if (isPublicRoute || isAuthRoute || isSigningRoute) {
     // If logged in and on landing page, redirect to dashboard
     if (isLoggedIn && isPublicRoute) {
       return NextResponse.redirect(new URL('/dashboard', nextUrl.origin));
