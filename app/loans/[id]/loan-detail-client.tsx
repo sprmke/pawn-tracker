@@ -1,14 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { LoanWithInvestors, Investor } from '@/lib/types';
 import { LoanForm } from '@/components/loans/loan-form';
 import { LoanDetailContent } from '@/components/loans/loan-detail-content';
+import { LoanSigningSection } from '@/components/loans/loan-signing-section';
 import { DetailHeader } from '@/components/common';
 import { createDuplicateDataFromLoan } from '@/stores/loan-duplicate-store';
+import { renderLoanContractPDF } from '@/components/pdf/loan-contract-pdf-document';
+import type { ContractCustomization } from '@/lib/loan-contract-customization';
+import type { LoanContractData } from '@/lib/loan-contract-data';
 
 interface LoanDetailClientProps {
   loan: LoanWithInvestors;
@@ -17,7 +22,16 @@ interface LoanDetailClientProps {
 
 export function LoanDetailClient({ loan, investors }: LoanDetailClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const highlightSigning = searchParams.get('signing') === '1';
   const [isEditing, setIsEditing] = useState(false);
+  const [isDownloadingContract, setIsDownloadingContract] = useState(false);
+
+  useEffect(() => {
+    if (!highlightSigning) return;
+    const section = document.getElementById('contract-signing-section');
+    section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [highlightSigning]);
 
   const handlePayBalance = () => {
     const investorsSection = document.getElementById('investors-section');
@@ -33,6 +47,32 @@ export function LoanDetailClient({ loan, investors }: LoanDetailClientProps) {
     // For page view, navigate to the create page with encoded data
     const encodedData = btoa(JSON.stringify(duplicateData));
     router.push(`/loans/new?duplicate=${encodedData}`);
+  };
+
+  const handleDownloadContract = async () => {
+    setIsDownloadingContract(true);
+    try {
+      const response = await fetch(`/api/loans/${loan.id}/contract`);
+      if (response.ok) {
+        const payload = (await response.json()) as {
+          contractData: LoanContractData;
+          customization: ContractCustomization;
+        };
+        await renderLoanContractPDF(
+          loan,
+          payload.customization,
+          payload.contractData,
+        );
+      } else {
+        await renderLoanContractPDF(loan);
+      }
+      toast.success('Contract PDF downloaded.');
+    } catch (error) {
+      console.error('Error generating loan contract PDF:', error);
+      toast.error('Failed to generate contract PDF.');
+    } finally {
+      setIsDownloadingContract(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -54,6 +94,7 @@ export function LoanDetailClient({ loan, investors }: LoanDetailClientProps) {
       },
       body: JSON.stringify({
         loanData: {
+          borrowerId: loan.borrowerId,
           loanName: loan.loanName,
           type: loan.type,
           status: 'Completed',
@@ -122,7 +163,12 @@ export function LoanDetailClient({ loan, investors }: LoanDetailClientProps) {
         completeDescription="Are you sure you want to mark this loan as completed? This will change the loan status to 'Completed'."
         showDuplicate={true}
         onDuplicate={handleDuplicate}
+        showDownloadContract={true}
+        onDownloadContract={handleDownloadContract}
+        isDownloadingContract={isDownloadingContract}
       />
+
+      <LoanSigningSection loanId={loan.id} highlight={highlightSigning} />
 
       <LoanDetailContent
         loan={loan}

@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { investors } from '@/db/schema';
+import { investors, borrowers } from '@/db/schema';
 import { LoanForm } from '@/components/loans/loan-form';
 import { getCachedAuth } from '@/auth';
 import { eq } from 'drizzle-orm';
@@ -17,6 +17,18 @@ async function getInvestors(userId: string) {
   }
 }
 
+async function getBorrowers(userId: string) {
+  try {
+    const allBorrowers = await db.query.borrowers.findMany({
+      where: eq(borrowers.userId, userId),
+    });
+    return allBorrowers;
+  } catch (error) {
+    console.error('Error fetching borrowers:', error);
+    return [];
+  }
+}
+
 interface NewLoanPageProps {
   searchParams: Promise<{ investorId?: string; duplicate?: string }>;
 }
@@ -28,7 +40,10 @@ export default async function NewLoanPage({ searchParams }: NewLoanPageProps) {
   }
 
   const params = await searchParams;
-  const allInvestors = await getInvestors(session.user.id);
+  const [allInvestors, allBorrowers] = await Promise.all([
+    getInvestors(session.user.id),
+    getBorrowers(session.user.id),
+  ]);
   const preselectedInvestorId = params.investorId
     ? parseInt(params.investorId)
     : undefined;
@@ -47,6 +62,7 @@ export default async function NewLoanPage({ searchParams }: NewLoanPageProps) {
     <div className="max-w-4xl mx-auto">
       <LoanForm
         investors={allInvestors}
+        borrowers={allBorrowers}
         preselectedInvestorId={preselectedInvestorId}
         duplicateData={duplicateData}
       />

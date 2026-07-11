@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { db } from '@/db';
 import { investors, loans, loanInvestors } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
@@ -49,6 +50,7 @@ async function getLoan(id: number, userId: string) {
     // First try to get loan if user owns it
     const loanQuery = {
       with: {
+        borrower: true,
         loanInvestors: {
           with: {
             investor: true,
@@ -125,5 +127,9 @@ export default async function LoanDetailPage({
     notFound();
   }
 
-  return <LoanDetailClient loan={loan} investors={allInvestors} />;
+  return (
+    <Suspense fallback={null}>
+      <LoanDetailClient loan={loan} investors={allInvestors} />
+    </Suspense>
+  );
 }
