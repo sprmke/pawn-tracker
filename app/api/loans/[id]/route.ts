@@ -9,6 +9,11 @@ import {
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { hasLoanAccess } from '@/lib/access-control';
+import {
+  syncSigningInvitationsForLoan,
+  upsertLoanContractCustomization,
+} from '@/lib/loan-contract-persistence';
+import type { ContractCustomization } from '@/lib/loan-contract-customization';
 
 export async function GET(
   request: Request,
@@ -32,6 +37,7 @@ export async function GET(
     const loan = await db.query.loans.findFirst({
       where: eq(loans.id, loanId),
       with: {
+        borrower: true,
         loanInvestors: {
           with: {
             investor: true,
@@ -76,6 +82,7 @@ export async function PUT(
       loanData,
       investorData,
       receivedPaymentsByInvestor = [],
+      contractCustomization = null,
     } = body;
 
     console.log('Updating loan:', loanId);
@@ -105,6 +112,7 @@ export async function PUT(
 
     // Convert date strings to Date objects and ensure proper types
     const processedLoanData = {
+      borrowerId: loanData.borrowerId ? Number(loanData.borrowerId) : null,
       loanName: loanData.loanName,
       type: loanData.type,
       status: loanData.status,
@@ -284,6 +292,7 @@ export async function PUT(
     const updatedLoan = await db.query.loans.findFirst({
       where: eq(loans.id, loanId),
       with: {
+        borrower: true,
         loanInvestors: {
           with: {
             investor: true,
@@ -295,6 +304,16 @@ export async function PUT(
     });
 
     console.log('Loan updated successfully:', updatedLoan);
+
+    if (updatedLoan) {
+      if (contractCustomization) {
+        await upsertLoanContractCustomization(
+          updatedLoan,
+          contractCustomization as ContractCustomization,
+        );
+      }
+      await syncSigningInvitationsForLoan(updatedLoan);
+    }
 
     return NextResponse.json(updatedLoan);
   } catch (error) {
