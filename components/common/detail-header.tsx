@@ -21,6 +21,7 @@ import {
   ExternalLink,
   Copy,
   MoreVertical,
+  FileText,
 } from 'lucide-react';
 import { PriceVisibilityToggle } from './price-visibility-toggle';
 import { formatText } from '@/lib/format';
@@ -52,6 +53,9 @@ interface DetailHeaderProps {
   showViewLoan?: boolean;
   onDuplicate?: () => void;
   showDuplicate?: boolean;
+  onDownloadContract?: () => void;
+  showDownloadContract?: boolean;
+  isDownloadingContract?: boolean;
   showPriceToggle?: boolean;
 }
 
@@ -78,6 +82,9 @@ export function DetailHeader({
   showViewLoan = false,
   onDuplicate,
   showDuplicate = false,
+  onDownloadContract,
+  showDownloadContract = false,
+  isDownloadingContract = false,
   showPriceToggle = true,
 }: DetailHeaderProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -122,6 +129,19 @@ export function DetailHeader({
             label: 'Duplicate',
             onClick: onDuplicate,
             icon: <Copy className="h-4 w-4" />,
+          },
+        ]
+      : []),
+    ...(showDownloadContract && onDownloadContract
+      ? [
+          {
+            label: isDownloadingContract ? 'Generating Contract...' : 'Download Contract',
+            onClick: () => {
+              if (!isDownloadingContract) {
+                onDownloadContract();
+              }
+            },
+            icon: <FileText className="h-4 w-4" />,
           },
         ]
       : []),

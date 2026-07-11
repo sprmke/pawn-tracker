@@ -24,6 +24,7 @@ export { CardPagination } from './card-pagination';
 export { SortButton } from './sort-button';
 export { FormHeader } from './form-header';
 export { DetailHeader } from './detail-header';
+export { ContactInfoCard } from './contact-info-card';
 export { DetailModalHeader } from './detail-modal-header';
 export { DataTable } from './data-table';
 export { InvestorsTable } from './investors-table';

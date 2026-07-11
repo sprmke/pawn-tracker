@@ -11,6 +11,7 @@ import {
   X,
   Copy,
   MoreVertical,
+  FileText,
 } from 'lucide-react';
 
 // Common styles for responsive icon buttons
@@ -31,6 +32,9 @@ interface DetailModalHeaderProps {
   showViewLoan?: boolean;
   onDuplicate?: () => void;
   showDuplicate?: boolean;
+  onDownloadContract?: () => void;
+  showDownloadContract?: boolean;
+  isDownloadingContract?: boolean;
 }
 
 export function DetailModalHeader({
@@ -47,6 +51,9 @@ export function DetailModalHeader({
   showViewLoan = false,
   onDuplicate,
   showDuplicate = false,
+  onDownloadContract,
+  showDownloadContract = false,
+  isDownloadingContract = false,
 }: DetailModalHeaderProps) {
   const actionItems = [
     ...(canEdit
@@ -58,6 +65,19 @@ export function DetailModalHeader({
             label: 'Duplicate',
             onClick: onDuplicate,
             icon: <Copy className="h-4 w-4" />,
+          },
+        ]
+      : []),
+    ...(showDownloadContract && onDownloadContract
+      ? [
+          {
+            label: isDownloadingContract ? 'Generating Contract...' : 'Download Contract',
+            onClick: () => {
+              if (!isDownloadingContract) {
+                onDownloadContract();
+              }
+            },
+            icon: <FileText className="h-4 w-4" />,
           },
         ]
       : []),
