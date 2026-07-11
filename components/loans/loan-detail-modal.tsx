@@ -12,6 +12,7 @@ import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { LoanWithInvestors } from '@/lib/types';
 import { LoanDetailContent } from './loan-detail-content';
 import { LoanForm } from './loan-form';
+import { LoanSigningSection } from './loan-signing-section';
 import { DetailModalHeader } from '@/components/common';
 import { formatText } from '@/lib/format';
 import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
@@ -29,6 +30,9 @@ import {
   useLoanDuplicateStore,
   createDuplicateDataFromLoan,
 } from '@/stores/loan-duplicate-store';
+import { renderLoanContractPDF } from '@/components/pdf/loan-contract-pdf-document';
+import type { ContractCustomization } from '@/lib/loan-contract-customization';
+import type { LoanContractData } from '@/lib/loan-contract-data';
 
 interface LoanDetailModalProps {
   loan: LoanWithInvestors | null;
@@ -49,6 +53,7 @@ export function LoanDetailModal({
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isDownloadingContract, setIsDownloadingContract] = useState(false);
   const [loan, setLoan] = useState<LoanWithInvestors | null>(initialLoan);
   const [loanFetchKey, setLoanFetchKey] = useState(0);
 
@@ -158,6 +163,32 @@ export function LoanDetailModal({
     }, 150);
   };
 
+  const handleDownloadContract = async () => {
+    setIsDownloadingContract(true);
+    try {
+      const response = await fetch(`/api/loans/${loan.id}/contract`);
+      if (response.ok) {
+        const payload = (await response.json()) as {
+          contractData: LoanContractData;
+          customization: ContractCustomization;
+        };
+        await renderLoanContractPDF(
+          loan,
+          payload.customization,
+          payload.contractData,
+        );
+      } else {
+        await renderLoanContractPDF(loan);
+      }
+      toast.success('Contract PDF downloaded.');
+    } catch (error) {
+      console.error('Error generating loan contract PDF:', error);
+      toast.error('Failed to generate contract PDF.');
+    } finally {
+      setIsDownloadingContract(false);
+    }
+  };
+
   const isOverdue = loan.status === 'Overdue';
   const isPartiallyFunded = loan.status === 'Partially Funded';
 
@@ -170,9 +201,7 @@ export function LoanDetailModal({
         >
           {isEditing ? (
             <VisuallyHidden>
-              <DialogTitle>
-                Edit Loan - {formatText(loan.loanName)}
-              </DialogTitle>
+              <DialogTitle>Edit Loan - {formatText(loan.loanName)}</DialogTitle>
             </VisuallyHidden>
           ) : (
             <DialogHeader>
@@ -192,6 +221,9 @@ export function LoanDetailModal({
                   showComplete={isOverdue}
                   onDuplicate={handleDuplicate}
                   showDuplicate={true}
+                  onDownloadContract={handleDownloadContract}
+                  showDownloadContract={true}
+                  isDownloadingContract={isDownloadingContract}
                 />
               </div>
             </DialogHeader>
@@ -206,11 +238,17 @@ export function LoanDetailModal({
                 onCancel={() => setIsEditing(false)}
               />
             ) : (
-              <LoanDetailContent
-                loan={loan}
-                showHeader={false}
-                onRefresh={fetchLoan}
-              />
+              <div className="space-y-6">
+                <LoanDetailContent
+                  loan={loan}
+                  showHeader={false}
+                  onRefresh={fetchLoan}
+                />
+                <LoanSigningSection
+                  loanId={loan.id}
+                  refreshKey={loanFetchKey}
+                />
+              </div>
             )}
           </div>
         </DialogContent>

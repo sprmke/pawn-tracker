@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { X, Plus, Eye, UserPlus } from 'lucide-react';
-import type { Investor, LoanWithInvestors } from '@/lib/types';
+import type { Investor, Borrower, LoanWithInvestors } from '@/lib/types';
 import {
   toLocalDateString,
   isMoreThanOneMonth,
@@ -31,7 +31,11 @@ import {
   normalizeToMidnight,
 } from '@/lib/date-utils';
 import { InvestorFormModal } from '@/components/investors/investor-form-modal';
+import { BorrowerFormModal } from '@/components/borrowers/borrower-form-modal';
 import { LoanSummarySection } from './loan-summary-section';
+import { LoanContractPreview } from './loan-contract-preview';
+import { LoanSigningSection } from './loan-signing-section';
+import type { ContractCustomization } from '@/lib/loan-contract-customization';
 import { LoanInvestorsSection } from './loan-investors-section';
 import { FormHeader } from '@/components/common';
 import {
@@ -48,6 +52,7 @@ import {
 } from '@/components/ui/collapsible';
 import { CopyInvestorModal } from './copy-investor-modal';
 import { DuplicateLoanData } from '@/stores/loan-duplicate-store';
+import { renderLoanContractPDF } from '@/components/pdf/loan-contract-pdf-document';
 import { formatCurrency, formatDate } from '@/lib/format';
 
 const loanSchema = z.object({
@@ -85,6 +90,7 @@ interface InvestorAllocation {
 
 interface LoanFormProps {
   investors?: Investor[];
+  borrowers?: Borrower[];
   existingLoan?: LoanWithInvestors;
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -95,6 +101,7 @@ interface LoanFormProps {
 
 export function LoanForm({
   investors: initialInvestors = [],
+  borrowers: initialBorrowers = [],
   existingLoan,
   onSuccess,
   onCancel,
@@ -120,6 +127,28 @@ export function LoanForm({
   const [isFetchingInvestors, setIsFetchingInvestors] = useState(false);
   const investorsFetched = useRef(initialInvestors.length > 0);
   const [showInvestorModal, setShowInvestorModal] = useState(false);
+
+  const [borrowers, setBorrowers] = useState<Borrower[]>(() => {
+    const list = [...initialBorrowers];
+    if (
+      existingLoan?.borrower &&
+      !list.find((borrower) => borrower.id === existingLoan.borrower?.id)
+    ) {
+      list.push(existingLoan.borrower);
+    }
+    return list;
+  });
+  const [isFetchingBorrowers, setIsFetchingBorrowers] = useState(false);
+  const borrowersFetched = useRef(initialBorrowers.length > 0);
+  const [showBorrowerModal, setShowBorrowerModal] = useState(false);
+  const [selectedBorrowerId, setSelectedBorrowerId] = useState<number | null>(
+    existingLoan?.borrowerId ?? duplicateData?.borrowerId ?? null,
+  );
+  const [borrowerSelectValue, setBorrowerSelectValue] = useState<string>(
+    existingLoan?.borrowerId?.toString() ??
+      duplicateData?.borrowerId?.toString() ??
+      '',
+  );
 
   const isLoadingInvestors = externalLoadingInvestors || isFetchingInvestors;
 
@@ -147,6 +176,44 @@ export function LoanForm({
     },
     [fetchInvestorsIfNeeded],
   );
+
+  const fetchBorrowersIfNeeded = useCallback(async () => {
+    if (borrowersFetched.current) return;
+    borrowersFetched.current = true;
+    setIsFetchingBorrowers(true);
+    try {
+      const response = await fetch('/api/borrowers?simple=true');
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setBorrowers((current) => {
+          const merged = new Map(
+            current.map((borrower) => [borrower.id, borrower]),
+          );
+          data.forEach((borrower: Borrower) =>
+            merged.set(borrower.id, borrower),
+          );
+          return Array.from(merged.values()).sort((a, b) =>
+            a.name.localeCompare(b.name),
+          );
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching borrowers:', error);
+      borrowersFetched.current = false;
+    } finally {
+      setIsFetchingBorrowers(false);
+    }
+  }, []);
+
+  const handleBorrowerDropdownOpen = useCallback(
+    (open: boolean) => {
+      if (open) fetchBorrowersIfNeeded();
+    },
+    [fetchBorrowersIfNeeded],
+  );
+
+  const selectedBorrower =
+    borrowers.find((borrower) => borrower.id === selectedBorrowerId) ?? null;
   const [copySourceInvestorId, setCopySourceInvestorId] = useState<
     number | null
   >(null);
@@ -333,6 +400,8 @@ export function LoanForm({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [investorSelectValue, setInvestorSelectValue] = useState<string>('');
+  const [contractCustomization, setContractCustomization] =
+    useState<ContractCustomization | null>(null);
 
   const {
     register,
@@ -365,9 +434,19 @@ export function LoanForm({
 
   const watchType = watch('type');
   const watchDueDate = watch('dueDate');
+  const watchLoanName = watch('loanName');
+  const watchFreeLotSqm = watch('freeLotSqm');
+  const watchNotes = watch('notes');
 
   // Track if form has changes (including investor allocations)
-  const hasChanges = isDirty || selectedInvestors.length > 0;
+  const hasChanges =
+    isDirty || selectedInvestors.length > 0 || selectedBorrowerId !== null;
+
+  useEffect(() => {
+    if (selectedBorrowerId && !selectedBorrower) {
+      fetchBorrowersIfNeeded();
+    }
+  }, [selectedBorrowerId, selectedBorrower, fetchBorrowersIfNeeded]);
 
   // Register form state with dialog to prevent accidental close
   useRegisterDialogFormState(hasChanges, isSubmitting);
@@ -453,15 +532,53 @@ export function LoanForm({
     setInvestorSelectValue('');
   };
 
+  const handleBorrowerSelect = (borrowerId: string) => {
+    if (borrowerId === 'new') {
+      setShowBorrowerModal(true);
+      setBorrowerSelectValue('');
+      return;
+    }
+
+    const borrower = borrowers.find(
+      (item) => item.id.toString() === borrowerId,
+    );
+    if (borrower) {
+      setSelectedBorrowerId(borrower.id);
+      setBorrowerSelectValue(borrower.id.toString());
+    }
+  };
+
+  const handleNewBorrowerSuccess = (newBorrower: Borrower) => {
+    setBorrowers((current) => {
+      const merged = new Map(
+        current.map((borrower) => [borrower.id, borrower]),
+      );
+      merged.set(newBorrower.id, newBorrower);
+      return Array.from(merged.values()).sort((a, b) =>
+        a.name.localeCompare(b.name),
+      );
+    });
+    setSelectedBorrowerId(newBorrower.id);
+    setBorrowerSelectValue(newBorrower.id.toString());
+    toast.success(`Borrower "${newBorrower.name}" added.`);
+  };
+
   const handleNewInvestorSuccess = (newInvestor: {
     id: number;
     name: string;
     email: string;
+    contactNumber?: string;
+    address?: string;
+    validIdUrl?: string | null;
+    eSignatureUrl?: string | null;
   }) => {
     // Convert to full Investor type with dates
     const fullInvestor: Investor = {
       ...newInvestor,
-      contactNumber: null,
+      contactNumber: newInvestor.contactNumber ?? null,
+      address: newInvestor.address ?? null,
+      validIdUrl: newInvestor.validIdUrl ?? null,
+      eSignatureUrl: newInvestor.eSignatureUrl ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -857,6 +974,11 @@ export function LoanForm({
   };
 
   const onSubmit = async (data: z.infer<typeof loanSchema>) => {
+    if (!selectedBorrowerId) {
+      toast.error('Please select a borrower');
+      return;
+    }
+
     if (selectedInvestors.length === 0) {
       toast.error('Please add at least one investor');
       return;
@@ -922,10 +1044,7 @@ export function LoanForm({
       const investorPreviewItems = previewForValidation.filter(
         (p) => p.investor.id === si.investor.id,
       );
-      const totalDue = investorPreviewItems.reduce(
-        (s, p) => s + p.total,
-        0,
-      );
+      const totalDue = investorPreviewItems.reduce((s, p) => s + p.total, 0);
       if (totalDue <= 0) return false;
       const received = si.receivedPayments.reduce(
         (s, r) => s + (parseFloat(r.amount) || 0),
@@ -947,6 +1066,7 @@ export function LoanForm({
       const calculatedStatus = calculateLoanStatus();
 
       const loanData = {
+        borrowerId: selectedBorrowerId,
         loanName: data.loanName,
         type: data.type,
         status: calculatedStatus,
@@ -1059,16 +1179,52 @@ export function LoanForm({
           loanData,
           investorData,
           receivedPaymentsByInvestor,
+          contractCustomization: contractCustomization ?? null,
         }),
       });
 
       if (!response.ok)
         throw new Error(`Failed to ${isEditMode ? 'update' : 'create'} loan`);
 
+      const savedLoan = (await response.json()) as LoanWithInvestors & {
+        signingInvitations?: Array<{
+          id: number;
+          token: string;
+          partyRole: string;
+          partyName: string;
+          partyEmail: string | null;
+          signedAt: string | null;
+          expiresAt: string;
+          signingUrl: string;
+        }>;
+      };
+
+      if (!isEditMode) {
+        try {
+          await renderLoanContractPDF(
+            savedLoan,
+            contractCustomization ?? undefined,
+          );
+          toast.success('Loan created and contract PDF downloaded.');
+        } catch (contractError) {
+          console.error('Error generating loan contract PDF:', contractError);
+          toast.success('Loan created successfully.');
+          toast.error(
+            'Contract PDF could not be generated. Download it from the loan details.',
+          );
+        }
+      } else {
+        toast.success('Loan updated successfully.');
+      }
+
       if (onSuccess) {
         onSuccess();
       } else {
-        router.push('/loans');
+        router.push(
+          !isEditMode && savedLoan.id
+            ? `/loans/${savedLoan.id}?signing=1`
+            : '/loans',
+        );
         router.refresh();
       }
     } catch (error) {
@@ -1090,6 +1246,59 @@ export function LoanForm({
 
   const preview = calculatePreview();
   const summary = calculateSummary();
+
+  const contractDraft = useMemo(
+    () => ({
+      borrowerName: selectedBorrower?.name ?? '',
+      borrowerAddress: selectedBorrower?.address ?? null,
+      borrowerContact: selectedBorrower?.contactNumber ?? null,
+      borrowerEmail: selectedBorrower?.email ?? null,
+      borrowerValidIdUrl: selectedBorrower?.validIdUrl ?? null,
+      borrowerESignatureUrl: selectedBorrower?.eSignatureUrl ?? null,
+      loanTitleLabel: watchLoanName ?? '',
+      type: watchType,
+      dueDate: watchDueDate ?? '',
+      freeLotSqm: watchFreeLotSqm,
+      notes: watchNotes,
+      loanId: existingLoan?.id,
+      investors: selectedInvestors.map((si) => ({
+        investor: si.investor,
+        transactions: si.transactions.map((t) => ({
+          amount: t.amount,
+          interestRate: t.interestRate,
+          interestAmount: t.interestAmount,
+          interestType: t.interestType,
+          sentDate: t.sentDate,
+        })),
+        hasMultipleInterest: si.hasMultipleInterest,
+        interestPeriods: si.interestPeriods.map((period) => ({
+          dueDate: period.dueDate,
+          interestRate: period.interestRate,
+          interestAmount: period.interestAmount,
+          interestType: period.interestType,
+        })),
+      })),
+      totalPrincipal: summary.totalCapital,
+      totalInterest: summary.totalInterest,
+      totalAmountDue: summary.totalAmount,
+    }),
+    [
+      selectedBorrower?.name,
+      selectedBorrower?.address,
+      selectedBorrower?.contactNumber,
+      selectedBorrower?.email,
+      watchLoanName,
+      watchType,
+      watchDueDate,
+      watchFreeLotSqm,
+      watchNotes,
+      selectedInvestors,
+      summary.totalCapital,
+      summary.totalInterest,
+      summary.totalAmount,
+      existingLoan?.id,
+    ],
+  );
 
   const handleFormSubmit = () => {
     formRef.current?.requestSubmit();
@@ -1261,6 +1470,56 @@ export function LoanForm({
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
+              <Label htmlFor="borrower">Borrower *</Label>
+              <Select
+                value={borrowerSelectValue}
+                onValueChange={handleBorrowerSelect}
+                onOpenChange={handleBorrowerDropdownOpen}
+                disabled={isFetchingBorrowers}
+              >
+                <SelectTrigger id="borrower">
+                  <SelectValue
+                    placeholder={
+                      isFetchingBorrowers
+                        ? 'Loading borrowers...'
+                        : 'Select a borrower...'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {isFetchingBorrowers ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      Loading borrowers...
+                    </div>
+                  ) : (
+                    <>
+                      <SelectItem
+                        value="new"
+                        className="text-primary font-medium"
+                      >
+                        <div className="flex items-center gap-2">
+                          <UserPlus className="h-4 w-4" />
+                          <span>Add New Borrower</span>
+                        </div>
+                      </SelectItem>
+                      {borrowers.length > 0 && (
+                        <div className="h-px bg-border my-1" />
+                      )}
+                      {borrowers.map((borrower) => (
+                        <SelectItem
+                          key={borrower.id}
+                          value={borrower.id.toString()}
+                        >
+                          {borrower.name}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="loanName">Loan Name / Label *</Label>
               <Input
                 id="loanName"
@@ -1405,41 +1664,41 @@ export function LoanForm({
                   0,
                 );
                 return (
-                <LoanInvestorCard
-                  key={si.investor.id}
-                  selectedInvestor={si}
-                  watchDueDate={watchDueDate}
-                  totalAmountDue={investorTotalDue}
-                  onRemoveInvestor={removeInvestor}
-                  onAddTransaction={addTransaction}
-                  onRemoveTransaction={removeTransaction}
-                  onUpdateTransaction={updateTransaction}
-                  onAddReceivedPayment={addReceivedPayment}
-                  onRemoveReceivedPayment={removeReceivedPayment}
-                  onUpdateReceivedPayment={updateReceivedPayment}
-                  onPeriodsChange={(periods) => {
-                    setSelectedInvestors((prev) =>
-                      prev.map((inv) =>
-                        inv.investor.id === si.investor.id
-                          ? { ...inv, interestPeriods: periods }
-                          : inv,
-                      ),
-                    );
-                  }}
-                  onModeChange={(mode) => {
-                    setSelectedInvestors((prev) =>
-                      prev.map((inv) =>
-                        inv.investor.id === si.investor.id
-                          ? {
-                              ...inv,
-                              hasMultipleInterest: mode === 'multiple',
-                            }
-                          : inv,
-                      ),
-                    );
-                  }}
-                  onCopy={handleCopy}
-                />
+                  <LoanInvestorCard
+                    key={si.investor.id}
+                    selectedInvestor={si}
+                    watchDueDate={watchDueDate}
+                    totalAmountDue={investorTotalDue}
+                    onRemoveInvestor={removeInvestor}
+                    onAddTransaction={addTransaction}
+                    onRemoveTransaction={removeTransaction}
+                    onUpdateTransaction={updateTransaction}
+                    onAddReceivedPayment={addReceivedPayment}
+                    onRemoveReceivedPayment={removeReceivedPayment}
+                    onUpdateReceivedPayment={updateReceivedPayment}
+                    onPeriodsChange={(periods) => {
+                      setSelectedInvestors((prev) =>
+                        prev.map((inv) =>
+                          inv.investor.id === si.investor.id
+                            ? { ...inv, interestPeriods: periods }
+                            : inv,
+                        ),
+                      );
+                    }}
+                    onModeChange={(mode) => {
+                      setSelectedInvestors((prev) =>
+                        prev.map((inv) =>
+                          inv.investor.id === si.investor.id
+                            ? {
+                                ...inv,
+                                hasMultipleInterest: mode === 'multiple',
+                              }
+                            : inv,
+                        ),
+                      );
+                    }}
+                    onCopy={handleCopy}
+                  />
                 );
               })}
             </div>
@@ -1597,6 +1856,16 @@ export function LoanForm({
         />
       )}
 
+      <LoanContractPreview
+        draft={contractDraft}
+        customization={contractCustomization}
+        onCustomizationChange={setContractCustomization}
+      />
+
+      {isEditMode && existingLoan?.id ? (
+        <LoanSigningSection loanId={existingLoan.id} />
+      ) : null}
+
       <div className="flex flex-col sm:flex-row gap-4">
         <Button
           type="button"
@@ -1622,6 +1891,12 @@ export function LoanForm({
         open={showInvestorModal}
         onOpenChange={setShowInvestorModal}
         onSuccess={handleNewInvestorSuccess}
+      />
+
+      <BorrowerFormModal
+        open={showBorrowerModal}
+        onOpenChange={setShowBorrowerModal}
+        onSuccess={handleNewBorrowerSuccess}
       />
 
       {/* Copy Investor Modal */}

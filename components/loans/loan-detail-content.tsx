@@ -108,6 +108,13 @@ export function LoanDetailContent({
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
+              <p className="text-caption">Borrower</p>
+              <p className="text-sm font-medium">
+                {formatText(loan.borrower?.name ?? '-')}
+              </p>
+            </div>
+
+            <div className="space-y-1">
               <p className="text-caption">Loan Name</p>
               <p className="text-sm font-medium">{formatText(loan.loanName)}</p>
             </div>
