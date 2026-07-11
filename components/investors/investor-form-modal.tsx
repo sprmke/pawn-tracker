@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { InvestorFormFields, InvestorFormData } from './investor-form-fields';
+import { normalizeValidIdUrl, normalizeSignatureImageUrl } from '@/lib/valid-id-document';
 
 const investorSchema = z.object({
   name: z
@@ -23,6 +24,7 @@ const investorSchema = z.object({
     .min(2, 'Name must be at least 2 characters'),
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
   contactNumber: z.string().optional(),
+  address: z.string().optional(),
 });
 
 interface InvestorFormModalProps {
@@ -33,6 +35,9 @@ interface InvestorFormModalProps {
     name: string;
     email: string;
     contactNumber?: string;
+    address?: string;
+    validIdUrl?: string | null;
+    eSignatureUrl?: string | null;
   }) => void;
 }
 
@@ -42,6 +47,8 @@ export function InvestorFormModal({
   onSuccess,
 }: InvestorFormModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validIdUrl, setValidIdUrl] = useState<string | null>(null);
+  const [eSignatureUrl, setESignatureUrl] = useState<string | null>(null);
 
   const {
     register,
@@ -54,6 +61,7 @@ export function InvestorFormModal({
       name: '',
       email: '',
       contactNumber: '',
+      address: '',
     },
   });
 
@@ -67,7 +75,11 @@ export function InvestorFormModal({
       const response = await fetch('/api/investors', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          validIdUrl: normalizeValidIdUrl(validIdUrl),
+          eSignatureUrl: normalizeSignatureImageUrl(eSignatureUrl),
+        }),
       });
 
       if (!response.ok) {
@@ -79,6 +91,8 @@ export function InvestorFormModal({
 
       // Reset form and close modal
       reset();
+      setValidIdUrl(null);
+      setESignatureUrl(null);
       onOpenChange(false);
 
       // Call success callback with the new investor
@@ -97,6 +111,8 @@ export function InvestorFormModal({
 
   const handleCancel = () => {
     reset();
+    setValidIdUrl(null);
+    setESignatureUrl(null);
     onOpenChange(false);
   };
 
@@ -115,6 +131,10 @@ export function InvestorFormModal({
             register={register}
             errors={errors}
             isSubmitting={isSubmitting}
+            validIdUrl={validIdUrl}
+            onValidIdUrlChange={setValidIdUrl}
+            eSignatureUrl={eSignatureUrl}
+            onESignatureUrlChange={setESignatureUrl}
           />
 
           <div className="flex flex-col-reverse md:flex-row gap-1.5 md:gap-2 pt-4">
