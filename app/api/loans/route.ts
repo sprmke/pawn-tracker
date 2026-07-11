@@ -9,6 +9,8 @@ import {
 } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { saveLoanContractAndInvitations } from '@/lib/loan-contract-persistence';
+import { toSigningInvitationSummary } from '@/lib/loan-signing';
 
 export async function GET() {
   try {
@@ -21,6 +23,7 @@ export async function GET() {
     const ownedLoans = await db.query.loans.findMany({
       where: eq(loans.userId, session.user.id),
       with: {
+        borrower: true,
         loanInvestors: {
           with: {
             investor: true,
@@ -46,6 +49,7 @@ export async function GET() {
         with: {
           loan: {
             with: {
+              borrower: true,
               loanInvestors: {
                 with: {
                   investor: true,
@@ -96,6 +100,7 @@ export async function POST(request: Request) {
       loanData,
       investorData,
       receivedPaymentsByInvestor = [],
+      contractCustomization = null,
     } = body;
 
     console.log('Received loan data:', loanData);
@@ -104,6 +109,7 @@ export async function POST(request: Request) {
     // Convert date strings to Date objects and ensure proper types
     const processedLoanData = {
       userId: session.user.id,
+      borrowerId: loanData.borrowerId ? Number(loanData.borrowerId) : null,
       loanName: loanData.loanName,
       type: loanData.type,
       status: loanData.status,
@@ -210,6 +216,7 @@ export async function POST(request: Request) {
     const completeLoan = await db.query.loans.findFirst({
       where: eq(loans.id, loanId),
       with: {
+        borrower: true,
         loanInvestors: {
           with: {
             investor: true,
@@ -222,7 +229,36 @@ export async function POST(request: Request) {
 
     console.log('Complete loan fetched:', completeLoan);
 
-    return NextResponse.json(completeLoan, { status: 201 });
+    let signingInvitations: ReturnType<typeof toSigningInvitationSummary>[] = [];
+    if (completeLoan) {
+      const { invitations } = await saveLoanContractAndInvitations(
+        completeLoan,
+        contractCustomization,
+      );
+      const origin = process.env.NEXT_PUBLIC_APP_URL;
+      signingInvitations = invitations.map((invitation) =>
+        toSigningInvitationSummary(
+          {
+            id: invitation.id,
+            token: invitation.token,
+            partyRole: invitation.partyRole,
+            investorId: invitation.investorId,
+            partyName: invitation.partyName,
+            partyEmail: invitation.partyEmail,
+            signatureDataUrl: invitation.signatureDataUrl,
+            signedAt: invitation.signedAt,
+            consentedAt: invitation.consentedAt,
+            expiresAt: invitation.expiresAt,
+          },
+          origin,
+        ),
+      );
+    }
+
+    return NextResponse.json(
+      { ...completeLoan, signingInvitations },
+      { status: 201 },
+    );
   } catch (error) {
     console.error('Error creating loan:', error);
     // Log the full error details for debugging
