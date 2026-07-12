@@ -20,11 +20,12 @@ export function SignaturePad({
   disabled = false,
   className = '',
 }: SignaturePadProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const lastPointRef = useRef<Point | null>(null);
   const hasInkRef = useRef(false);
-  const rafRef = useRef<number | null>(null);
+  const scrollLockRef = useRef<{ x: number; y: number } | null>(null);
   const [hasInk, setHasInk] = useState(false);
 
   const getPoint = useCallback(
@@ -83,21 +84,37 @@ export function SignaturePad({
     onChange(canvas.toDataURL('image/png'));
   }, [onChange]);
 
-  const scheduleEmit = useCallback(() => {
-    if (rafRef.current != null) return;
-    rafRef.current = window.requestAnimationFrame(() => {
-      rafRef.current = null;
-      if (hasInkRef.current) {
-        emitChange();
-      }
-    });
-  }, [emitChange]);
-
   useEffect(() => {
-    return () => {
-      if (rafRef.current != null) {
-        window.cancelAnimationFrame(rafRef.current);
+    const container = containerRef.current;
+    if (!container) return;
+
+    const preventTouchScroll = (event: TouchEvent) => {
+      event.preventDefault();
+    };
+
+    const restoreScrollPosition = () => {
+      const locked = scrollLockRef.current;
+      if (!locked || !isDrawingRef.current) return;
+      if (
+        window.scrollX !== locked.x ||
+        window.scrollY !== locked.y
+      ) {
+        window.scrollTo(locked.x, locked.y);
       }
+    };
+
+    container.addEventListener('touchstart', preventTouchScroll, {
+      passive: false,
+    });
+    container.addEventListener('touchmove', preventTouchScroll, {
+      passive: false,
+    });
+    window.addEventListener('scroll', restoreScrollPosition, { passive: true });
+
+    return () => {
+      container.removeEventListener('touchstart', preventTouchScroll);
+      container.removeEventListener('touchmove', preventTouchScroll);
+      window.removeEventListener('scroll', restoreScrollPosition);
     };
   }, []);
 
@@ -126,6 +143,10 @@ export function SignaturePad({
   const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     if (disabled) return;
     event.preventDefault();
+    scrollLockRef.current = {
+      x: window.scrollX,
+      y: window.scrollY,
+    };
     const canvas = canvasRef.current;
     canvas?.setPointerCapture(event.pointerId);
     isDrawingRef.current = true;
@@ -141,7 +162,6 @@ export function SignaturePad({
       drawLine(lastPoint, point);
       hasInkRef.current = true;
       setHasInk(true);
-      scheduleEmit();
     }
     lastPointRef.current = point;
   };
@@ -149,6 +169,7 @@ export function SignaturePad({
   const finishStroke = () => {
     if (!isDrawingRef.current) return;
     isDrawingRef.current = false;
+    scrollLockRef.current = null;
     lastPointRef.current = null;
     if (hasInkRef.current) {
       emitChange();
@@ -157,10 +178,13 @@ export function SignaturePad({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <div className="rounded-md border-2 border-dashed border-primary/50 bg-white">
+      <div
+        ref={containerRef}
+        className="touch-none overscroll-none rounded-md border-2 border-dashed border-primary/50 bg-white"
+      >
         <canvas
           ref={canvasRef}
-          className="block h-32 w-full min-h-[128px] touch-none cursor-crosshair sm:h-36 sm:min-h-[160px]"
+          className="block h-32 w-full min-h-[128px] touch-none cursor-crosshair select-none sm:h-36 sm:min-h-[160px]"
           aria-label="Draw your signature here"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}

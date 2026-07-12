@@ -104,18 +104,18 @@ function PartyNoticeBlock({
           </span>
         </div>
       ) : null}
-      {party.eSignatureUrl ? (
-        <div className="mb-2 overflow-hidden rounded border border-border bg-white px-2 py-1">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+      <div className="mb-2 flex h-12 items-end overflow-hidden rounded border border-border bg-white px-2 py-1 sm:h-16">
+        {party.eSignatureUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={party.eSignatureUrl}
             alt={`${party.role} e-signature`}
-            className="max-h-12 w-full object-contain object-left sm:max-h-16"
+            className="max-h-full w-full object-contain object-left"
           />
-        </div>
-      ) : (
-        <div className="mb-2 h-7 border-b border-foreground" />
-      )}
+        ) : (
+          <div className="w-full border-b border-foreground" />
+        )}
+      </div>
       {!showSigningStatus ? (
         <p className={cn(metaClass, 'font-semibold text-foreground')}>
           {party.role} Signature
