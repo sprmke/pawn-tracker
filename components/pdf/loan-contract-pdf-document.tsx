@@ -36,6 +36,12 @@ import type { LoanWithInvestors } from '@/lib/types';
 
 Font.registerHyphenationCallback((word) => [word]);
 
+/** Approximate block heights (pt) for minPresenceAhead page-break hints */
+const MIN_LENDER_BLOCK = 72;
+const MIN_SIGNATURE_BLOCK = 220;
+const MIN_DETAIL_ROW = 24;
+const MIN_SECTION_INTRO = 48;
+
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
@@ -43,7 +49,7 @@ const styles = StyleSheet.create({
     lineHeight: 1.45,
     color: '#0f172a',
     paddingTop: 40,
-    paddingBottom: 48,
+    paddingBottom: 60,
     paddingHorizontal: 44,
   },
   header: {
@@ -86,7 +92,6 @@ const styles = StyleSheet.create({
   detailsGrid: {
     border: '1 solid #e2e8f0',
     borderRadius: 4,
-    overflow: 'hidden',
     marginBottom: 10,
   },
   detailRow: {
@@ -130,8 +135,11 @@ const styles = StyleSheet.create({
   },
   signatureSection: {
     marginTop: 14,
+  },
+  signatureSectionHeader: {
     paddingTop: 10,
     borderTop: '1 solid #cbd5e1',
+    marginBottom: 10,
   },
   signatureIntro: {
     fontSize: 8,
@@ -215,6 +223,7 @@ function ContractDetailsGrid({ data }: { data: LoanContractData }) {
       {rows.map((row, index) => (
         <View
           key={row.label}
+          wrap={false}
           style={
             index === rows.length - 1 ? styles.detailRowLast : styles.detailRow
           }
@@ -229,7 +238,7 @@ function ContractDetailsGrid({ data }: { data: LoanContractData }) {
 
 function SignatureBlock({ party }: { party: SignaturePartyDetails }) {
   return (
-    <View style={styles.signatureBlock}>
+    <View style={styles.signatureBlock} wrap={false}>
       {party.eSignatureUrl ? (
         <Image src={party.eSignatureUrl} style={styles.eSignatureImage} />
       ) : (
@@ -296,7 +305,7 @@ function LoanContractPDFDocument({
           </Text>
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.section} wrap={false}>
           <Text style={styles.sectionTitle}>Parties</Text>
           <Text style={styles.paragraph}>
             <Text style={{ fontFamily: 'Helvetica-Bold' }}>BORROWER: </Text>
@@ -309,15 +318,22 @@ function LoanContractPDFDocument({
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Loan Terms</Text>
+          <Text style={styles.sectionTitle} minPresenceAhead={MIN_DETAIL_ROW}>
+            Loan Terms
+          </Text>
           <ContractDetailsGrid data={displayData} />
         </View>
 
         {displayData.lenders.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Lender Allocation</Text>
+            <Text
+              style={styles.sectionTitle}
+              minPresenceAhead={MIN_LENDER_BLOCK}
+            >
+              Lender Allocation
+            </Text>
             {displayData.lenders.map((lender) => (
-              <View key={lender.email} style={styles.lenderBlock}>
+              <View key={lender.email} style={styles.lenderBlock} wrap={false}>
                 <Text style={styles.lenderName}>{lender.name}</Text>
                 {lender.contactNumber ? (
                   <Text style={styles.lenderMeta}>
@@ -337,18 +353,30 @@ function LoanContractPDFDocument({
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Terms and Conditions</Text>
+          <Text style={styles.sectionTitle} minPresenceAhead={MIN_SECTION_INTRO}>
+            Terms and Conditions
+          </Text>
           {termClauses.map((clause, index) => (
-            <Text key={index} style={styles.paragraph}>
+            <Text
+              key={index}
+              style={styles.paragraph}
+              orphans={3}
+              widows={3}
+            >
               {index + 1}. {clause.text}
             </Text>
           ))}
         </View>
 
         <View style={styles.signatureSection}>
-          <Text style={styles.signatureIntro}>
-            {getWitnessAttestationText(customization)}
-          </Text>
+          <View style={styles.signatureSectionHeader} wrap={false}>
+            <Text
+              style={styles.signatureIntro}
+              minPresenceAhead={MIN_SIGNATURE_BLOCK}
+            >
+              {getWitnessAttestationText(customization)}
+            </Text>
+          </View>
           <View style={styles.signatureGrid}>
             {signatureParties.map((party) => (
               <SignatureBlock
