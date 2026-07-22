@@ -61,6 +61,7 @@ async function getLoan(id: number, userId: string) {
         transactions: {
           orderBy: (transactions: any, { asc }: any) => [asc(transactions.date)],
         },
+        loanContract: true,
       },
     } as const;
 

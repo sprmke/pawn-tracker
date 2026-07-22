@@ -115,6 +115,13 @@ export interface LoanWithInvestors extends Loan {
   borrower?: Borrower | null;
   loanInvestors: (LoanInvestor & { investor: Investor })[];
   transactions?: Transaction[];
+  loanContract?: {
+    id: number;
+    loanId: number;
+    customization: unknown;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
 }
 
 export interface InvestorWithLoans extends Investor {

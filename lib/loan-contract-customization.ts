@@ -34,6 +34,28 @@ export interface ContractCustomization {
   additionalTerms: string;
 }
 
+/** User-entered contract fields that should not reset when loan draft defaults change. */
+export const USER_PERSISTED_CUSTOMIZATION_FIELDS: ReadonlyArray<
+  keyof ContractCustomization
+> = [
+  'witness1Name',
+  'witness1Address',
+  'witness1ValidIdUrl',
+  'witness1ESignatureUrl',
+  'witness1DateSigned',
+  'includeSecondWitness',
+  'witness2Name',
+  'witness2Address',
+  'witness2ValidIdUrl',
+  'witness2ESignatureUrl',
+  'witness2DateSigned',
+  'includeWitnesses',
+  'includeBorrowerSignature',
+  'borrowerDateSigned',
+  'additionalTerms',
+  'disputeVenue',
+];
+
 export const CONTRACT_CUSTOMIZATION_FIELDS: Array<keyof ContractCustomization> = [
   'contractTitle',
   'collateralSummary',
@@ -135,82 +157,199 @@ export function applyContractCustomization(
   };
 }
 
+function isUserPersistedField(
+  field: keyof ContractCustomization,
+): field is (typeof USER_PERSISTED_CUSTOMIZATION_FIELDS)[number] {
+  return USER_PERSISTED_CUSTOMIZATION_FIELDS.includes(
+    field as (typeof USER_PERSISTED_CUSTOMIZATION_FIELDS)[number],
+  );
+}
+
+function mergeCustomizationField<K extends keyof ContractCustomization>(
+  field: K,
+  previous: ContractCustomization,
+  defaults: ContractCustomization,
+  dirtyFields: Set<keyof ContractCustomization>,
+): ContractCustomization[K] {
+  if (isUserPersistedField(field)) {
+    return previous[field];
+  }
+
+  if (field === 'lenderSignaturesIncluded') {
+    return (
+      dirtyFields.has(field)
+        ? mergeLenderBooleanMap(
+            previous.lenderSignaturesIncluded,
+            defaults.lenderSignaturesIncluded,
+          )
+        : defaults.lenderSignaturesIncluded
+    ) as ContractCustomization[K];
+  }
+
+  if (field === 'lenderDateSigned') {
+    return (
+      dirtyFields.has(field)
+        ? mergeLenderSignatureDates(
+            previous.lenderDateSigned,
+            defaults.lenderDateSigned,
+          )
+        : defaults.lenderDateSigned
+    ) as ContractCustomization[K];
+  }
+
+  return (
+    dirtyFields.has(field) ? previous[field] : defaults[field]
+  ) as ContractCustomization[K];
+}
+
 export function mergeCustomizationWithDefaults(
   previous: ContractCustomization,
   defaults: ContractCustomization,
   dirtyFields: Set<keyof ContractCustomization>,
 ): ContractCustomization {
   return {
-    contractTitle: dirtyFields.has('contractTitle')
-      ? previous.contractTitle
-      : defaults.contractTitle,
-    collateralSummary: dirtyFields.has('collateralSummary')
-      ? previous.collateralSummary
-      : defaults.collateralSummary,
-    securityClause: dirtyFields.has('securityClause')
-      ? previous.securityClause
-      : defaults.securityClause,
-    disputeVenue: dirtyFields.has('disputeVenue')
-      ? previous.disputeVenue
-      : defaults.disputeVenue,
-    witness1Name: dirtyFields.has('witness1Name')
-      ? previous.witness1Name
-      : defaults.witness1Name,
-    witness1Address: dirtyFields.has('witness1Address')
-      ? previous.witness1Address
-      : defaults.witness1Address,
-    witness1ValidIdUrl: dirtyFields.has('witness1ValidIdUrl')
-      ? previous.witness1ValidIdUrl
-      : defaults.witness1ValidIdUrl,
-    witness1ESignatureUrl: dirtyFields.has('witness1ESignatureUrl')
-      ? previous.witness1ESignatureUrl
-      : defaults.witness1ESignatureUrl,
-    includeSecondWitness: dirtyFields.has('includeSecondWitness')
-      ? previous.includeSecondWitness
-      : defaults.includeSecondWitness,
-    witness2Name: dirtyFields.has('witness2Name')
-      ? previous.witness2Name
-      : defaults.witness2Name,
-    witness2Address: dirtyFields.has('witness2Address')
-      ? previous.witness2Address
-      : defaults.witness2Address,
-    witness2ValidIdUrl: dirtyFields.has('witness2ValidIdUrl')
-      ? previous.witness2ValidIdUrl
-      : defaults.witness2ValidIdUrl,
-    witness2ESignatureUrl: dirtyFields.has('witness2ESignatureUrl')
-      ? previous.witness2ESignatureUrl
-      : defaults.witness2ESignatureUrl,
-    includeWitnesses: dirtyFields.has('includeWitnesses')
-      ? previous.includeWitnesses
-      : defaults.includeWitnesses,
-    includeBorrowerSignature: dirtyFields.has('includeBorrowerSignature')
-      ? previous.includeBorrowerSignature
-      : defaults.includeBorrowerSignature,
-    lenderSignaturesIncluded: dirtyFields.has('lenderSignaturesIncluded')
-      ? mergeLenderBooleanMap(
-          previous.lenderSignaturesIncluded,
-          defaults.lenderSignaturesIncluded,
-        )
-      : defaults.lenderSignaturesIncluded,
-    borrowerDateSigned: dirtyFields.has('borrowerDateSigned')
-      ? previous.borrowerDateSigned
-      : defaults.borrowerDateSigned,
-    lenderDateSigned: dirtyFields.has('lenderDateSigned')
-      ? mergeLenderSignatureDates(
-          previous.lenderDateSigned,
-          defaults.lenderDateSigned,
-        )
-      : defaults.lenderDateSigned,
-    witness1DateSigned: dirtyFields.has('witness1DateSigned')
-      ? previous.witness1DateSigned
-      : defaults.witness1DateSigned,
-    witness2DateSigned: dirtyFields.has('witness2DateSigned')
-      ? previous.witness2DateSigned
-      : defaults.witness2DateSigned,
-    additionalTerms: dirtyFields.has('additionalTerms')
-      ? previous.additionalTerms
-      : defaults.additionalTerms,
+    contractTitle: mergeCustomizationField(
+      'contractTitle',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    collateralSummary: mergeCustomizationField(
+      'collateralSummary',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    securityClause: mergeCustomizationField(
+      'securityClause',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    disputeVenue: mergeCustomizationField(
+      'disputeVenue',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness1Name: mergeCustomizationField(
+      'witness1Name',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness1Address: mergeCustomizationField(
+      'witness1Address',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness1ValidIdUrl: mergeCustomizationField(
+      'witness1ValidIdUrl',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness1ESignatureUrl: mergeCustomizationField(
+      'witness1ESignatureUrl',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    includeSecondWitness: mergeCustomizationField(
+      'includeSecondWitness',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness2Name: mergeCustomizationField(
+      'witness2Name',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness2Address: mergeCustomizationField(
+      'witness2Address',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness2ValidIdUrl: mergeCustomizationField(
+      'witness2ValidIdUrl',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness2ESignatureUrl: mergeCustomizationField(
+      'witness2ESignatureUrl',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    includeWitnesses: mergeCustomizationField(
+      'includeWitnesses',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    includeBorrowerSignature: mergeCustomizationField(
+      'includeBorrowerSignature',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    lenderSignaturesIncluded: mergeCustomizationField(
+      'lenderSignaturesIncluded',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    borrowerDateSigned: mergeCustomizationField(
+      'borrowerDateSigned',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    lenderDateSigned: mergeCustomizationField(
+      'lenderDateSigned',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness1DateSigned: mergeCustomizationField(
+      'witness1DateSigned',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness2DateSigned: mergeCustomizationField(
+      'witness2DateSigned',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    additionalTerms: mergeCustomizationField(
+      'additionalTerms',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
   };
+}
+
+export function parseStoredContractCustomization(
+  stored: unknown,
+  defaults: ContractCustomization,
+): ContractCustomization {
+  if (!stored || typeof stored !== 'object') {
+    return defaults;
+  }
+
+  return mergeCustomizationWithDefaults(
+    { ...defaults, ...(stored as Partial<ContractCustomization>) },
+    defaults,
+    new Set(USER_PERSISTED_CUSTOMIZATION_FIELDS),
+  );
 }
 
 export function createEmptyDirtyFields(): Set<keyof ContractCustomization> {

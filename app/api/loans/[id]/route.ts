@@ -48,6 +48,7 @@ export async function GET(
         transactions: {
           orderBy: (transactions, { asc }) => [asc(transactions.date)],
         },
+        loanContract: true,
       },
     });
 

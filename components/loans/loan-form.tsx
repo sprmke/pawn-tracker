@@ -35,7 +35,9 @@ import { BorrowerFormModal } from '@/components/borrowers/borrower-form-modal';
 import { LoanSummarySection } from './loan-summary-section';
 import { LoanContractPreview } from './loan-contract-preview';
 import { LoanSigningSection } from './loan-signing-section';
-import type { ContractCustomization } from '@/lib/loan-contract-customization';
+import type {
+  ContractCustomization,
+} from '@/lib/loan-contract-customization';
 import { LoanInvestorsSection } from './loan-investors-section';
 import { FormHeader } from '@/components/common';
 import {
@@ -401,7 +403,44 @@ export function LoanForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [investorSelectValue, setInvestorSelectValue] = useState<string>('');
   const [contractCustomization, setContractCustomization] =
-    useState<ContractCustomization | null>(null);
+    useState<ContractCustomization | null>(() => {
+      if (existingLoan?.loanContract?.customization) {
+        return existingLoan.loanContract
+          .customization as ContractCustomization;
+      }
+      return null;
+    });
+
+  useEffect(() => {
+    if (!isEditMode || !existingLoan?.id) return;
+    if (existingLoan.loanContract?.customization) return;
+
+    const loanId = existingLoan.id;
+    let cancelled = false;
+
+    async function loadStoredCustomization() {
+      try {
+        const response = await fetch(`/api/loans/${loanId}/contract`);
+        if (!response.ok || cancelled) return;
+
+        const payload = (await response.json()) as {
+          customization?: ContractCustomization;
+        };
+
+        if (payload.customization && !cancelled) {
+          setContractCustomization(payload.customization);
+        }
+      } catch (error) {
+        console.error('Error loading contract customization:', error);
+      }
+    }
+
+    void loadStoredCustomization();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditMode, existingLoan?.id, existingLoan?.loanContract?.customization]);
 
   const {
     register,
