@@ -16,12 +16,18 @@ interface DebtsTableProps {
   debts: DebtWithInvestor[];
   itemsPerPage?: number;
   onQuickView?: (debt: DebtWithInvestor) => void;
+  enableRowSelection?: boolean;
+  selectedRowIds?: Set<string | number>;
+  onSelectedRowIdsChange?: (ids: Set<string | number>) => void;
 }
 
 export function DebtsTable({
   debts,
   itemsPerPage = 10,
   onQuickView,
+  enableRowSelection,
+  selectedRowIds,
+  onSelectedRowIdsChange,
 }: DebtsTableProps) {
   const columns: ColumnDef<DebtWithInvestor>[] = [
     {
@@ -197,6 +203,9 @@ export function DebtsTable({
       initialSortDirection="asc"
       onRowClick={onQuickView ? onQuickView : undefined}
       rowClickOnMobileOnly={true}
+      enableRowSelection={enableRowSelection}
+      selectedRowIds={selectedRowIds}
+      onSelectedRowIdsChange={onSelectedRowIdsChange}
     />
   );
 }

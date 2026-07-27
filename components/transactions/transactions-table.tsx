@@ -19,12 +19,18 @@ interface TransactionsTableProps {
   transactions: TransactionWithInvestor[];
   itemsPerPage?: number;
   onQuickView?: (transaction: TransactionWithInvestor) => void;
+  enableRowSelection?: boolean;
+  selectedRowIds?: Set<string | number>;
+  onSelectedRowIdsChange?: (ids: Set<string | number>) => void;
 }
 
 export function TransactionsTable({
   transactions,
   itemsPerPage = 10,
   onQuickView,
+  enableRowSelection,
+  selectedRowIds,
+  onSelectedRowIdsChange,
 }: TransactionsTableProps) {
   const columns: ColumnDef<TransactionWithInvestor>[] = [
     {
@@ -157,6 +163,9 @@ export function TransactionsTable({
       initialSortDirection="asc"
       onRowClick={onQuickView ? onQuickView : undefined}
       rowClickOnMobileOnly={true}
+      enableRowSelection={enableRowSelection}
+      selectedRowIds={selectedRowIds}
+      onSelectedRowIdsChange={onSelectedRowIdsChange}
     />
   );
 }

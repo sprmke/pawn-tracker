@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -138,6 +138,9 @@ export default function LoansPage() {
   const [minTotalAmount, setMinTotalAmount] = useState<string>('');
   const [maxTotalAmount, setMaxTotalAmount] = useState<string>('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<string | number>>(
+    new Set(),
+  );
 
   // Get due date filter from URL query parameter
   const dueDateFilter = searchParams.get('dueDate');
@@ -527,6 +530,11 @@ export default function LoansPage() {
     return 0;
   });
 
+  const selectedLoans = useMemo(
+    () => sortedLoans.filter((loan) => selectedRowIds.has(loan.id)),
+    [sortedLoans, selectedRowIds],
+  );
+
   if (loading || !isViewModeReady) {
     return <LoansPageSkeleton showTitle />;
   }
@@ -548,6 +556,7 @@ export default function LoansPage() {
             <ExportButton
               data={loansList}
               filteredData={sortedLoans}
+              selectedData={selectedLoans}
               sections={loanPDFSections}
               onGeneratePDF={renderLoansPDF}
               variant="outline"
@@ -1149,6 +1158,9 @@ export default function LoansPage() {
                 setSelectedLoan(loan);
                 setIsModalOpen(true);
               }}
+              enableRowSelection
+              selectedRowIds={selectedRowIds}
+              onSelectedRowIdsChange={setSelectedRowIds}
             />
           )}
         </>

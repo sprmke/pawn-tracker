@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -181,6 +181,9 @@ export default function InvestorsPage() {
   const [minGain, setMinGain] = useState<string>('');
   const [maxGain, setMaxGain] = useState<string>('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<string | number>>(
+    new Set(),
+  );
 
   useEffect(() => {
     fetchInvestors();
@@ -335,6 +338,11 @@ export default function InvestorsPage() {
     return true;
   });
 
+  const selectedInvestorsForExport = useMemo(
+    () => filteredInvestors.filter((investor) => selectedRowIds.has(investor.id)),
+    [filteredInvestors, selectedRowIds],
+  );
+
   if (loading || !isViewModeReady) {
     return (
       <div className="space-y-6">
@@ -405,6 +413,7 @@ export default function InvestorsPage() {
             <ExportButton
               data={investors}
               filteredData={filteredInvestors}
+              selectedData={selectedInvestorsForExport}
               sections={investorPDFSections}
               onGeneratePDF={renderInvestorsPDF}
               variant="outline"
@@ -766,6 +775,9 @@ export default function InvestorsPage() {
               itemsPerPage={10}
               expandedRows={expandedTableRows}
               onToggleExpand={toggleTableRow}
+              enableRowSelection
+              selectedRowIds={selectedRowIds}
+              onSelectedRowIdsChange={setSelectedRowIds}
             />
           )}
         </>

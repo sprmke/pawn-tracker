@@ -25,6 +25,9 @@ interface InvestorsTableProps {
   itemsPerPage?: number;
   expandedRows?: Set<string | number>;
   onToggleExpand?: (investorId: string | number) => void;
+  enableRowSelection?: boolean;
+  selectedRowIds?: Set<string | number>;
+  onSelectedRowIdsChange?: (ids: Set<string | number>) => void;
 }
 
 export function InvestorsTable({
@@ -33,6 +36,9 @@ export function InvestorsTable({
   itemsPerPage = 10,
   expandedRows,
   onToggleExpand,
+  enableRowSelection,
+  selectedRowIds,
+  onSelectedRowIdsChange,
 }: InvestorsTableProps) {
   const router = useRouter();
   const { startProgress } = useNavigationProgress();
@@ -285,6 +291,9 @@ export function InvestorsTable({
         router.push(`/investors/${investor.id}`);
       }}
       rowClickOnMobileOnly={true}
+      enableRowSelection={enableRowSelection}
+      selectedRowIds={selectedRowIds}
+      onSelectedRowIdsChange={onSelectedRowIdsChange}
     />
   );
 }

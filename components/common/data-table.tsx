@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowUpDown } from 'lucide-react';
 import { Pagination } from './pagination';
 
@@ -41,6 +42,9 @@ export interface DataTableProps<TData> {
   initialSortField?: string;
   initialSortDirection?: 'asc' | 'desc';
   rowClickOnMobileOnly?: boolean;
+  enableRowSelection?: boolean;
+  selectedRowIds?: Set<string | number>;
+  onSelectedRowIdsChange?: (ids: Set<string | number>) => void;
 }
 
 export function DataTable<TData>({
@@ -57,6 +61,9 @@ export function DataTable<TData>({
   initialSortField,
   initialSortDirection = 'asc',
   rowClickOnMobileOnly = false,
+  enableRowSelection = false,
+  selectedRowIds,
+  onSelectedRowIdsChange,
 }: DataTableProps<TData>) {
   const [sortField, setSortField] = React.useState<string | null>(
     initialSortField || null
@@ -145,6 +152,87 @@ export function DataTable<TData>({
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = sortedData.slice(startIndex, endIndex);
 
+  const showSelection =
+    enableRowSelection &&
+    !!onSelectedRowIdsChange &&
+    !!getRowId &&
+    !!selectedRowIds;
+
+  const getId = (row: TData, index: number) =>
+    getRowId ? getRowId(row) : index;
+
+  const pageRowIds = React.useMemo(
+    () => paginatedData.map((row, index) => getId(row, index)),
+    [paginatedData, getRowId],
+  );
+
+  const allFilteredIds = React.useMemo(
+    () => sortedData.map((row, index) => getId(row, index)),
+    [sortedData, getRowId],
+  );
+
+  const allPageSelected =
+    showSelection &&
+    pageRowIds.length > 0 &&
+    pageRowIds.every((id) => selectedRowIds!.has(id));
+
+  const somePageSelected =
+    showSelection && pageRowIds.some((id) => selectedRowIds!.has(id));
+
+  const allFilteredSelected =
+    showSelection &&
+    allFilteredIds.length > 0 &&
+    allFilteredIds.every((id) => selectedRowIds!.has(id));
+
+  const showSelectAllFilteredBanner =
+    showSelection &&
+    allPageSelected &&
+    !allFilteredSelected &&
+    sortedData.length > pageRowIds.length;
+
+  const toggleRowSelection = (rowId: string | number) => {
+    if (!onSelectedRowIdsChange || !selectedRowIds) return;
+
+    onSelectedRowIdsChange(
+      (() => {
+        const next = new Set(selectedRowIds);
+        if (next.has(rowId)) {
+          next.delete(rowId);
+        } else {
+          next.add(rowId);
+        }
+        return next;
+      })(),
+    );
+  };
+
+  const togglePageSelection = () => {
+    if (!onSelectedRowIdsChange || !selectedRowIds) return;
+
+    onSelectedRowIdsChange(
+      (() => {
+        const next = new Set(selectedRowIds);
+        if (allPageSelected) {
+          pageRowIds.forEach((id) => next.delete(id));
+        } else {
+          pageRowIds.forEach((id) => next.add(id));
+        }
+        return next;
+      })(),
+    );
+  };
+
+  const selectAllFiltered = () => {
+    if (!onSelectedRowIdsChange || !selectedRowIds) return;
+    onSelectedRowIdsChange(new Set(allFilteredIds));
+  };
+
+  const clearSelection = () => {
+    onSelectedRowIdsChange?.(new Set());
+  };
+
+  const totalColumnCount = visibleColumns.length + (showSelection ? 1 : 0);
+
   const SortButton = ({
     columnId,
     children,
@@ -174,9 +262,56 @@ export function DataTable<TData>({
   return (
     <Card>
       <CardContent className="p-0">
+        {showSelectAllFilteredBanner && (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b bg-muted/40 px-4 py-2 text-sm">
+            <span>
+              All {pageRowIds.length} items on this page are selected.
+            </span>
+            <button
+              type="button"
+              onClick={selectAllFiltered}
+              className="font-medium text-primary hover:underline"
+            >
+              Select all {sortedData.length} filtered{' '}
+              {sortedData.length === 1 ? 'item' : 'items'}
+            </button>
+          </div>
+        )}
+        {showSelection && selectedRowIds!.size > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2 text-sm">
+            <span className="text-muted-foreground">
+              {selectedRowIds!.size}{' '}
+              {selectedRowIds!.size === 1 ? 'item' : 'items'} selected
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-muted-foreground"
+              onClick={clearSelection}
+            >
+              Clear selection
+            </Button>
+          </div>
+        )}
         <Table>
           <TableHeader>
             <TableRow>
+              {showSelection && (
+                <TableHead className="w-10 pr-0">
+                  <Checkbox
+                    checked={
+                      allPageSelected
+                        ? true
+                        : somePageSelected
+                          ? 'indeterminate'
+                          : false
+                    }
+                    onCheckedChange={togglePageSelection}
+                    aria-label="Select all on page"
+                  />
+                </TableHead>
+              )}
               {visibleColumns.map((column) => (
                 <TableHead key={column.id} className={column.headerClassName}>
                   <SortButton columnId={column.id}>
@@ -201,6 +336,16 @@ export function DataTable<TData>({
                       }`}
                       onClick={() => shouldEnableRowClick && onRowClick?.(row)}
                     >
+                      {showSelection && (
+                        <TableCell className="w-10 pr-0">
+                          <Checkbox
+                            checked={selectedRowIds!.has(rowId)}
+                            onCheckedChange={() => toggleRowSelection(rowId)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Select row"
+                          />
+                        </TableCell>
+                      )}
                       {visibleColumns.map((column) => {
                         let cellContent: React.ReactNode;
 
@@ -227,7 +372,7 @@ export function DataTable<TData>({
                     {isExpanded && expandedContent && (
                       <TableRow key={`${rowId}-expanded`}>
                         <TableCell
-                          colSpan={visibleColumns.length}
+                          colSpan={totalColumnCount}
                           className="bg-muted/30 p-4"
                         >
                           {expandedContent(row)}

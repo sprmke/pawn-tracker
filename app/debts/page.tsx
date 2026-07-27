@@ -62,6 +62,9 @@ export default function DebtsPage() {
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<string | number>>(
+    new Set(),
+  );
 
   useEffect(() => {
     fetchDebts();
@@ -449,6 +452,9 @@ export default function DebtsPage() {
               debts={sortedDebts}
               itemsPerPage={itemsPerPage}
               onQuickView={handleQuickView}
+              enableRowSelection
+              selectedRowIds={selectedRowIds}
+              onSelectedRowIdsChange={setSelectedRowIds}
             />
           )}
         </>

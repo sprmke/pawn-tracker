@@ -23,6 +23,9 @@ interface LoansTableProps {
   onQuickView?: (loan: LoanWithInvestors) => void;
   /** When provided, shows investor-specific stats instead of loan totals */
   investorId?: number;
+  enableRowSelection?: boolean;
+  selectedRowIds?: Set<string | number>;
+  onSelectedRowIdsChange?: (ids: Set<string | number>) => void;
 }
 
 export function LoansTable({
@@ -31,6 +34,9 @@ export function LoansTable({
   hideFields = [],
   onQuickView,
   investorId,
+  enableRowSelection,
+  selectedRowIds,
+  onSelectedRowIdsChange,
 }: LoansTableProps) {
   // Helper to get investor-specific loan investors or all if no investorId
   const getRelevantLoanInvestors = (loan: LoanWithInvestors) => {
@@ -339,6 +345,9 @@ export function LoansTable({
       getRowId={(loan) => loan.id}
       onRowClick={onQuickView ? onQuickView : undefined}
       rowClickOnMobileOnly={true}
+      enableRowSelection={enableRowSelection}
+      selectedRowIds={selectedRowIds}
+      onSelectedRowIdsChange={onSelectedRowIdsChange}
     />
   );
 }

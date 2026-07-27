@@ -3,14 +3,17 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
-import { FileText, Filter, Loader2 } from 'lucide-react';
+import { CheckSquare, FileText, Filter, Loader2 } from 'lucide-react';
 import { PDFSection } from '@/lib/pdf-export';
 import { ExportColumnsModal } from './export-columns-modal';
 import { toast } from 'sonner';
 
+type ExportScope = 'all' | 'filtered' | 'selected';
+
 interface ExportButtonProps<T> {
   data: T[];
   filteredData: T[];
+  selectedData?: T[];
   sections: PDFSection<T>[];
   filename?: string;
   onGeneratePDF: (data: T[], enabledSectionKeys: string[]) => Promise<void>;
@@ -22,6 +25,7 @@ interface ExportButtonProps<T> {
 export function ExportButton<T>({
   data,
   filteredData,
+  selectedData = [],
   sections,
   onGeneratePDF,
   variant = 'outline',
@@ -29,16 +33,24 @@ export function ExportButton<T>({
   className = '',
 }: ExportButtonProps<T>) {
   const [showModal, setShowModal] = useState(false);
-  const [exportAllData, setExportAllData] = useState(true);
+  const [exportScope, setExportScope] = useState<ExportScope>('all');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleExportClick = (exportAll: boolean) => {
-    setExportAllData(exportAll);
+  const hasFilters = data.length !== filteredData.length;
+  const hasSelection = selectedData.length > 0;
+
+  const handleExportClick = (scope: ExportScope) => {
+    setExportScope(scope);
     setShowModal(true);
   };
 
   const handleExport = async (selectedSections: PDFSection<T>[]) => {
-    const dataToExport = exportAllData ? data : filteredData;
+    const dataToExport =
+      exportScope === 'all'
+        ? data
+        : exportScope === 'filtered'
+          ? filteredData
+          : selectedData;
 
     if (dataToExport.length === 0) {
       toast.error('No data to export');
@@ -65,21 +77,51 @@ export function ExportButton<T>({
     }
   };
 
-  const hasFilters = data.length !== filteredData.length;
-  const dataCount = exportAllData ? data.length : filteredData.length;
+  const dataCount =
+    exportScope === 'all'
+      ? data.length
+      : exportScope === 'filtered'
+        ? filteredData.length
+        : selectedData.length;
   const itemLabel = dataCount === 1 ? 'item' : 'items';
-
   const modalDescription = `Choose which sections to include in the exported PDF. (${dataCount} ${itemLabel})`;
 
-  // Single button when no filters
-  if (!hasFilters) {
+  const exportItems = [
+    {
+      label: `Export All Data (${data.length} ${data.length === 1 ? 'item' : 'items'})`,
+      icon: <FileText className="h-4 w-4" />,
+      onClick: () => handleExportClick('all'),
+    },
+    ...(hasFilters
+      ? [
+          {
+            label: `Export Filtered Data (${filteredData.length} ${filteredData.length === 1 ? 'item' : 'items'})`,
+            icon: <Filter className="h-4 w-4" />,
+            onClick: () => handleExportClick('filtered'),
+          },
+        ]
+      : []),
+    ...(hasSelection
+      ? [
+          {
+            label: `Export Selected (${selectedData.length} ${selectedData.length === 1 ? 'item' : 'items'})`,
+            icon: <CheckSquare className="h-4 w-4" />,
+            onClick: () => handleExportClick('selected'),
+          },
+        ]
+      : []),
+  ];
+
+  const showDropdown = exportItems.length > 1;
+
+  if (!showDropdown) {
     return (
       <>
         <Button
           variant={variant}
           size={size}
           className={className}
-          onClick={() => handleExportClick(true)}
+          onClick={() => handleExportClick('all')}
           disabled={isGenerating}
         >
           {isGenerating ? (
@@ -102,12 +144,16 @@ export function ExportButton<T>({
     );
   }
 
-  // Dropdown when filters are active
   return (
     <>
       <DropdownMenu
         trigger={
-          <Button variant={variant} size={size} className={className} disabled={isGenerating}>
+          <Button
+            variant={variant}
+            size={size}
+            className={className}
+            disabled={isGenerating}
+          >
             {isGenerating ? (
               <Loader2 className="h-4 w-4 md:mr-2 animate-spin" />
             ) : (
@@ -116,18 +162,7 @@ export function ExportButton<T>({
             <span className="hidden md:inline">Export PDF</span>
           </Button>
         }
-        items={[
-          {
-            label: `Export All Data (${data.length} ${data.length === 1 ? 'item' : 'items'})`,
-            icon: <FileText className="h-4 w-4" />,
-            onClick: () => handleExportClick(true),
-          },
-          {
-            label: `Export Filtered Data (${filteredData.length} ${filteredData.length === 1 ? 'item' : 'items'})`,
-            icon: <Filter className="h-4 w-4" />,
-            onClick: () => handleExportClick(false),
-          },
-        ]}
+        items={exportItems}
         align="end"
       />
       <ExportColumnsModal

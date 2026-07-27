@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useResponsiveViewMode } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
@@ -76,6 +76,9 @@ export default function TransactionsPage() {
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<string | number>>(
+    new Set(),
+  );
 
   useEffect(() => {
     fetchTransactions();
@@ -226,6 +229,14 @@ export default function TransactionsPage() {
     return aTime - bTime; // Ascending order (earliest first)
   });
 
+  const selectedTransactions = useMemo(
+    () =>
+      sortedTransactions.filter((transaction) =>
+        selectedRowIds.has(transaction.id),
+      ),
+    [sortedTransactions, selectedRowIds],
+  );
+
   if (loading || !isViewModeReady) {
     return <TransactionsPageSkeleton showTitle />;
   }
@@ -246,6 +257,7 @@ export default function TransactionsPage() {
             <ExportButton
               data={transactions}
               filteredData={sortedTransactions}
+              selectedData={selectedTransactions}
               sections={transactionPDFSections}
               onGeneratePDF={renderTransactionsPDF}
               variant="outline"
@@ -613,6 +625,9 @@ export default function TransactionsPage() {
               transactions={sortedTransactions}
               itemsPerPage={itemsPerPage}
               onQuickView={handleQuickView}
+              enableRowSelection
+              selectedRowIds={selectedRowIds}
+              onSelectedRowIdsChange={setSelectedRowIds}
             />
           )}
         </>
