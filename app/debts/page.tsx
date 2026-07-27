@@ -24,6 +24,7 @@ import {
   CardPagination,
   ViewModeToggle,
   PageHeader,
+  toggleSelectedId,
 } from '@/components/common';
 import { DollarSign, Users } from 'lucide-react';
 import { isCompletedDebt } from '@/lib/debt-calculations';
@@ -440,6 +441,13 @@ export default function DebtsPage() {
                       debt={debt}
                       onQuickView={handleQuickView}
                       viewHref={`/debts/${debt.id}`}
+                      showSelection
+                      selected={selectedRowIds.has(debt.id)}
+                      onSelectedChange={() =>
+                        setSelectedRowIds((prev) =>
+                          toggleSelectedId(prev, debt.id),
+                        )
+                      }
                     />
                   ))}
                 </div>

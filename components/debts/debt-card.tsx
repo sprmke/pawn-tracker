@@ -5,6 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ActionButtonsGroup, CardActionFooter } from '@/components/common';
 import {
+  CardSelectionCheckbox,
+  getSelectableCardClassName,
+} from '@/components/common/card-selection-checkbox';
+import {
   formatCurrency,
   formatDateShort,
   formatText,
@@ -19,9 +23,19 @@ interface DebtCardProps {
   debt: DebtWithInvestor;
   onQuickView: (debt: DebtWithInvestor) => void;
   viewHref: string;
+  showSelection?: boolean;
+  selected?: boolean;
+  onSelectedChange?: (selected: boolean) => void;
 }
 
-export function DebtCard({ debt, onQuickView, viewHref }: DebtCardProps) {
+export function DebtCard({
+  debt,
+  onQuickView,
+  viewHref,
+  showSelection = false,
+  selected = false,
+  onSelectedChange,
+}: DebtCardProps) {
   const perPeriodInterest = calculatePerPeriodInterest(
     debt.amount,
     debt.interestRate,
@@ -40,9 +54,18 @@ export function DebtCard({ debt, onQuickView, viewHref }: DebtCardProps) {
   }).totalInterestIncludingFees;
 
   return (
-    <Card className="hover:shadow-lg transition-shadow h-full flex flex-col overflow-hidden">
+    <Card
+      className={`hover:shadow-lg transition-shadow h-full flex flex-col overflow-hidden ${getSelectableCardClassName(selected)}`}
+    >
       <CardHeader className="pb-1 px-4 pt-4">
         <div className="flex items-start justify-between gap-2">
+          {showSelection && onSelectedChange && (
+            <CardSelectionCheckbox
+              checked={selected}
+              onCheckedChange={onSelectedChange}
+              ariaLabel={`Select ${debt.name}`}
+            />
+          )}
           <div className="flex-1 min-w-0">
             <CardTitle className="text-sm sm:text-base truncate mb-2">
               {formatText(debt.name)}

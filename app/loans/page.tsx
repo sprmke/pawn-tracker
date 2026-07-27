@@ -64,6 +64,9 @@ import {
   DateListWithViewMore,
   ExportButton,
   SyncCalendarButton,
+  CardSelectionCheckbox,
+  getSelectableCardClassName,
+  toggleSelectedId,
 } from '@/components/common';
 import { toLocalDateString } from '@/lib/date-utils';
 import {
@@ -959,10 +962,19 @@ export default function LoansPage() {
                   {paginatedLoans.map((loan) => (
                     <Card
                       key={loan.id}
-                      className="hover:shadow-lg transition-shadow h-full flex flex-col overflow-hidden"
+                      className={`hover:shadow-lg transition-shadow h-full flex flex-col overflow-hidden ${getSelectableCardClassName(selectedRowIds.has(loan.id))}`}
                     >
                       <CardHeader className="pb-1 px-4 pt-4">
                         <div className="flex items-start justify-between gap-2">
+                          <CardSelectionCheckbox
+                            checked={selectedRowIds.has(loan.id)}
+                            onCheckedChange={() =>
+                              setSelectedRowIds((prev) =>
+                                toggleSelectedId(prev, loan.id),
+                              )
+                            }
+                            ariaLabel={`Select ${loan.loanName}`}
+                          />
                           <div className="space-y-1 flex-1 min-w-0">
                             <CardTitle className="text-sm sm:text-base truncate">
                               {formatText(loan.loanName)}

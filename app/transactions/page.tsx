@@ -31,6 +31,7 @@ import {
   ViewModeToggle,
   PageHeader,
   ExportButton,
+  toggleSelectedId,
 } from '@/components/common';
 import { DollarSign, Users } from 'lucide-react';
 import { transactionPDFSections } from '@/lib/pdf-sections';
@@ -613,6 +614,13 @@ export default function TransactionsPage() {
                       transaction={transaction}
                       onQuickView={handleQuickView}
                       viewHref={`/transactions/${transaction.id}`}
+                      showSelection
+                      selected={selectedRowIds.has(transaction.id)}
+                      onSelectedChange={() =>
+                        setSelectedRowIds((prev) =>
+                          toggleSelectedId(prev, transaction.id),
+                        )
+                      }
                     />
                   ))}
                 </div>

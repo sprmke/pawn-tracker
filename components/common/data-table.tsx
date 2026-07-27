@@ -229,8 +229,14 @@ export function DataTable<TData>({
     );
   };
 
-  const selectionColumnClassName =
-    'w-px whitespace-nowrap px-2 py-3 [&:has([role=checkbox])]:px-2';
+  const selectionColumnProps = {
+    className: 'px-2 py-3',
+    style: {
+      width: '2.5rem',
+      minWidth: '2.5rem',
+      maxWidth: '2.5rem',
+    } satisfies React.CSSProperties,
+  };
 
   if (data.length === 0 && emptyState) {
     return <>{emptyState}</>;
@@ -239,13 +245,17 @@ export function DataTable<TData>({
   return (
     <Card>
       <CardContent className="p-0">
-        <Table className={showSelection ? 'table-auto' : undefined}>
+        <Table>
+          {showSelection && (
+            <colgroup>
+              <col style={{ width: '2.5rem' }} />
+            </colgroup>
+          )}
           <TableHeader>
             <TableRow>
               {showSelection && (
-                <TableHead className={selectionColumnClassName}>
-                  <div className="flex items-center justify-center">
-                    <Checkbox
+                <TableHead {...selectionColumnProps}>
+                  <Checkbox
                       checked={
                         allPageSelected
                           ? true
@@ -254,9 +264,8 @@ export function DataTable<TData>({
                             : false
                       }
                       onCheckedChange={togglePageSelection}
-                      aria-label="Select all on page"
-                    />
-                  </div>
+                    aria-label="Select all on page"
+                  />
                 </TableHead>
               )}
               {visibleColumns.map((column) => (
@@ -284,15 +293,13 @@ export function DataTable<TData>({
                       onClick={() => shouldEnableRowClick && onRowClick?.(row)}
                     >
                       {showSelection && (
-                        <TableCell className={selectionColumnClassName}>
-                          <div className="flex items-center justify-center">
-                            <Checkbox
-                              checked={selectedRowIds!.has(rowId)}
-                              onCheckedChange={() => toggleRowSelection(rowId)}
-                              onClick={(e) => e.stopPropagation()}
-                              aria-label="Select row"
-                            />
-                          </div>
+                        <TableCell {...selectionColumnProps}>
+                          <Checkbox
+                            checked={selectedRowIds!.has(rowId)}
+                            onCheckedChange={() => toggleRowSelection(rowId)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Select row"
+                          />
                         </TableCell>
                       )}
                       {visibleColumns.map((column) => {

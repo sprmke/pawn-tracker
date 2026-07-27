@@ -59,8 +59,8 @@ export function LoansTable({
       hidden: hideFields.includes('loanName'),
       accessorKey: 'loanName',
       sortable: true,
-      headerClassName: 'w-[12%]',
-      className: 'w-[12%]',
+      headerClassName: 'w-[28%] 2xl:w-[12%]',
+      className: 'w-[28%] 2xl:w-[12%]',
       cell: (loan) => (
         <span
           className="block truncate font-medium"
@@ -221,8 +221,8 @@ export function LoansTable({
       id: 'totalPrincipal',
       header: 'Principal',
       hidden: hideFields.includes('totalPrincipal'),
-      headerClassName: 'w-[10%]',
-      className: 'w-[10%]',
+      headerClassName: 'w-[16%] 2xl:w-[10%]',
+      className: 'w-[16%] 2xl:w-[10%]',
       accessorFn: (loan) => getStats(loan).totalPrincipal,
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -240,8 +240,8 @@ export function LoansTable({
       id: 'avgRate',
       header: 'Rate',
       hidden: hideFields.includes('avgRate'),
-      headerClassName: 'w-[7%]',
-      className: 'w-[7%]',
+      headerClassName: 'w-[10%] 2xl:w-[7%]',
+      className: 'w-[10%] 2xl:w-[7%]',
       accessorFn: (loan) => getStats(loan).averageRate,
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -259,8 +259,8 @@ export function LoansTable({
       id: 'totalInterest',
       header: 'Interest',
       hidden: hideFields.includes('totalInterest'),
-      headerClassName: 'w-[10%]',
-      className: 'w-[10%]',
+      headerClassName: 'w-[16%] 2xl:w-[10%]',
+      className: 'w-[16%] 2xl:w-[10%]',
       accessorFn: (loan) => getStats(loan).totalInterest,
       sortable: true,
       sortFn: (a, b, direction) => {
@@ -278,8 +278,8 @@ export function LoansTable({
       id: 'totalAmount',
       header: investorId ? 'Total' : 'Amount',
       hidden: hideFields.includes('totalAmount'),
-      headerClassName: 'w-[10%]',
-      className: 'w-[10%]',
+      headerClassName: 'w-[16%] 2xl:w-[10%]',
+      className: 'w-[16%] 2xl:w-[10%]',
       accessorFn: (loan) => getStats(loan).total,
       sortable: true,
       sortFn: (a, b, direction) => {

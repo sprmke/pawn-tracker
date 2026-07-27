@@ -84,8 +84,8 @@ export function Pagination({
   const pageItems = getPageNumbers(currentPage, totalPages);
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t px-4 py-4 sm:px-6">
-      <div className="flex items-center gap-4 flex-wrap">
+    <div className="flex flex-col gap-4 border-t px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <div className="text-sm text-muted-foreground">
           Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of{' '}
           {totalItems} {itemName}

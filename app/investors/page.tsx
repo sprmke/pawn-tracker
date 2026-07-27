@@ -41,6 +41,9 @@ import {
   PageHeader,
   ExportButton,
   useNavigationProgress,
+  CardSelectionCheckbox,
+  getSelectableCardClassName,
+  toggleSelectedId,
 } from '@/components/common';
 import {
   formatCurrency,
@@ -638,13 +641,18 @@ export default function InvestorsPage() {
                     return (
                       <Card
                         key={investor.id}
-                        className="hover:shadow-lg transition-shadow h-full flex flex-col overflow-hidden cursor-pointer lg:cursor-default"
+                        className={`hover:shadow-lg transition-shadow h-full flex flex-col overflow-hidden cursor-pointer lg:cursor-default ${getSelectableCardClassName(selectedRowIds.has(investor.id))}`}
                         onClick={(e) => {
                           // Only navigate on mobile (below lg breakpoint)
                           // Check if click is on the card itself, not on buttons
                           const target = e.target as HTMLElement;
                           const isButton = target.closest('button');
-                          if (!isButton && window.innerWidth < 1024) {
+                          const isCheckbox = target.closest('[role=checkbox]');
+                          if (
+                            !isButton &&
+                            !isCheckbox &&
+                            window.innerWidth < 1024
+                          ) {
                             startProgress();
                             router.push(`/investors/${investor.id}`);
                           }
@@ -652,6 +660,15 @@ export default function InvestorsPage() {
                       >
                         <CardHeader className="pb-3 px-4 pt-4">
                           <div className="flex items-start justify-between gap-2">
+                            <CardSelectionCheckbox
+                              checked={selectedRowIds.has(investor.id)}
+                              onCheckedChange={() =>
+                                setSelectedRowIds((prev) =>
+                                  toggleSelectedId(prev, investor.id),
+                                )
+                              }
+                              ariaLabel={`Select ${investor.name}`}
+                            />
                             <div className="flex-1 min-w-0">
                               <CardTitle className="text-sm sm:text-base truncate">
                                 {formatText(investor.name)}
