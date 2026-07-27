@@ -10,7 +10,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowUpDown } from 'lucide-react';
 import { Pagination } from './pagination';
@@ -166,11 +165,6 @@ export function DataTable<TData>({
     [paginatedData, getRowId],
   );
 
-  const allFilteredIds = React.useMemo(
-    () => sortedData.map((row, index) => getId(row, index)),
-    [sortedData, getRowId],
-  );
-
   const allPageSelected =
     showSelection &&
     pageRowIds.length > 0 &&
@@ -178,17 +172,6 @@ export function DataTable<TData>({
 
   const somePageSelected =
     showSelection && pageRowIds.some((id) => selectedRowIds!.has(id));
-
-  const allFilteredSelected =
-    showSelection &&
-    allFilteredIds.length > 0 &&
-    allFilteredIds.every((id) => selectedRowIds!.has(id));
-
-  const showSelectAllFilteredBanner =
-    showSelection &&
-    allPageSelected &&
-    !allFilteredSelected &&
-    sortedData.length > pageRowIds.length;
 
   const toggleRowSelection = (rowId: string | number) => {
     if (!onSelectedRowIdsChange || !selectedRowIds) return;
@@ -222,15 +205,6 @@ export function DataTable<TData>({
     );
   };
 
-  const selectAllFiltered = () => {
-    if (!onSelectedRowIdsChange || !selectedRowIds) return;
-    onSelectedRowIdsChange(new Set(allFilteredIds));
-  };
-
-  const clearSelection = () => {
-    onSelectedRowIdsChange?.(new Set());
-  };
-
   const totalColumnCount = visibleColumns.length + (showSelection ? 1 : 0);
 
   const SortButton = ({
@@ -255,6 +229,9 @@ export function DataTable<TData>({
     );
   };
 
+  const selectionColumnClassName =
+    'w-px whitespace-nowrap px-2 py-3 [&:has([role=checkbox])]:px-2';
+
   if (data.length === 0 && emptyState) {
     return <>{emptyState}</>;
   }
@@ -262,54 +239,24 @@ export function DataTable<TData>({
   return (
     <Card>
       <CardContent className="p-0">
-        {showSelectAllFilteredBanner && (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b bg-muted/40 px-4 py-2 text-sm">
-            <span>
-              All {pageRowIds.length} items on this page are selected.
-            </span>
-            <button
-              type="button"
-              onClick={selectAllFiltered}
-              className="font-medium text-primary hover:underline"
-            >
-              Select all {sortedData.length} filtered{' '}
-              {sortedData.length === 1 ? 'item' : 'items'}
-            </button>
-          </div>
-        )}
-        {showSelection && selectedRowIds!.size > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2 text-sm">
-            <span className="text-muted-foreground">
-              {selectedRowIds!.size}{' '}
-              {selectedRowIds!.size === 1 ? 'item' : 'items'} selected
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-muted-foreground"
-              onClick={clearSelection}
-            >
-              Clear selection
-            </Button>
-          </div>
-        )}
-        <Table>
+        <Table className={showSelection ? 'table-auto' : undefined}>
           <TableHeader>
             <TableRow>
               {showSelection && (
-                <TableHead className="w-10 pr-0">
-                  <Checkbox
-                    checked={
-                      allPageSelected
-                        ? true
-                        : somePageSelected
-                          ? 'indeterminate'
-                          : false
-                    }
-                    onCheckedChange={togglePageSelection}
-                    aria-label="Select all on page"
-                  />
+                <TableHead className={selectionColumnClassName}>
+                  <div className="flex items-center justify-center">
+                    <Checkbox
+                      checked={
+                        allPageSelected
+                          ? true
+                          : somePageSelected
+                            ? 'indeterminate'
+                            : false
+                      }
+                      onCheckedChange={togglePageSelection}
+                      aria-label="Select all on page"
+                    />
+                  </div>
                 </TableHead>
               )}
               {visibleColumns.map((column) => (
@@ -337,13 +284,15 @@ export function DataTable<TData>({
                       onClick={() => shouldEnableRowClick && onRowClick?.(row)}
                     >
                       {showSelection && (
-                        <TableCell className="w-10 pr-0">
-                          <Checkbox
-                            checked={selectedRowIds!.has(rowId)}
-                            onCheckedChange={() => toggleRowSelection(rowId)}
-                            onClick={(e) => e.stopPropagation()}
-                            aria-label="Select row"
-                          />
+                        <TableCell className={selectionColumnClassName}>
+                          <div className="flex items-center justify-center">
+                            <Checkbox
+                              checked={selectedRowIds!.has(rowId)}
+                              onCheckedChange={() => toggleRowSelection(rowId)}
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label="Select row"
+                            />
+                          </div>
                         </TableCell>
                       )}
                       {visibleColumns.map((column) => {
