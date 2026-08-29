@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { LoanWithInvestors, InterestType, InterestPeriodStatus } from '@/lib/types';
+import type { ContractCustomization } from '@/lib/loan-contract-customization';
 
 export interface DuplicateLoanData {
   name: string;
@@ -8,6 +9,7 @@ export interface DuplicateLoanData {
   dueDate: string | Date;
   freeLotSqm: number | null;
   notes: string | null;
+  contractCustomization?: ContractCustomization;
   loanInvestors: Array<{
     investorId: number;
     amount: string;
@@ -61,6 +63,9 @@ export const useLoanDuplicateStore = create<LoanDuplicateState>((set) => ({
 
 // Helper function to create duplicate data from a loan
 export function createDuplicateDataFromLoan(loan: LoanWithInvestors): DuplicateLoanData {
+  const storedCustomization = loan.loanContract
+    ?.customization as ContractCustomization | undefined;
+
   return {
     name: loan.loanName,
     borrowerId: loan.borrowerId,
@@ -68,6 +73,15 @@ export function createDuplicateDataFromLoan(loan: LoanWithInvestors): DuplicateL
     dueDate: loan.dueDate,
     freeLotSqm: loan.freeLotSqm,
     notes: loan.notes,
+    contractCustomization: storedCustomization
+      ? {
+          ...storedCustomization,
+          borrowerDateSigned: '',
+          lenderDateSigned: {},
+          witness1DateSigned: '',
+          witness2DateSigned: '',
+        }
+      : undefined,
     loanInvestors: loan.loanInvestors.map((li) => ({
       investorId: li.investorId,
       amount: li.amount,

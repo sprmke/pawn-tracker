@@ -29,7 +29,7 @@ function ContractDetailsTable({
 }) {
   const rows = getContractDetailRows(data);
   const cellClass = compact
-    ? 'px-2 py-1.5 text-[10px] sm:px-3 sm:py-2 sm:text-xs'
+    ? 'px-3 py-2 text-sm sm:px-4 sm:py-2.5 sm:text-sm'
     : 'px-3 py-2 text-xs';
 
   return (
@@ -74,13 +74,13 @@ function PartyNoticeBlock({
   const knownAddress = party.address?.trim();
   const isSigned = Boolean(party.eSignatureUrl);
   const metaClass = compact
-    ? 'text-[10px] sm:text-xs text-muted-foreground'
+    ? 'text-sm text-muted-foreground'
     : 'text-xs text-muted-foreground';
 
   return (
     <div
       className={cn(
-        'w-full min-w-0 flex-1 space-y-1 rounded-md p-2 transition-colors sm:min-w-[200px] md:min-w-[240px]',
+        'w-full min-w-0 flex-1 space-y-1.5 rounded-md p-3 transition-colors sm:min-w-50 md:min-w-60',
         isActive
           ? 'bg-primary/5 ring-2 ring-primary/60'
           : isSigned
@@ -90,11 +90,11 @@ function PartyNoticeBlock({
     >
       {showSigningStatus ? (
         <div className="mb-1 flex items-center justify-between gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {party.role}
           </p>
           <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
               isSigned
                 ? 'bg-green-100 text-green-800'
                 : 'bg-muted text-muted-foreground'
@@ -134,7 +134,7 @@ function PartyNoticeBlock({
               <img
                 src={party.validIdUrl}
                 alt={`${party.role} valid ID`}
-                className="max-h-24 w-full object-contain sm:max-h-32"
+                className="max-h-28 w-full object-contain sm:max-h-36"
               />
             </div>
           ) : (
@@ -194,7 +194,7 @@ export function LoanContractDocumentBody({
       className={cn(
         'mx-auto w-full max-w-3xl bg-background text-foreground',
         compact
-          ? 'space-y-3 p-2.5 text-[11px] leading-snug sm:space-y-4 sm:p-4 sm:text-xs sm:leading-relaxed md:space-y-5 md:p-6 md:text-sm lg:p-8'
+          ? 'space-y-4 p-4 text-sm leading-relaxed sm:space-y-5 sm:p-6 sm:text-base md:space-y-6 md:p-8 lg:p-10'
           : 'space-y-5 p-6 text-sm leading-relaxed sm:p-8',
       )}
     >
@@ -202,7 +202,7 @@ export function LoanContractDocumentBody({
         <p
           className={cn(
             'font-bold uppercase tracking-widest text-primary',
-            compact ? 'text-[9px] sm:text-[10px] md:text-xs' : 'text-xs',
+            compact ? 'text-xs sm:text-sm' : 'text-xs',
           )}
         >
           PawnTracker
@@ -210,9 +210,7 @@ export function LoanContractDocumentBody({
         <h3
           className={cn(
             'mt-1 font-bold',
-            compact
-              ? 'text-base sm:text-lg md:text-xl'
-              : 'text-xl',
+            compact ? 'text-2xl sm:text-3xl' : 'text-xl',
           )}
         >
           {displayData.contractTitle}
@@ -220,7 +218,7 @@ export function LoanContractDocumentBody({
         <p
           className={cn(
             'text-muted-foreground',
-            compact ? 'text-[10px] sm:text-xs' : 'text-xs',
+            compact ? 'text-sm sm:text-base' : 'text-xs',
           )}
         >
           Contract No. {displayData.contractNumber}
@@ -230,7 +228,7 @@ export function LoanContractDocumentBody({
       <p
         className={cn(
           'text-justify text-muted-foreground',
-          compact && 'text-[11px] sm:text-xs md:text-sm',
+          compact && 'text-sm sm:text-base',
         )}
       >
         {getContractIntroText(displayData, customization)}
@@ -240,7 +238,7 @@ export function LoanContractDocumentBody({
         <p
           className={cn(
             'font-bold uppercase tracking-wide text-foreground',
-            compact ? 'text-[10px] sm:text-xs' : 'text-xs',
+            compact ? 'text-xs sm:text-sm' : 'text-xs',
           )}
         >
           Parties
@@ -248,7 +246,7 @@ export function LoanContractDocumentBody({
         <p
           className={cn(
             'text-muted-foreground',
-            compact && 'text-[11px] sm:text-xs md:text-sm',
+            compact && 'text-sm sm:text-base',
           )}
         >
           <span className="font-semibold text-foreground">BORROWER: </span>
@@ -257,7 +255,7 @@ export function LoanContractDocumentBody({
         <p
           className={cn(
             'text-muted-foreground',
-            compact && 'text-[11px] sm:text-xs md:text-sm',
+            compact && 'text-sm sm:text-base',
           )}
         >
           <span className="font-semibold text-foreground">LENDER(S): </span>
@@ -269,7 +267,7 @@ export function LoanContractDocumentBody({
         <p
           className={cn(
             'font-bold uppercase tracking-wide text-foreground',
-            compact ? 'text-[10px] sm:text-xs' : 'text-xs',
+            compact ? 'text-xs sm:text-sm' : 'text-xs',
           )}
         >
           Loan Terms
@@ -282,7 +280,7 @@ export function LoanContractDocumentBody({
           <p
             className={cn(
               'font-bold uppercase tracking-wide text-foreground',
-              compact ? 'text-[10px] sm:text-xs' : 'text-xs',
+              compact ? 'text-xs sm:text-sm' : 'text-xs',
             )}
           >
             Lender Allocation
@@ -293,29 +291,53 @@ export function LoanContractDocumentBody({
                 key={lender.email}
                 className={cn(
                   'rounded-md border border-border bg-muted/40',
-                  compact ? 'p-2 sm:p-3' : 'p-3',
+                  compact ? 'p-3 sm:p-4' : 'p-3',
                 )}
               >
                 <p
                   className={cn(
                     'font-semibold',
-                    compact ? 'text-xs sm:text-sm' : 'text-sm',
+                    compact ? 'text-base sm:text-lg' : 'text-sm',
                   )}
                 >
                   {lender.name}
                 </p>
                 {lender.contactNumber ? (
-                  <p className={compact ? 'text-[10px] sm:text-xs text-muted-foreground' : 'text-xs text-muted-foreground'}>
+                  <p
+                    className={
+                      compact
+                        ? 'text-sm text-muted-foreground'
+                        : 'text-xs text-muted-foreground'
+                    }
+                  >
                     Contact: {lender.contactNumber}
                   </p>
                 ) : null}
-                <p className={compact ? 'text-[10px] sm:text-xs text-muted-foreground' : 'text-xs text-muted-foreground'}>
+                <p
+                  className={
+                    compact
+                      ? 'text-sm text-muted-foreground'
+                      : 'text-xs text-muted-foreground'
+                  }
+                >
                   Email: {lender.email}
                 </p>
-                <p className={compact ? 'text-[10px] sm:text-xs text-muted-foreground' : 'text-xs text-muted-foreground'}>
+                <p
+                  className={
+                    compact
+                      ? 'text-sm text-muted-foreground'
+                      : 'text-xs text-muted-foreground'
+                  }
+                >
                   Principal: {formatContractCurrency(lender.principalAmount)}
                 </p>
-                <p className={compact ? 'text-[10px] sm:text-xs text-muted-foreground' : 'text-xs text-muted-foreground'}>
+                <p
+                  className={
+                    compact
+                      ? 'text-sm text-muted-foreground'
+                      : 'text-xs text-muted-foreground'
+                  }
+                >
                   Interest: {lender.interestDescription}
                 </p>
               </div>
@@ -328,7 +350,7 @@ export function LoanContractDocumentBody({
         <p
           className={cn(
             'font-bold uppercase tracking-wide text-foreground',
-            compact ? 'text-[10px] sm:text-xs' : 'text-xs',
+            compact ? 'text-xs sm:text-sm' : 'text-xs',
           )}
         >
           Terms and Conditions
@@ -336,7 +358,7 @@ export function LoanContractDocumentBody({
         <ol
           className={cn(
             'list-decimal space-y-2 pl-4 text-muted-foreground sm:space-y-3 sm:pl-5',
-            compact && 'text-[11px] sm:text-xs md:text-sm',
+            compact && 'text-sm sm:text-base',
           )}
         >
           {termClauses.map((clause, index) => (
@@ -351,7 +373,7 @@ export function LoanContractDocumentBody({
         <p
           className={cn(
             'italic text-muted-foreground',
-            compact ? 'text-[10px] sm:text-xs' : 'text-xs',
+            compact ? 'text-sm sm:text-base' : 'text-xs',
           )}
         >
           {getWitnessAttestationText(customization)}
@@ -381,7 +403,7 @@ export function LoanContractDocumentBody({
       <p
         className={cn(
           'text-muted-foreground',
-          compact ? 'text-[9px] sm:text-[10px]' : 'text-[10px]',
+          compact ? 'text-xs sm:text-sm' : 'text-[10px]',
         )}
       >
         Generated by PawnTracker · {formatContractDate(new Date())}

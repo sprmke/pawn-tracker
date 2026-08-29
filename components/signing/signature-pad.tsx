@@ -177,14 +177,14 @@ export function SignaturePad({
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`space-y-3 ${className}`}>
       <div
         ref={containerRef}
-        className="touch-none overscroll-none rounded-md border-2 border-dashed border-primary/50 bg-white"
+        className="touch-none overscroll-none rounded-xl border-2 border-dashed border-primary/50 bg-white shadow-sm"
       >
         <canvas
           ref={canvasRef}
-          className="block h-32 w-full min-h-[128px] touch-none cursor-crosshair select-none sm:h-36 sm:min-h-[160px]"
+          className="block h-44 w-full min-h-44 touch-none cursor-crosshair select-none sm:h-52 sm:min-h-52"
           aria-label="Draw your signature here"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -193,8 +193,8 @@ export function SignaturePad({
           onPointerCancel={finishStroke}
         />
       </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[10px] text-muted-foreground sm:text-xs">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           Draw your signature inside the box above using your mouse or finger.
         </p>
         <Button

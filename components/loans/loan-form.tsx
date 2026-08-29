@@ -56,6 +56,7 @@ import { CopyInvestorModal } from './copy-investor-modal';
 import { DuplicateLoanData } from '@/stores/loan-duplicate-store';
 import { renderLoanContractPDF } from '@/components/pdf/loan-contract-pdf-document';
 import { formatCurrency, formatDate } from '@/lib/format';
+import { useSensitiveDataHidden } from '@/hooks';
 
 const loanSchema = z.object({
   loanName: z.string().min(1, 'Loan name is required'),
@@ -112,6 +113,7 @@ export function LoanForm({
   duplicateData,
 }: LoanFormProps) {
   const router = useRouter();
+  useSensitiveDataHidden();
   const isEditMode = !!existingLoan;
   const isDuplicateMode = !!duplicateData;
   const formRef = useRef<HTMLFormElement>(null);
@@ -407,6 +409,9 @@ export function LoanForm({
       if (existingLoan?.loanContract?.customization) {
         return existingLoan.loanContract
           .customization as ContractCustomization;
+      }
+      if (duplicateData?.contractCustomization) {
+        return duplicateData.contractCustomization;
       }
       return null;
     });
@@ -1899,6 +1904,13 @@ export function LoanForm({
         draft={contractDraft}
         customization={contractCustomization}
         onCustomizationChange={setContractCustomization}
+        preserveCustomization={isEditMode || isDuplicateMode}
+        borrowers={borrowers}
+        investors={investors}
+        onOpen={() => {
+          fetchBorrowersIfNeeded();
+          fetchInvestorsIfNeeded();
+        }}
       />
 
       {isEditMode && existingLoan?.id ? (

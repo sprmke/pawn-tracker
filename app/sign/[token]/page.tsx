@@ -20,7 +20,7 @@ export default async function SignPage({ params }: SignPageProps) {
   const data = await buildSigningPagePayload(invitation);
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-2 py-3 sm:px-4 sm:py-5 md:px-6 md:py-8">
+    <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-5 sm:py-6 md:px-8 md:py-10">
       <ContractSigningClient token={token} initialData={data} />
     </div>
   );

@@ -78,6 +78,7 @@ async function insertSigningInvitations(
         token: generateSigningToken(),
         partyRole: input.partyRole,
         investorId: input.investorId ?? null,
+        witnessId: input.witnessId ?? null,
         partyName: input.partyName,
         partyEmail: input.partyEmail ?? null,
         expiresAt,
@@ -104,6 +105,7 @@ async function insertSigningInvitationInputs(
         token: generateSigningToken(),
         partyRole: input.partyRole,
         investorId: input.investorId ?? null,
+        witnessId: input.witnessId ?? null,
         partyName: input.partyName,
         partyEmail: input.partyEmail ?? null,
         expiresAt,
@@ -119,10 +121,19 @@ async function syncSigningInvitationPartyNames(
   const witnessRoles = ['witness_1', 'witness_2'] as const;
 
   for (const partyRole of witnessRoles) {
+    const isFirst = partyRole === 'witness_1';
     await db
       .update(loanSigningInvitations)
       .set({
         partyName: getWitnessInvitationPartyName(partyRole, customization),
+        partyEmail:
+          (isFirst
+            ? customization.witness1Email
+            : customization.witness2Email
+          )?.trim() || null,
+        witnessId: isFirst
+          ? customization.witness1Id
+          : customization.witness2Id,
       })
       .where(
         and(

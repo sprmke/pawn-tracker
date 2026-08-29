@@ -240,6 +240,7 @@ export interface CreateSigningInvitationInput {
   partyName: string;
   partyEmail?: string | null;
   investorId?: number | null;
+  witnessId?: number | null;
 }
 
 export function getWitnessInvitationPartyName(
@@ -315,6 +316,8 @@ export function buildSigningInvitationsForLoan(
       contractId,
       partyRole: 'witness_1',
       partyName: getWitnessInvitationPartyName('witness_1', customization),
+      partyEmail: customization.witness1Email?.trim() || null,
+      witnessId: customization.witness1Id ?? null,
     });
 
     const includeSecond =
@@ -332,6 +335,8 @@ export function buildSigningInvitationsForLoan(
         contractId,
         partyRole: 'witness_2',
         partyName: getWitnessInvitationPartyName('witness_2', customization),
+        partyEmail: customization.witness2Email?.trim() || null,
+        witnessId: customization.witness2Id ?? null,
       });
     }
   }

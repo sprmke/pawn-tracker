@@ -15,15 +15,21 @@ export interface ContractCustomization {
   collateralSummary: string;
   securityClause: string;
   disputeVenue: string;
+  witness1Id: number | null;
   witness1Name: string;
+  witness1Email: string;
   witness1Address: string;
   witness1ValidIdUrl: string;
   witness1ESignatureUrl: string;
+  witness1SignatureIncluded: boolean;
   includeSecondWitness: boolean;
+  witness2Id: number | null;
   witness2Name: string;
+  witness2Email: string;
   witness2Address: string;
   witness2ValidIdUrl: string;
   witness2ESignatureUrl: string;
+  witness2SignatureIncluded: boolean;
   includeWitnesses: boolean;
   includeBorrowerSignature: boolean;
   lenderSignaturesIncluded: Record<string, boolean>;
@@ -38,16 +44,22 @@ export interface ContractCustomization {
 export const USER_PERSISTED_CUSTOMIZATION_FIELDS: ReadonlyArray<
   keyof ContractCustomization
 > = [
+  'witness1Id',
   'witness1Name',
+  'witness1Email',
   'witness1Address',
   'witness1ValidIdUrl',
   'witness1ESignatureUrl',
+  'witness1SignatureIncluded',
   'witness1DateSigned',
   'includeSecondWitness',
+  'witness2Id',
   'witness2Name',
+  'witness2Email',
   'witness2Address',
   'witness2ValidIdUrl',
   'witness2ESignatureUrl',
+  'witness2SignatureIncluded',
   'witness2DateSigned',
   'includeWitnesses',
   'includeBorrowerSignature',
@@ -61,15 +73,21 @@ export const CONTRACT_CUSTOMIZATION_FIELDS: Array<keyof ContractCustomization> =
   'collateralSummary',
   'securityClause',
   'disputeVenue',
+  'witness1Id',
   'witness1Name',
+  'witness1Email',
   'witness1Address',
   'witness1ValidIdUrl',
   'witness1ESignatureUrl',
+  'witness1SignatureIncluded',
   'includeSecondWitness',
+  'witness2Id',
   'witness2Name',
+  'witness2Email',
   'witness2Address',
   'witness2ValidIdUrl',
   'witness2ESignatureUrl',
+  'witness2SignatureIncluded',
   'includeWitnesses',
   'includeBorrowerSignature',
   'lenderSignaturesIncluded',
@@ -91,15 +109,21 @@ export function buildDefaultContractCustomization(
     collateralSummary: data.collateralDescription,
     securityClause: getSecurityAndCollateralClause(data),
     disputeVenue: CONTRACT_DISPUTE_VENUE,
+    witness1Id: null,
     witness1Name: '',
+    witness1Email: '',
     witness1Address: '',
     witness1ValidIdUrl: '',
     witness1ESignatureUrl: '',
+    witness1SignatureIncluded: true,
     includeSecondWitness: false,
+    witness2Id: null,
     witness2Name: '',
+    witness2Email: '',
     witness2Address: '',
     witness2ValidIdUrl: '',
     witness2ESignatureUrl: '',
+    witness2SignatureIncluded: true,
     includeWitnesses: true,
     includeBorrowerSignature: true,
     lenderSignaturesIncluded: buildDefaultLenderSignaturesIncluded(
@@ -123,15 +147,21 @@ export function buildDefaultContractCustomizationFromLoan(
     collateralSummary: data.collateralDescription,
     securityClause: getSecurityAndCollateralClause(data),
     disputeVenue: CONTRACT_DISPUTE_VENUE,
+    witness1Id: null,
     witness1Name: '',
+    witness1Email: '',
     witness1Address: '',
     witness1ValidIdUrl: '',
     witness1ESignatureUrl: '',
+    witness1SignatureIncluded: true,
     includeSecondWitness: false,
+    witness2Id: null,
     witness2Name: '',
+    witness2Email: '',
     witness2Address: '',
     witness2ValidIdUrl: '',
     witness2ESignatureUrl: '',
+    witness2SignatureIncluded: true,
     includeWitnesses: true,
     includeBorrowerSignature: true,
     lenderSignaturesIncluded: buildDefaultLenderSignaturesIncluded(
@@ -232,8 +262,20 @@ export function mergeCustomizationWithDefaults(
       defaults,
       dirtyFields,
     ),
+    witness1Id: mergeCustomizationField(
+      'witness1Id',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
     witness1Name: mergeCustomizationField(
       'witness1Name',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness1Email: mergeCustomizationField(
+      'witness1Email',
       previous,
       defaults,
       dirtyFields,
@@ -256,14 +298,32 @@ export function mergeCustomizationWithDefaults(
       defaults,
       dirtyFields,
     ),
+    witness1SignatureIncluded: mergeCustomizationField(
+      'witness1SignatureIncluded',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
     includeSecondWitness: mergeCustomizationField(
       'includeSecondWitness',
       previous,
       defaults,
       dirtyFields,
     ),
+    witness2Id: mergeCustomizationField(
+      'witness2Id',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
     witness2Name: mergeCustomizationField(
       'witness2Name',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness2Email: mergeCustomizationField(
+      'witness2Email',
       previous,
       defaults,
       dirtyFields,
@@ -282,6 +342,12 @@ export function mergeCustomizationWithDefaults(
     ),
     witness2ESignatureUrl: mergeCustomizationField(
       'witness2ESignatureUrl',
+      previous,
+      defaults,
+      dirtyFields,
+    ),
+    witness2SignatureIncluded: mergeCustomizationField(
+      'witness2SignatureIncluded',
       previous,
       defaults,
       dirtyFields,
@@ -345,11 +411,19 @@ export function parseStoredContractCustomization(
     return defaults;
   }
 
-  return mergeCustomizationWithDefaults(
-    { ...defaults, ...(stored as Partial<ContractCustomization>) },
-    defaults,
-    new Set(USER_PERSISTED_CUSTOMIZATION_FIELDS),
-  );
+  const parsed = stored as Partial<ContractCustomization>;
+  return {
+    ...defaults,
+    ...parsed,
+    lenderSignaturesIncluded: {
+      ...defaults.lenderSignaturesIncluded,
+      ...(parsed.lenderSignaturesIncluded ?? {}),
+    },
+    lenderDateSigned: {
+      ...defaults.lenderDateSigned,
+      ...(parsed.lenderDateSigned ?? {}),
+    },
+  };
 }
 
 export function createEmptyDirtyFields(): Set<keyof ContractCustomization> {

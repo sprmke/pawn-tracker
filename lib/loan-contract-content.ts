@@ -380,6 +380,14 @@ export function shouldShowPartySignatureImage(
     return isLenderSignatureIncluded(customization, party.email);
   }
 
+  if (party.role === 'Witness 1') {
+    return customization?.witness1SignatureIncluded !== false;
+  }
+
+  if (party.role === 'Witness 2') {
+    return customization?.witness2SignatureIncluded !== false;
+  }
+
   return true;
 }
 
