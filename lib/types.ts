@@ -44,6 +44,18 @@ export interface Borrower {
   updatedAt: Date;
 }
 
+export interface Witness {
+  id: number;
+  name: string;
+  email: string | null;
+  contactNumber: string | null;
+  address: string | null;
+  validIdUrl: string | null;
+  eSignatureUrl: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Loan {
   id: number;
   borrowerId: number | null;

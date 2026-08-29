@@ -9,6 +9,7 @@ import {
   jsonb,
   pgEnum,
   primaryKey,
+  index,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { AdapterAccount } from 'next-auth/adapters';
@@ -54,23 +55,32 @@ export const signingPartyRoleEnum = pgEnum('signing_party_role', [
 ]);
 
 // Investors Table
-export const investors = pgTable('investors', {
-  id: serial('id').primaryKey(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  investorUserId: text('investor_user_id').references(() => users.id, {
-    onDelete: 'set null',
+export const investors = pgTable(
+  'investors',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    investorUserId: text('investor_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    contactNumber: text('contact_number'),
+    address: text('address'),
+    validIdUrl: text('valid_id_url'),
+    eSignatureUrl: text('e_signature_url'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('investors_user_id_idx').on(table.userId),
+    investorUserIdIdx: index('investors_investor_user_id_idx').on(
+      table.investorUserId,
+    ),
   }),
-  name: text('name').notNull(),
-  email: text('email').notNull(),
-  contactNumber: text('contact_number'),
-  address: text('address'),
-  validIdUrl: text('valid_id_url'),
-  eSignatureUrl: text('e_signature_url'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+);
 
 // Borrowers Table
 export const borrowers = pgTable('borrowers', {
@@ -87,7 +97,35 @@ export const borrowers = pgTable('borrowers', {
   eSignatureUrl: text('e_signature_url'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index('borrowers_user_id_idx').on(table.userId),
+}));
+
+// Reusable contract witnesses
+export const witnesses = pgTable(
+  'witnesses',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    email: text('email'),
+    contactNumber: text('contact_number'),
+    address: text('address'),
+    validIdUrl: text('valid_id_url'),
+    eSignatureUrl: text('e_signature_url'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('witnesses_user_id_idx').on(table.userId),
+    userNameIdx: index('witnesses_user_name_idx').on(
+      table.userId,
+      table.name,
+    ),
+  }),
+);
 
 // Loans Table
 export const loans = pgTable('loans', {
@@ -107,7 +145,11 @@ export const loans = pgTable('loans', {
   googleCalendarEventIds: jsonb('google_calendar_event_ids'), // Store array of event IDs for sent/due/interest events
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index('loans_user_id_idx').on(table.userId),
+  borrowerIdIdx: index('loans_borrower_id_idx').on(table.borrowerId),
+  dueDateIdx: index('loans_due_date_idx').on(table.dueDate),
+}));
 
 // Loan Contracts (persisted customization for signing)
 export const loanContracts = pgTable('loan_contracts', {
@@ -122,28 +164,39 @@ export const loanContracts = pgTable('loan_contracts', {
 });
 
 // Loan Signing Invitations (shareable e-signature links per party)
-export const loanSigningInvitations = pgTable('loan_signing_invitations', {
-  id: serial('id').primaryKey(),
-  loanId: integer('loan_id')
-    .references(() => loans.id, { onDelete: 'cascade' })
-    .notNull(),
-  contractId: integer('contract_id')
-    .references(() => loanContracts.id, { onDelete: 'cascade' })
-    .notNull(),
-  token: text('token').notNull().unique(),
-  partyRole: signingPartyRoleEnum('party_role').notNull(),
-  investorId: integer('investor_id').references(() => investors.id, {
-    onDelete: 'set null',
+export const loanSigningInvitations = pgTable(
+  'loan_signing_invitations',
+  {
+    id: serial('id').primaryKey(),
+    loanId: integer('loan_id')
+      .references(() => loans.id, { onDelete: 'cascade' })
+      .notNull(),
+    contractId: integer('contract_id')
+      .references(() => loanContracts.id, { onDelete: 'cascade' })
+      .notNull(),
+    token: text('token').notNull().unique(),
+    partyRole: signingPartyRoleEnum('party_role').notNull(),
+    investorId: integer('investor_id').references(() => investors.id, {
+      onDelete: 'set null',
+    }),
+    witnessId: integer('witness_id').references(() => witnesses.id, {
+      onDelete: 'set null',
+    }),
+    partyName: text('party_name').notNull(),
+    partyEmail: text('party_email'),
+    signatureDataUrl: text('signature_data_url'),
+    signedAt: timestamp('signed_at'),
+    consentedAt: timestamp('consented_at'),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    witnessIdIdx: index('loan_signing_invitations_witness_id_idx').on(
+      table.witnessId,
+    ),
   }),
-  partyName: text('party_name').notNull(),
-  partyEmail: text('party_email'),
-  signatureDataUrl: text('signature_data_url'),
-  signedAt: timestamp('signed_at'),
-  consentedAt: timestamp('consented_at'),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+);
 
 // Loan Investors (Junction Table)
 export const loanInvestors = pgTable('loan_investors', {
@@ -164,7 +217,10 @@ export const loanInvestors = pgTable('loan_investors', {
     .default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  loanIdIdx: index('loan_investors_loan_id_idx').on(table.loanId),
+  investorIdIdx: index('loan_investors_investor_id_idx').on(table.investorId),
+}));
 
 // Interest Periods Table (for multiple interest due dates)
 export const interestPeriods = pgTable('interest_periods', {
@@ -178,7 +234,11 @@ export const interestPeriods = pgTable('interest_periods', {
   status: interestPeriodStatusEnum('status').notNull().default('Pending'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  loanInvestorIdIdx: index('interest_periods_loan_investor_id_idx').on(
+    table.loanInvestorId,
+  ),
+}));
 
 // Received Payments (payments received back from borrower, per loan investor)
 export const receivedPayments = pgTable('received_payments', {
@@ -195,7 +255,11 @@ export const receivedPayments = pgTable('received_payments', {
   receivedDate: timestamp('received_date').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  loanInvestorIdIdx: index('received_payments_loan_investor_id_idx').on(
+    table.loanInvestorId,
+  ),
+}));
 
 // Debts Table
 export const debts = pgTable('debts', {
@@ -220,7 +284,10 @@ export const debts = pgTable('debts', {
   notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index('debts_user_id_idx').on(table.userId),
+  investorIdIdx: index('debts_investor_id_idx').on(table.investorId),
+}));
 
 // Debt interest periods (scheduled interest due per payment period)
 export const debtInterestPeriods = pgTable('debt_interest_periods', {
@@ -237,7 +304,9 @@ export const debtInterestPeriods = pgTable('debt_interest_periods', {
   status: interestPeriodStatusEnum('status').notNull().default('Pending'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  debtIdIdx: index('debt_interest_periods_debt_id_idx').on(table.debtId),
+}));
 
 // Debt received payments (interest payments per debt period)
 export const debtReceivedPayments = pgTable('debt_received_payments', {
@@ -249,7 +318,11 @@ export const debtReceivedPayments = pgTable('debt_received_payments', {
   receivedDate: timestamp('received_date').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  periodIdIdx: index('debt_received_payments_period_id_idx').on(
+    table.debtInterestPeriodId,
+  ),
+}));
 
 // Transactions Table
 export const transactions = pgTable('transactions', {
@@ -274,7 +347,12 @@ export const transactions = pgTable('transactions', {
   transactionTotal: integer('transaction_total'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index('transactions_user_id_idx').on(table.userId),
+  investorIdIdx: index('transactions_investor_id_idx').on(table.investorId),
+  loanIdIdx: index('transactions_loan_id_idx').on(table.loanId),
+  dateIdx: index('transactions_date_idx').on(table.date),
+}));
 
 // Auth.js Tables
 export const users = pgTable('user', {
@@ -341,6 +419,14 @@ export const borrowersRelations = relations(borrowers, ({ one, many }) => ({
   loans: many(loans),
 }));
 
+export const witnessesRelations = relations(witnesses, ({ one, many }) => ({
+  user: one(users, {
+    fields: [witnesses.userId],
+    references: [users.id],
+  }),
+  signingInvitations: many(loanSigningInvitations),
+}));
+
 export const investorsRelations = relations(investors, ({ one, many }) => ({
   user: one(users, {
     fields: [investors.userId],
@@ -398,6 +484,10 @@ export const loanSigningInvitationsRelations = relations(
     investor: one(investors, {
       fields: [loanSigningInvitations.investorId],
       references: [investors.id],
+    }),
+    witness: one(witnesses, {
+      fields: [loanSigningInvitations.witnessId],
+      references: [witnesses.id],
     }),
   }),
 );
