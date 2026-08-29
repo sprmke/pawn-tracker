@@ -11,13 +11,21 @@ async function getInvestor(id: number, userId: string) {
       where: and(eq(investors.id, id), eq(investors.userId, userId)),
       with: {
         loanInvestors: {
-          columns: { id: true },
+          with: {
+            loan: true,
+          },
         },
         transactions: {
-          columns: { id: true },
+          orderBy: (transactions, { desc }) => [desc(transactions.date)],
         },
         debts: {
-          columns: { id: true },
+          orderBy: (debts, { desc }) => [desc(debts.date)],
+          with: {
+            interestPeriods: {
+              with: { receivedPayments: true },
+              orderBy: (periods, { asc }) => [asc(periods.periodNumber)],
+            },
+          },
         },
       },
     });

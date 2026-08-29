@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Investor } from '@/lib/types';
 import { FormHeader } from '@/components/common';
 import { InvestorFormFields, InvestorFormData } from './investor-form-fields';
+import { useSensitiveDataHidden } from '@/hooks';
 import { normalizeValidIdUrl, normalizeSignatureImageUrl } from '@/lib/valid-id-document';
 
 const investorSchema = z.object({
@@ -35,6 +36,7 @@ export function InvestorForm({
   onCancel,
 }: InvestorFormProps) {
   const router = useRouter();
+  useSensitiveDataHidden();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validIdUrl, setValidIdUrl] = useState<string | null>(
     existingInvestor?.validIdUrl ?? null,

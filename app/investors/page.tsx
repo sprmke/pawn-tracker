@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useOverdueCheck, useResponsiveViewMode } from '@/hooks';
+import {
+  useOverdueCheck,
+  useResponsiveViewMode,
+  useSensitiveDataHidden,
+} from '@/hooks';
 import {
   TrendingUp,
   DollarSign,
@@ -154,6 +158,7 @@ export default function InvestorsPage() {
   const [investors, setInvestors] = useState<InvestorWithLoans[]>([]);
   const [allLoans, setAllLoans] = useState<LoanWithInvestors[]>([]);
   const [loading, setLoading] = useState(true);
+  useSensitiveDataHidden();
 
   // Use responsive view mode hook for SSR-safe view mode detection
   const {
