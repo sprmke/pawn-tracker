@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { CustomTooltip } from './custom-tooltip';
 import { TrendingUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { useSensitiveDataHidden } from '@/hooks';
 import {
   ChartAreaGradientDefs,
   ChartCard,
@@ -68,6 +69,7 @@ export function CashflowTrendChart({
   emptyMessage = 'No cashflow data',
 }: CashflowTrendChartProps) {
   const [period, setPeriod] = useState<TimePeriod>('week');
+  useSensitiveDataHidden();
 
   const dataMap: Record<TimePeriod, CashflowData[]> = {
     day: dailyData,

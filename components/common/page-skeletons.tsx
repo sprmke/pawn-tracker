@@ -76,10 +76,15 @@ export function ActivityPanelSkeleton({
 }
 
 type TableColumnSkeleton = {
-  headerWidth: string;
+  /** Share of the row width, mirroring the real table's column widths. */
+  grow: string;
+  /** Width of the placeholder bar within its column. */
+  headerWidth?: string;
   cellWidth?: string;
   cellHeight?: string;
   pill?: boolean;
+  /** Mirrors the breakpoints at which the real table hides the column. */
+  visibility?: string;
 };
 
 function TableRowSkeleton({
@@ -97,14 +102,17 @@ function TableRowSkeleton({
       )}
     >
       {columns.map((col, i) => (
-        <Skeleton
+        <div
           key={i}
-          className={cn(
-            'shrink-0',
-            col.pill ? 'h-6 rounded-full' : col.cellHeight ?? 'h-4',
-            col.cellWidth ?? col.headerWidth
-          )}
-        />
+          className={cn('min-w-0 basis-0', col.grow, col.visibility)}
+        >
+          <Skeleton
+            className={cn(
+              col.pill ? 'h-6 rounded-full' : col.cellHeight ?? 'h-4',
+              col.cellWidth ?? 'w-full'
+            )}
+          />
+        </div>
       ))}
     </div>
   );
@@ -126,39 +134,65 @@ export function DataTableSkeleton({
       <CardContent className="p-0">
         <div className="flex items-center gap-3 border-b border-border/50 bg-muted/30 px-4 py-3">
           {columns.map((col, i) => (
-            <Skeleton key={i} className={cn('h-3 shrink-0', col.headerWidth)} />
+            <div
+              key={i}
+              className={cn('min-w-0 basis-0', col.grow, col.visibility)}
+            >
+              <Skeleton className={cn('h-3', col.headerWidth ?? 'w-3/5')} />
+            </div>
           ))}
         </div>
         {Array.from({ length: rows }).map((_, i) => (
           <TableRowSkeleton key={i} columns={columns} tall={tallRows} />
         ))}
+        <div className="flex flex-col items-start justify-between gap-4 border-t border-border/50 px-4 py-4 sm:flex-row sm:items-center sm:px-6">
+          <Skeleton className="h-4 w-56 max-w-full" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-24 rounded-xl" />
+            <Skeleton className="h-8 w-8 rounded-xl" />
+            <Skeleton className="h-8 w-8 rounded-xl" />
+            <Skeleton className="h-8 w-16 rounded-xl" />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
+const HIDDEN_BELOW_2XL = 'hidden 2xl:block';
+
 const LOANS_TABLE_COLUMNS: TableColumnSkeleton[] = [
-  { headerWidth: 'w-28', cellWidth: 'w-32' },
-  { headerWidth: 'w-14', cellWidth: 'w-16', pill: true },
-  { headerWidth: 'w-14', cellWidth: 'w-20', pill: true },
-  { headerWidth: 'w-16', cellWidth: 'w-24', cellHeight: 'h-10' },
-  { headerWidth: 'w-16', cellWidth: 'w-24', cellHeight: 'h-10' },
-  { headerWidth: 'w-20', cellWidth: 'w-24' },
-  { headerWidth: 'w-14', cellWidth: 'w-16' },
-  { headerWidth: 'w-20', cellWidth: 'w-24' },
-  { headerWidth: 'w-20', cellWidth: 'w-24' },
-  { headerWidth: 'w-14', cellWidth: 'w-16' },
-  { headerWidth: 'w-12', cellWidth: 'w-14' },
+  { grow: 'grow-[12]', headerWidth: 'w-1/2', cellWidth: 'w-4/5' },
+  { grow: 'grow-[7]', pill: true, visibility: HIDDEN_BELOW_2XL },
+  { grow: 'grow-[7]', pill: true, visibility: HIDDEN_BELOW_2XL },
+  { grow: 'grow-[8]', cellHeight: 'h-8', visibility: HIDDEN_BELOW_2XL },
+  { grow: 'grow-[8]', cellHeight: 'h-8', visibility: HIDDEN_BELOW_2XL },
+  { grow: 'grow-[10]', cellWidth: 'w-3/4' },
+  { grow: 'grow-[7]', cellWidth: 'w-2/3' },
+  { grow: 'grow-[10]', cellWidth: 'w-3/4' },
+  { grow: 'grow-[10]', cellWidth: 'w-3/4' },
+  { grow: 'grow-[7]', cellWidth: 'w-2/3', visibility: HIDDEN_BELOW_2XL },
+  {
+    grow: 'grow-[5]',
+    headerWidth: 'w-0',
+    cellWidth: 'w-8',
+    visibility: HIDDEN_BELOW_2XL,
+  },
 ];
 
 const TRANSACTIONS_TABLE_COLUMNS: TableColumnSkeleton[] = [
-  { headerWidth: 'w-16', cellWidth: 'w-20' },
-  { headerWidth: 'w-24', cellWidth: 'w-36' },
-  { headerWidth: 'w-20', cellWidth: 'w-28' },
-  { headerWidth: 'w-14', cellWidth: 'w-18', pill: true },
-  { headerWidth: 'w-14', cellWidth: 'w-10', pill: true },
-  { headerWidth: 'w-16', cellWidth: 'w-24' },
-  { headerWidth: 'w-12', cellWidth: 'w-14' },
+  { grow: 'grow-[12]', cellWidth: 'w-3/4' },
+  { grow: 'grow-[22]', headerWidth: 'w-1/3', cellWidth: 'w-4/5' },
+  { grow: 'grow-[18]', headerWidth: 'w-2/5', cellWidth: 'w-2/3' },
+  { grow: 'grow-[12]', pill: true, visibility: HIDDEN_BELOW_2XL },
+  { grow: 'grow-[12]', pill: true },
+  { grow: 'grow-[14]', cellWidth: 'w-3/4' },
+  {
+    grow: 'grow-[5]',
+    headerWidth: 'w-0',
+    cellWidth: 'w-8',
+    visibility: HIDDEN_BELOW_2XL,
+  },
 ];
 
 export function LoansTableSkeleton(props?: {

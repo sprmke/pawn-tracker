@@ -2,6 +2,7 @@
 
 import { BarChart } from './bar-chart';
 import { formatCurrency } from '@/lib/format';
+import { useSensitiveDataHidden } from '@/hooks';
 
 interface CurrencyBarChartProps {
   data: Array<{ [key: string]: any }>;
@@ -17,5 +18,7 @@ interface CurrencyBarChartProps {
 }
 
 export function CurrencyBarChart(props: CurrencyBarChartProps) {
+  useSensitiveDataHidden();
+
   return <BarChart {...props} formatValue={formatCurrency} />;
 }

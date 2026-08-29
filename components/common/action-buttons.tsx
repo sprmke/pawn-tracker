@@ -2,7 +2,20 @@
 
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, Eye, Maximize2 } from 'lucide-react';
+import { DropdownMenu } from '@/components/ui/dropdown-menu';
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Eye,
+  FileText,
+  Maximize2,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useNavigationProgress } from './navigation-progress';
 import { cn } from '@/lib/utils';
@@ -80,8 +93,8 @@ export function QuickViewButton({
       )}
       onClick={onClick}
     >
-      <Maximize2 />
-      <span className={isCardSize ? 'inline' : 'hidden md:inline'}>View</span>
+      {isCardSize && <Maximize2 />}
+      <span>View</span>
     </Button>
   );
 }
@@ -124,10 +137,135 @@ export function ViewButton({
       )}
       onClick={handleClick}
     >
-      <Eye />
-      <span className={isCardSize ? 'inline' : 'hidden md:inline'}>View</span>
+      {isCardSize && <Eye />}
+      <span>View</span>
     </Button>
   );
+}
+
+export interface RowActionItem {
+  label: string;
+  onClick: () => void;
+  icon?: ReactNode;
+  destructive?: boolean;
+  separatorBefore?: boolean;
+}
+
+interface RowActionsMenuProps {
+  items: RowActionItem[];
+  size?: 'sm' | 'md';
+  className?: string;
+}
+
+export function RowActionsMenu({
+  items,
+  size = 'sm',
+  className = '',
+}: RowActionsMenuProps) {
+  const isCardSize = size === 'md';
+
+  if (items.length === 0) return null;
+
+  return (
+    <div
+      className={cn('inline-flex items-stretch', className)}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <DropdownMenu
+        align="end"
+        className={isCardSize ? 'flex-1' : ''}
+        trigger={
+          <Button
+            variant="ghost"
+            size="sm"
+            title="More actions"
+            className={cn(
+              isCardSize ? cardActionButtonClass : tableActionButtonClass,
+            )}
+          >
+            <MoreVertical />
+            {isCardSize && <span>More</span>}
+          </Button>
+        }
+        items={items}
+      />
+    </div>
+  );
+}
+
+/** Builds the row-level menu used by list tables, mirroring the detail modal menu */
+export function createRowActionItems({
+  onEdit,
+  onAddPayment,
+  onAddReceivedPayment,
+  onDuplicate,
+  onDownloadContract,
+  isDownloadingContract = false,
+  onDelete,
+}: {
+  onEdit?: () => void;
+  onAddPayment?: () => void;
+  onAddReceivedPayment?: () => void;
+  onDuplicate?: () => void;
+  onDownloadContract?: () => void;
+  isDownloadingContract?: boolean;
+  onDelete?: () => void;
+}): RowActionItem[] {
+  const items: RowActionItem[] = [];
+
+  if (onAddPayment) {
+    items.push({
+      label: 'Add Payment',
+      onClick: onAddPayment,
+      icon: <ArrowUpFromLine className="h-4 w-4" />,
+    });
+  }
+  if (onAddReceivedPayment) {
+    items.push({
+      label: 'Add Received Payment',
+      onClick: onAddReceivedPayment,
+      icon: <ArrowDownToLine className="h-4 w-4" />,
+    });
+  }
+  if (onEdit) {
+    items.push({
+      label: 'Edit',
+      onClick: onEdit,
+      icon: <Pencil className="h-4 w-4" />,
+      separatorBefore: items.length > 0,
+    });
+  }
+  if (onDuplicate) {
+    items.push({
+      label: 'Duplicate',
+      onClick: onDuplicate,
+      icon: <Copy className="h-4 w-4" />,
+      separatorBefore: items.length > 0 && !onEdit,
+    });
+  }
+  if (onDownloadContract) {
+    items.push({
+      label: isDownloadingContract
+        ? 'Generating Contract...'
+        : 'Download Contract',
+      onClick: () => {
+        if (!isDownloadingContract) onDownloadContract();
+      },
+      icon: <FileText className="h-4 w-4" />,
+      separatorBefore: items.length > 0 && !onEdit && !onDuplicate,
+    });
+  }
+  if (onDelete) {
+    items.push({
+      label: 'Delete',
+      onClick: onDelete,
+      icon: <Trash2 className="h-4 w-4" />,
+      destructive: true,
+      separatorBefore: items.length > 0,
+    });
+  }
+
+  return items;
 }
 
 interface ActionButtonsGroupProps {
@@ -139,6 +277,8 @@ interface ActionButtonsGroupProps {
   showToggle?: boolean;
   showView?: boolean;
   hideViewOnMobile?: boolean;
+  /** Extra actions (edit, duplicate, delete, ...) shown behind a "more" menu */
+  actionItems?: RowActionItem[];
   size?: 'sm' | 'md';
   className?: string;
 }
@@ -152,6 +292,7 @@ export function ActionButtonsGroup({
   showToggle = true,
   showView = true,
   hideViewOnMobile = true,
+  actionItems,
   size = 'sm',
   className = '',
 }: ActionButtonsGroupProps) {
@@ -189,6 +330,13 @@ export function ActionButtonsGroup({
             isCardSize && 'flex-1',
             !isCardSize && hideViewOnMobile && 'hidden md:inline-flex',
           )}
+        />
+      )}
+      {actionItems && actionItems.length > 0 && (
+        <RowActionsMenu
+          items={actionItems}
+          size={size}
+          className={isCardSize ? 'flex-1' : ''}
         />
       )}
     </div>

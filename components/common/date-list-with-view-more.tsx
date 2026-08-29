@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { formatDateShort, formatText, formatCount } from '@/lib/format';
-import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
+import { useSensitiveDataHidden } from '@/hooks';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -35,7 +35,7 @@ export function DateListWithViewMore({
   checkUnpaid,
 }: DateListWithViewMoreProps) {
   const [showAllModal, setShowAllModal] = useState(false);
-  usePriceVisibilityStore((state) => state.pricesHidden);
+  useSensitiveDataHidden();
 
   const formatDate = formatDateProp ?? ((date: Date) => formatDateShort(date));
   const dialogHeading = title

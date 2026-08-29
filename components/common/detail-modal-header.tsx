@@ -3,6 +3,8 @@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
   Pencil,
   Trash2,
   CheckCircle,
@@ -35,6 +37,8 @@ interface DetailModalHeaderProps {
   onDownloadContract?: () => void;
   showDownloadContract?: boolean;
   isDownloadingContract?: boolean;
+  onAddPayment?: () => void;
+  onAddReceivedPayment?: () => void;
 }
 
 export function DetailModalHeader({
@@ -54,10 +58,48 @@ export function DetailModalHeader({
   onDownloadContract,
   showDownloadContract = false,
   isDownloadingContract = false,
+  onAddPayment,
+  onAddReceivedPayment,
 }: DetailModalHeaderProps) {
   const actionItems = [
+    ...(onAddPayment
+      ? [
+          {
+            label: 'Add Payment',
+            onClick: onAddPayment,
+            icon: <ArrowUpFromLine className="h-4 w-4" />,
+          },
+        ]
+      : []),
+    ...(onAddReceivedPayment
+      ? [
+          {
+            label: 'Add Received Payment',
+            onClick: onAddReceivedPayment,
+            icon: <ArrowDownToLine className="h-4 w-4" />,
+          },
+        ]
+      : []),
+    ...(showPayBalance && onPayBalance
+      ? [
+          {
+            label: 'Pay',
+            onClick: onPayBalance,
+            icon: <Wallet className="h-4 w-4" />,
+          },
+        ]
+      : []),
     ...(canEdit
-      ? [{ label: 'Edit', onClick: onEdit, icon: <Pencil className="h-4 w-4" /> }]
+      ? [
+          {
+            label: 'Edit',
+            onClick: onEdit,
+            icon: <Pencil className="h-4 w-4" />,
+            separatorBefore: Boolean(
+              onAddPayment || onAddReceivedPayment || (showPayBalance && onPayBalance),
+            ),
+          },
+        ]
       : []),
     ...(showDuplicate && onDuplicate
       ? [
@@ -65,6 +107,7 @@ export function DetailModalHeader({
             label: 'Duplicate',
             onClick: onDuplicate,
             icon: <Copy className="h-4 w-4" />,
+            separatorBefore: !canEdit && Boolean(onAddPayment || onAddReceivedPayment),
           },
         ]
       : []),
@@ -78,15 +121,6 @@ export function DetailModalHeader({
               }
             },
             icon: <FileText className="h-4 w-4" />,
-          },
-        ]
-      : []),
-    ...(showPayBalance && onPayBalance
-      ? [
-          {
-            label: 'Pay',
-            onClick: onPayBalance,
-            icon: <Wallet className="h-4 w-4" />,
           },
         ]
       : []),
@@ -113,6 +147,7 @@ export function DetailModalHeader({
       onClick: onDelete,
       icon: <Trash2 className="h-4 w-4" />,
       destructive: true,
+      separatorBefore: true,
     },
   ].filter(Boolean);
 

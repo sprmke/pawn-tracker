@@ -42,8 +42,12 @@ export {
   QuickViewButton,
   ViewButton,
   ActionButtonsGroup,
+  RowActionsMenu,
+  createRowActionItems,
   CardActionFooter,
+  type RowActionItem,
 } from './action-buttons';
+export { ConfirmDeleteDialog } from './confirm-delete-dialog';
 export { Logo } from './logo';
 export { ExportButton } from './export-button';
 export {

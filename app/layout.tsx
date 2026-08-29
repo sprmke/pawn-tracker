@@ -23,31 +23,44 @@ export const metadata: Metadata = {
   description: 'Professional pawn business loan and investor management',
 };
 
-export default async function RootLayout({
+async function AuthenticatedAppShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getCachedAuth();
+
+  return (
+    <Nav user={session?.user}>
+      {session ? (
+        <main className="app-shell min-h-screen p-4 sm:p-6 lg:p-8 xl:p-10">
+          <PriceVisibilityShell>
+            <div className="mx-auto max-w-[1680px]">{children}</div>
+          </PriceVisibilityShell>
+        </main>
+      ) : (
+        <main className="min-h-screen">{children}</main>
+      )}
+    </Nav>
+  );
+}
+
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getCachedAuth();
-
   return (
     <html lang="en">
       <body
         className={`${plusJakarta.className} ${geistMono.variable} antialiased`}
       >
+        {/* Boundary is required for `useSearchParams` in the progress provider.
+            The fallback must not render `children`: doing so puts pages outside
+            the provider and remounts them once auth resolves. */}
         <Suspense fallback={null}>
           <NavigationProgressProvider>
-            <Nav user={session?.user}>
-              {session ? (
-                <main className="app-shell min-h-screen p-4 sm:p-6 lg:p-8 xl:p-10">
-                  <PriceVisibilityShell>
-                    <div className="mx-auto max-w-[1680px]">{children}</div>
-                  </PriceVisibilityShell>
-                </main>
-              ) : (
-                <main className="min-h-screen">{children}</main>
-              )}
-            </Nav>
+            <AuthenticatedAppShell>{children}</AuthenticatedAppShell>
           </NavigationProgressProvider>
         </Suspense>
         <Toaster />

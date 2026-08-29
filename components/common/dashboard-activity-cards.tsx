@@ -9,6 +9,7 @@ import { MaturingLoansCard } from './maturing-loans-card';
 import { ActivityCardSlot } from './activity-panel-card';
 import { LoanDetailModal, LoanCreateModal } from '@/components/loans';
 import { useLoanDuplicateStore } from '@/stores/loan-duplicate-store';
+import { useSensitiveDataHidden } from '@/hooks';
 import type { LoanWithInvestors, LoanType, LoanStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +42,7 @@ export function DashboardActivityCards({
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoadingLoan, setIsLoadingLoan] = useState(false);
+  useSensitiveDataHidden();
 
   // Handle direct loan click (when we have the full loan data)
   const handleLoanClick = useCallback((loan: LoanWithInvestors) => {

@@ -3,6 +3,7 @@
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
+import { useSensitiveDataHidden } from '@/hooks';
 import { cn } from '@/lib/utils';
 
 interface PriceVisibilityToggleProps {
@@ -10,7 +11,7 @@ interface PriceVisibilityToggleProps {
 }
 
 export function PriceVisibilityToggle({ className }: PriceVisibilityToggleProps) {
-  const pricesHidden = usePriceVisibilityStore((state) => state.pricesHidden);
+  const pricesHidden = useSensitiveDataHidden();
   const togglePricesHidden = usePriceVisibilityStore(
     (state) => state.togglePricesHidden
   );

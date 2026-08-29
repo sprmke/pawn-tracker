@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dialog';
 import {
   ArrowLeft,
+  ArrowDownToLine,
+  ArrowUpFromLine,
   Edit,
   Trash2,
   AlertCircle,
@@ -57,6 +59,8 @@ interface DetailHeaderProps {
   showDownloadContract?: boolean;
   isDownloadingContract?: boolean;
   showPriceToggle?: boolean;
+  onAddPayment?: () => void;
+  onAddReceivedPayment?: () => void;
 }
 
 export function DetailHeader({
@@ -86,6 +90,8 @@ export function DetailHeader({
   showDownloadContract = false,
   isDownloadingContract = false,
   showPriceToggle = true,
+  onAddPayment,
+  onAddReceivedPayment,
 }: DetailHeaderProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -118,9 +124,43 @@ export function DetailHeader({
   };
 
   const actionItems = [
+    ...(onAddPayment
+      ? [
+          {
+            label: 'Add Payment',
+            onClick: onAddPayment,
+            icon: <ArrowUpFromLine className="h-4 w-4" />,
+          },
+        ]
+      : []),
+    ...(onAddReceivedPayment
+      ? [
+          {
+            label: 'Add Received Payment',
+            onClick: onAddReceivedPayment,
+            icon: <ArrowDownToLine className="h-4 w-4" />,
+          },
+        ]
+      : []),
+    ...(showPayBalance && onPayBalance
+      ? [
+          {
+            label: 'Pay',
+            onClick: onPayBalance,
+            icon: <Wallet className="h-4 w-4" />,
+          },
+        ]
+      : []),
     ...(onEdit && canEdit
       ? [
-          { label: 'Edit', onClick: onEdit, icon: <Edit className="h-4 w-4" /> },
+          {
+            label: 'Edit',
+            onClick: onEdit,
+            icon: <Edit className="h-4 w-4" />,
+            separatorBefore: Boolean(
+              onAddPayment || onAddReceivedPayment || (showPayBalance && onPayBalance),
+            ),
+          },
         ]
       : []),
     ...(showDuplicate && onDuplicate
@@ -129,6 +169,9 @@ export function DetailHeader({
             label: 'Duplicate',
             onClick: onDuplicate,
             icon: <Copy className="h-4 w-4" />,
+            separatorBefore:
+              !(onEdit && canEdit) &&
+              Boolean(onAddPayment || onAddReceivedPayment),
           },
         ]
       : []),
@@ -142,15 +185,6 @@ export function DetailHeader({
               }
             },
             icon: <FileText className="h-4 w-4" />,
-          },
-        ]
-      : []),
-    ...(showPayBalance && onPayBalance
-      ? [
-          {
-            label: 'Pay',
-            onClick: onPayBalance,
-            icon: <Wallet className="h-4 w-4" />,
           },
         ]
       : []),
@@ -179,6 +213,7 @@ export function DetailHeader({
             onClick: () => setShowDeleteConfirm(true),
             icon: <Trash2 className="h-4 w-4" />,
             destructive: true,
+            separatorBefore: true,
           },
         ]
       : []),

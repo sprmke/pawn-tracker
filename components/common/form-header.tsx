@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { formatText } from '@/lib/format';
-import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
+import { useSensitiveDataHidden } from '@/hooks';
 
 // Common button style for form actions
 const formBtnClass = 'flex-1 md:flex-none h-8 px-3 text-xs md:text-sm';
@@ -28,7 +28,7 @@ export function FormHeader({
   submitLabel,
   cancelLabel = 'Cancel',
 }: FormHeaderProps) {
-  usePriceVisibilityStore((state) => state.pricesHidden);
+  useSensitiveDataHidden();
 
   const defaultSubmitLabel = isSubmitting
     ? isEditMode

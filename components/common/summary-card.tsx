@@ -13,7 +13,7 @@ import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { getSummaryMetricGridCols } from '@/lib/summary-grid';
 import { formatCurrency, formatCount } from '@/lib/format';
-import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
+import { useSensitiveDataHidden } from '@/hooks';
 
 export { getSummaryMetricGridCols } from '@/lib/summary-grid';
 
@@ -81,7 +81,7 @@ const defaultMetricStyles: Array<{
 ];
 
 export function SummaryCard({ metrics, className }: SummaryCardProps) {
-  usePriceVisibilityStore((state) => state.pricesHidden);
+  useSensitiveDataHidden();
 
   return (
     <div

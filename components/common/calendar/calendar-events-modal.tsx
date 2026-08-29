@@ -9,7 +9,7 @@ import {
 import { CalendarEvent, CalendarConfig } from './types';
 import { DailySummary } from './daily-summary';
 import { formatDate } from '@/lib/format';
-import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
+import { useSensitiveDataHidden } from '@/hooks';
 
 interface CalendarEventsModalProps {
   date: Date;
@@ -26,7 +26,7 @@ export function CalendarEventsModal({
   open,
   onOpenChange,
 }: CalendarEventsModalProps) {
-  usePriceVisibilityStore((state) => state.pricesHidden);
+  useSensitiveDataHidden();
   const { renderEventCard, formatCurrency } = config;
 
   return (

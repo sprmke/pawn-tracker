@@ -1,14 +1,20 @@
 'use client';
 
 import { ReactNode, useEffect } from 'react';
-import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
+import { useSensitiveDataHidden } from '@/hooks';
 
 interface PriceVisibilityShellProps {
   children: ReactNode;
 }
 
+/**
+ * Mirrors the sensitive-data toggle onto `<html>` so stylesheets and print rules
+ * can react to it. Masking itself is handled per-subtree via
+ * {@link useSensitiveDataHidden}; this shell must never remount `children`,
+ * otherwise toggling would discard page state and refetch every list.
+ */
 export function PriceVisibilityShell({ children }: PriceVisibilityShellProps) {
-  const pricesHidden = usePriceVisibilityStore((state) => state.pricesHidden);
+  const pricesHidden = useSensitiveDataHidden();
 
   useEffect(() => {
     document.documentElement.classList.toggle('prices-hidden', pricesHidden);
@@ -17,9 +23,5 @@ export function PriceVisibilityShell({ children }: PriceVisibilityShellProps) {
     };
   }, [pricesHidden]);
 
-  return (
-    <div key={pricesHidden ? 'prices-hidden' : 'prices-visible'} className="contents">
-      {children}
-    </div>
-  );
+  return <>{children}</>;
 }

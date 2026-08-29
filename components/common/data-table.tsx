@@ -14,6 +14,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowUpDown } from 'lucide-react';
 import { Pagination } from './pagination';
 
+/** Just wide enough for the 16px checkbox; the table wrapper supplies the outer gutter. */
+const SELECTION_COLUMN_WIDTH = '1.5rem';
+
 export interface ColumnDef<TData> {
   id: string;
   header: string;
@@ -230,11 +233,11 @@ export function DataTable<TData>({
   };
 
   const selectionColumnProps = {
-    className: 'px-2 py-3',
+    className: 'px-0 py-3',
     style: {
-      width: '2.5rem',
-      minWidth: '2.5rem',
-      maxWidth: '2.5rem',
+      width: SELECTION_COLUMN_WIDTH,
+      minWidth: SELECTION_COLUMN_WIDTH,
+      maxWidth: SELECTION_COLUMN_WIDTH,
     } satisfies React.CSSProperties,
   };
 
@@ -248,7 +251,7 @@ export function DataTable<TData>({
         <Table>
           {showSelection && (
             <colgroup>
-              <col style={{ width: '2.5rem' }} />
+              <col style={{ width: SELECTION_COLUMN_WIDTH }} />
             </colgroup>
           )}
           <TableHeader>
@@ -256,14 +259,14 @@ export function DataTable<TData>({
               {showSelection && (
                 <TableHead {...selectionColumnProps}>
                   <Checkbox
-                      checked={
-                        allPageSelected
-                          ? true
-                          : somePageSelected
-                            ? 'indeterminate'
-                            : false
-                      }
-                      onCheckedChange={togglePageSelection}
+                    checked={
+                      allPageSelected
+                        ? true
+                        : somePageSelected
+                          ? 'indeterminate'
+                          : false
+                    }
+                    onCheckedChange={togglePageSelection}
                     aria-label="Select all on page"
                   />
                 </TableHead>

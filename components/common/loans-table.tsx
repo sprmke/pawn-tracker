@@ -4,7 +4,7 @@ import React from 'react';
 import { LoanWithInvestors } from '@/lib/types';
 import { DataTable, ColumnDef } from './data-table';
 import { Badge } from '@/components/ui/badge';
-import { ActionButtonsGroup } from './action-buttons';
+import { ActionButtonsGroup, createRowActionItems } from './action-buttons';
 import {
   formatCurrencyCompact,
   formatDateVeryShort,
@@ -26,6 +26,14 @@ interface LoansTableProps {
   enableRowSelection?: boolean;
   selectedRowIds?: Set<string | number>;
   onSelectedRowIdsChange?: (ids: Set<string | number>) => void;
+  onEdit?: (loan: LoanWithInvestors) => void;
+  onAddPayment?: (loan: LoanWithInvestors) => void;
+  onAddReceivedPayment?: (loan: LoanWithInvestors) => void;
+  onDuplicate?: (loan: LoanWithInvestors) => void;
+  onDownloadContract?: (loan: LoanWithInvestors) => void;
+  /** Id of the loan whose contract is currently being generated */
+  downloadingContractLoanId?: number | null;
+  onDelete?: (loan: LoanWithInvestors) => void;
 }
 
 export function LoansTable({
@@ -37,6 +45,13 @@ export function LoansTable({
   enableRowSelection,
   selectedRowIds,
   onSelectedRowIdsChange,
+  onEdit,
+  onAddPayment,
+  onAddReceivedPayment,
+  onDuplicate,
+  onDownloadContract,
+  downloadingContractLoanId = null,
+  onDelete,
 }: LoansTableProps) {
   // Helper to get investor-specific loan investors or all if no investorId
   const getRelevantLoanInvestors = (loan: LoanWithInvestors) => {
@@ -330,6 +345,21 @@ export function LoansTable({
               : undefined
           }
           showView={false}
+          actionItems={createRowActionItems({
+            onEdit: onEdit ? () => onEdit(loan) : undefined,
+            onAddPayment: onAddPayment
+              ? () => onAddPayment(loan)
+              : undefined,
+            onAddReceivedPayment: onAddReceivedPayment
+              ? () => onAddReceivedPayment(loan)
+              : undefined,
+            onDuplicate: onDuplicate ? () => onDuplicate(loan) : undefined,
+            onDownloadContract: onDownloadContract
+              ? () => onDownloadContract(loan)
+              : undefined,
+            isDownloadingContract: downloadingContractLoanId === loan.id,
+            onDelete: onDelete ? () => onDelete(loan) : undefined,
+          })}
           size="sm"
         />
       ),
