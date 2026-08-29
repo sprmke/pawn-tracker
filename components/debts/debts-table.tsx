@@ -3,7 +3,10 @@
 import React from 'react';
 import { DataTable, ColumnDef } from '@/components/common/data-table';
 import { Badge } from '@/components/ui/badge';
-import { ActionButtonsGroup } from '@/components/common';
+import {
+  ActionButtonsGroup,
+  createRowActionItems,
+} from '@/components/common';
 import {
   formatCurrencyCompact,
   formatDateVeryShort,
@@ -19,6 +22,8 @@ interface DebtsTableProps {
   enableRowSelection?: boolean;
   selectedRowIds?: Set<string | number>;
   onSelectedRowIdsChange?: (ids: Set<string | number>) => void;
+  onEdit?: (debt: DebtWithInvestor) => void;
+  onDelete?: (debt: DebtWithInvestor) => void;
 }
 
 export function DebtsTable({
@@ -28,6 +33,8 @@ export function DebtsTable({
   enableRowSelection,
   selectedRowIds,
   onSelectedRowIdsChange,
+  onEdit,
+  onDelete,
 }: DebtsTableProps) {
   const columns: ColumnDef<DebtWithInvestor>[] = [
     {
@@ -186,6 +193,10 @@ export function DebtsTable({
           }
           viewHref={`/debts/${debt.id}`}
           showView={false}
+          actionItems={createRowActionItems({
+            onEdit: onEdit ? () => onEdit(debt) : undefined,
+            onDelete: onDelete ? () => onDelete(debt) : undefined,
+          })}
           size="sm"
         />
       ),

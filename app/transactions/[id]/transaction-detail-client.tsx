@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toLocalDateString } from '@/lib/date-utils';
+import { useSensitiveDataHidden } from '@/hooks';
 
 interface TransactionDetailClientProps {
   transaction: TransactionWithInvestor;
@@ -33,6 +34,7 @@ export function TransactionDetailClient({
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  useSensitiveDataHidden();
 
   // Form state
   const [formData, setFormData] = useState({

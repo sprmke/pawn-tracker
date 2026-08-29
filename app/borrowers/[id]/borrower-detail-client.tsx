@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContactInfoCard, DetailHeader } from '@/components/common';
 import { BorrowerForm } from '@/components/borrowers/borrower-form';
+import { useSensitiveDataHidden } from '@/hooks';
 import type { Borrower } from '@/lib/types';
 
 interface BorrowerWithLoanCount extends Borrower {
@@ -19,6 +20,7 @@ interface BorrowerDetailClientProps {
 export function BorrowerDetailClient({ borrower }: BorrowerDetailClientProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
+  useSensitiveDataHidden();
 
   const canDelete = borrower.loans.length === 0;
 

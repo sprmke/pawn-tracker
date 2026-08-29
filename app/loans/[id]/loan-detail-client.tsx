@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { LoanWithInvestors, Investor } from '@/lib/types';
@@ -10,10 +9,13 @@ import { LoanForm } from '@/components/loans/loan-form';
 import { LoanDetailContent } from '@/components/loans/loan-detail-content';
 import { LoanSigningSection } from '@/components/loans/loan-signing-section';
 import { DetailHeader } from '@/components/common';
+import { useSensitiveDataHidden } from '@/hooks';
 import { createDuplicateDataFromLoan } from '@/stores/loan-duplicate-store';
-import { renderLoanContractPDF } from '@/components/pdf/loan-contract-pdf-document';
-import type { ContractCustomization } from '@/lib/loan-contract-customization';
-import type { LoanContractData } from '@/lib/loan-contract-data';
+import { downloadLoanContract } from '@/components/loans/download-loan-contract';
+import {
+  LoanQuickPaymentDialog,
+  type LoanQuickPaymentKind,
+} from '@/components/loans/loan-quick-payment-dialog';
 
 interface LoanDetailClientProps {
   loan: LoanWithInvestors;
@@ -26,6 +28,9 @@ export function LoanDetailClient({ loan, investors }: LoanDetailClientProps) {
   const highlightSigning = searchParams.get('signing') === '1';
   const [isEditing, setIsEditing] = useState(false);
   const [isDownloadingContract, setIsDownloadingContract] = useState(false);
+  const [quickPaymentKind, setQuickPaymentKind] =
+    useState<LoanQuickPaymentKind | null>(null);
+  useSensitiveDataHidden();
 
   useEffect(() => {
     if (!highlightSigning) return;
@@ -52,24 +57,7 @@ export function LoanDetailClient({ loan, investors }: LoanDetailClientProps) {
   const handleDownloadContract = async () => {
     setIsDownloadingContract(true);
     try {
-      const response = await fetch(`/api/loans/${loan.id}/contract`);
-      if (response.ok) {
-        const payload = (await response.json()) as {
-          contractData: LoanContractData;
-          customization: ContractCustomization;
-        };
-        await renderLoanContractPDF(
-          loan,
-          payload.customization,
-          payload.contractData,
-        );
-      } else {
-        await renderLoanContractPDF(loan);
-      }
-      toast.success('Contract PDF downloaded.');
-    } catch (error) {
-      console.error('Error generating loan contract PDF:', error);
-      toast.error('Failed to generate contract PDF.');
+      await downloadLoanContract(loan);
     } finally {
       setIsDownloadingContract(false);
     }
@@ -166,6 +154,8 @@ export function LoanDetailClient({ loan, investors }: LoanDetailClientProps) {
         showDownloadContract={true}
         onDownloadContract={handleDownloadContract}
         isDownloadingContract={isDownloadingContract}
+        onAddPayment={() => setQuickPaymentKind('payment')}
+        onAddReceivedPayment={() => setQuickPaymentKind('received')}
       />
 
       <LoanSigningSection loanId={loan.id} highlight={highlightSigning} />
@@ -174,6 +164,16 @@ export function LoanDetailClient({ loan, investors }: LoanDetailClientProps) {
         loan={loan}
         showHeader={false}
         onRefresh={() => router.refresh()}
+      />
+
+      <LoanQuickPaymentDialog
+        loan={loan}
+        kind={quickPaymentKind}
+        open={quickPaymentKind !== null}
+        onOpenChange={(open) => {
+          if (!open) setQuickPaymentKind(null);
+        }}
+        onSuccess={() => router.refresh()}
       />
     </div>
   );

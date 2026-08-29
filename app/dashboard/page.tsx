@@ -51,8 +51,10 @@ import { SHOW_TRANSACTIONS_UI } from '@/lib/feature-flags';
 import { eq } from 'drizzle-orm';
 import { loans, investors, transactions, loanInvestors } from '@/db/schema';
 import { cn } from '@/lib/utils';
+import { unstable_cache } from 'next/cache';
+import { CACHE_TAGS } from '@/lib/cache-invalidation';
 
-async function getDashboardData(userId: string) {
+async function queryDashboardData(userId: string) {
   try {
     // Fire independent queries in parallel
     const [ownedLoans, investorRecord, ownedInvestors] = await Promise.all([
@@ -534,6 +536,12 @@ async function getDashboardData(userId: string) {
     };
   }
 }
+
+const getDashboardData = unstable_cache(
+  queryDashboardData,
+  ['dashboard-data'],
+  { revalidate: 300, tags: [CACHE_TAGS.dashboard] },
+);
 
 export default async function DashboardPage() {
   const session = await getCachedAuth();

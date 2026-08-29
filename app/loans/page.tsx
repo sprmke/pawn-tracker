@@ -7,7 +7,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useOverdueCheck, useResponsiveViewMode } from '@/hooks';
+import {
+  useOverdueCheck,
+  useResponsiveViewMode,
+  useSensitiveDataHidden,
+} from '@/hooks';
 import {
   Table,
   TableBody,
@@ -24,11 +28,13 @@ import {
   ChevronRight,
   DollarSign,
   Users,
+  UserCheck,
   Calendar,
   MapPin,
   X,
   Filter,
   TrendingUp,
+  type LucideIcon,
 } from 'lucide-react';
 import {
   Select,
@@ -43,7 +49,16 @@ import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
 import { LoanCalendarView } from '@/components/loans/loan-calendar-view';
 import { LoanDetailModal } from '@/components/loans/loan-detail-modal';
 import { LoanCreateModal } from '@/components/loans/loan-create-modal';
-import { useLoanDuplicateStore } from '@/stores/loan-duplicate-store';
+import { downloadLoanContract } from '@/components/loans/download-loan-contract';
+import {
+  LoanQuickPaymentDialog,
+  type LoanQuickPaymentKind,
+} from '@/components/loans/loan-quick-payment-dialog';
+import {
+  useLoanDuplicateStore,
+  createDuplicateDataFromLoan,
+} from '@/stores/loan-duplicate-store';
+import { toast } from '@/lib/toast';
 import {
   calculateTotalInterest,
   calculateAverageRate,
@@ -67,6 +82,7 @@ import {
   CardSelectionCheckbox,
   getSelectableCardClassName,
   toggleSelectedId,
+  ConfirmDeleteDialog,
 } from '@/components/common';
 import { toLocalDateString } from '@/lib/date-utils';
 import {
@@ -88,14 +104,124 @@ type SortField =
   | 'freeLot';
 type SortDirection = 'asc' | 'desc';
 
+type FilterablePerson = { id: number; name: string };
+
+function PersonMultiSelectFilter({
+  label,
+  noun,
+  allLabel,
+  emptyLabel,
+  icon: Icon,
+  people,
+  selected,
+  onChange,
+}: {
+  label: string;
+  noun: string;
+  allLabel: string;
+  emptyLabel: string;
+  icon: LucideIcon;
+  people: FilterablePerson[];
+  selected: number[];
+  onChange: (ids: number[]) => void;
+}) {
+  const triggerLabel =
+    selected.length === 0
+      ? allLabel
+      : selected.length === 1
+        ? formatText(people.find((p) => p.id === selected[0])?.name)
+        : `${selected.length} ${noun} selected`;
+
+  const toggle = (id: number) => {
+    onChange(
+      selected.includes(id)
+        ? selected.filter((selectedId) => selectedId !== id)
+        : [...selected, id],
+    );
+  };
+
+  return (
+    <div>
+      <label className="text-xs font-semibold flex items-center gap-1 mb-2">
+        <Icon className="h-3.5 w-3.5" />
+        {label} {selected.length > 0 && `(${selected.length})`}
+      </label>
+      <Select value="placeholder">
+        <SelectTrigger className="w-full h-9">
+          <span className="text-sm truncate">{triggerLabel}</span>
+        </SelectTrigger>
+        <SelectContent>
+          <div className="p-2">
+            <div className="flex items-center justify-between mb-2 pb-2 border-b">
+              <span className="text-xs font-semibold">{`Select ${label}`}</span>
+              {selected.length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onChange([]);
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="max-h-[200px] overflow-y-auto space-y-1">
+              {people.length === 0 ? (
+                <p className="text-xs text-muted-foreground p-2">
+                  {emptyLabel}
+                </p>
+              ) : (
+                people.map((person) => (
+                  <div
+                    key={person.id}
+                    className="flex items-center gap-2 p-2 hover:bg-accent rounded cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggle(person.id);
+                    }}
+                  >
+                    <div
+                      className={`w-4 h-4 border rounded flex items-center justify-center ${
+                        selected.includes(person.id)
+                          ? 'bg-primary border-primary'
+                          : 'border-input'
+                      }`}
+                    >
+                      {selected.includes(person.id) && (
+                        <svg
+                          className="w-3 h-3 text-primary-foreground"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path d="M5 13l4 4L19 7"></path>
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-sm">{formatText(person.name)}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 export default function LoansPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loans, setLoans] = useState<LoanWithInvestors[]>([]);
-  const [investors, setInvestors] = useState<{ id: number; name: string }[]>(
-    [],
-  );
+  const [investors, setInvestors] = useState<FilterablePerson[]>([]);
+  const [borrowers, setBorrowers] = useState<FilterablePerson[]>([]);
   const [loading, setLoading] = useState(true);
+  useSensitiveDataHidden();
 
   // Use responsive view mode hook for SSR-safe view mode detection
   const {
@@ -115,10 +241,21 @@ export default function LoansPage() {
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [freeLotFilter, setFreeLotFilter] = useState<string>('all');
   const [selectedInvestors, setSelectedInvestors] = useState<number[]>([]);
+  const [selectedBorrowers, setSelectedBorrowers] = useState<number[]>([]);
   const [selectedLoan, setSelectedLoan] = useState<LoanWithInvestors | null>(
     null,
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [openModalInEditMode, setOpenModalInEditMode] = useState(false);
+  const [loanPendingDeletion, setLoanPendingDeletion] =
+    useState<LoanWithInvestors | null>(null);
+  const [downloadingContractLoanId, setDownloadingContractLoanId] = useState<
+    number | null
+  >(null);
+  const [quickPaymentLoan, setQuickPaymentLoan] =
+    useState<LoanWithInvestors | null>(null);
+  const [quickPaymentKind, setQuickPaymentKind] =
+    useState<LoanQuickPaymentKind | null>(null);
 
   // Store for create modal (used when duplicating from detail modal)
   const isCreateModalOpen = useLoanDuplicateStore(
@@ -126,6 +263,9 @@ export default function LoansPage() {
   );
   const closeCreateModal = useLoanDuplicateStore(
     (state) => state.closeCreateModal,
+  );
+  const openCreateModal = useLoanDuplicateStore(
+    (state) => state.openCreateModal,
   );
 
   // Automatically check for overdue loans and periods
@@ -175,6 +315,7 @@ export default function LoansPage() {
   useEffect(() => {
     fetchLoans();
     fetchInvestors();
+    fetchBorrowers();
   }, []);
 
   // Reset to table view if no data and currently on cards/calendar view
@@ -269,6 +410,84 @@ export default function LoansPage() {
     }
   };
 
+  const fetchBorrowers = async () => {
+    try {
+      const response = await fetch('/api/borrowers?simple=true');
+      const data = await response.json();
+
+      if (!response.ok || !Array.isArray(data)) {
+        console.error('Error fetching borrowers:', data);
+        setBorrowers([]);
+        return;
+      }
+
+      const uniqueBorrowers = data
+        .map((borrower: any) => ({ id: borrower.id, name: borrower.name }))
+        .sort((a: FilterablePerson, b: FilterablePerson) =>
+          a.name.localeCompare(b.name),
+        );
+      setBorrowers(uniqueBorrowers);
+    } catch (error) {
+      console.error('Error fetching borrowers:', error);
+      setBorrowers([]);
+    }
+  };
+
+  const handleQuickView = (loan: LoanWithInvestors) => {
+    setSelectedLoan(loan);
+    setOpenModalInEditMode(false);
+    setIsModalOpen(true);
+  };
+
+  const handleRowEdit = (loan: LoanWithInvestors) => {
+    setSelectedLoan(loan);
+    setOpenModalInEditMode(true);
+    setIsModalOpen(true);
+  };
+
+  const handleRowDuplicate = async (loan: LoanWithInvestors) => {
+    try {
+      const response = await fetch(`/api/loans/${loan.id}`);
+      const sourceLoan = response.ok
+        ? ((await response.json()) as LoanWithInvestors)
+        : loan;
+      openCreateModal(createDuplicateDataFromLoan(sourceLoan));
+    } catch {
+      openCreateModal(createDuplicateDataFromLoan(loan));
+    }
+  };
+
+  const handleQuickPayment = (
+    loan: LoanWithInvestors,
+    kind: LoanQuickPaymentKind,
+  ) => {
+    setQuickPaymentLoan(loan);
+    setQuickPaymentKind(kind);
+  };
+
+  const handleRowDownloadContract = async (loan: LoanWithInvestors) => {
+    setDownloadingContractLoanId(loan.id);
+    try {
+      await downloadLoanContract(loan);
+    } finally {
+      setDownloadingContractLoanId(null);
+    }
+  };
+
+  const handleRowDelete = async (loan: LoanWithInvestors) => {
+    const response = await fetch(`/api/loans/${loan.id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      toast.error('Failed to delete loan');
+      throw new Error('Failed to delete loan');
+    }
+
+    toast.success('Loan deleted successfully');
+    await fetchLoans();
+  };
+
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-PH', {
       year: 'numeric',
@@ -313,6 +532,7 @@ export default function LoansPage() {
     setTypeFilter([]);
     setFreeLotFilter('all');
     setSelectedInvestors([]);
+    setSelectedBorrowers([]);
     setMinPrincipal('');
     setMaxPrincipal('');
     setMinAvgRate('');
@@ -337,7 +557,8 @@ export default function LoansPage() {
     minTotalAmount !== '' ||
     maxTotalAmount !== '' ||
     freeLotFilter !== 'all' ||
-    selectedInvestors.length > 0;
+    selectedInvestors.length > 0 ||
+    selectedBorrowers.length > 0;
 
   const hasActiveFilters =
     searchQuery !== '' ||
@@ -378,6 +599,14 @@ export default function LoansPage() {
         selectedInvestors.includes(li.investor.id),
       );
       if (!hasSelectedInvestor) return false;
+    }
+
+    // Borrower filter (multiple selection)
+    if (selectedBorrowers.length > 0) {
+      const borrowerId = loan.borrowerId ?? loan.borrower?.id ?? null;
+      if (borrowerId === null || !selectedBorrowers.includes(borrowerId)) {
+        return false;
+      }
     }
 
     // Due date filter (from URL query parameter)
@@ -762,7 +991,7 @@ export default function LoansPage() {
                 />
               </div>
 
-              {/* Free Lot and Investor Filters */}
+              {/* Free Lot, Investor and Borrower Filters */}
               <div className="pt-3 border-t grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {/* Free Lot Filter */}
                 <div>
@@ -788,92 +1017,28 @@ export default function LoansPage() {
                 </div>
 
                 {/* Investor Filter - Multi-select */}
-                <div>
-                  <label className="text-xs font-semibold flex items-center gap-1 mb-2">
-                    <Users className="h-3.5 w-3.5" />
-                    Investors{' '}
-                    {selectedInvestors.length > 0 &&
-                      `(${selectedInvestors.length})`}
-                  </label>
-                  <Select value="placeholder">
-                    <SelectTrigger className="w-full h-9">
-                      <span className="text-sm">
-                        {selectedInvestors.length === 0
-                          ? 'All Investors'
-                          : selectedInvestors.length === 1
-                            ? investors.find(
-                                (i) => i.id === selectedInvestors[0],
-                              )?.name
-                            : `${selectedInvestors.length} investors selected`}
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <div className="p-2">
-                        <div className="flex items-center justify-between mb-2 pb-2 border-b">
-                          <span className="text-xs font-semibold">
-                            Select Investors
-                          </span>
-                          {selectedInvestors.length > 0 && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setSelectedInvestors([]);
-                              }}
-                              className="text-xs text-muted-foreground hover:text-foreground"
-                            >
-                              Clear
-                            </button>
-                          )}
-                        </div>
-                        <div className="max-h-[200px] overflow-y-auto space-y-1">
-                          {investors.map((investor) => (
-                            <div
-                              key={investor.id}
-                              className="flex items-center gap-2 p-2 hover:bg-accent rounded cursor-pointer"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setSelectedInvestors((prev) => {
-                                  if (prev.includes(investor.id)) {
-                                    return prev.filter(
-                                      (id) => id !== investor.id,
-                                    );
-                                  } else {
-                                    return [...prev, investor.id];
-                                  }
-                                });
-                              }}
-                            >
-                              <div
-                                className={`w-4 h-4 border rounded flex items-center justify-center ${
-                                  selectedInvestors.includes(investor.id)
-                                    ? 'bg-primary border-primary'
-                                    : 'border-input'
-                                }`}
-                              >
-                                {selectedInvestors.includes(investor.id) && (
-                                  <svg
-                                    className="w-3 h-3 text-primary-foreground"
-                                    fill="none"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path d="M5 13l4 4L19 7"></path>
-                                  </svg>
-                                )}
-                              </div>
-                              <span className="text-sm">
-                                {formatText(investor.name)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <PersonMultiSelectFilter
+                  label="Investors"
+                  noun="investors"
+                  allLabel="All Investors"
+                  emptyLabel="No investors found"
+                  icon={Users}
+                  people={investors}
+                  selected={selectedInvestors}
+                  onChange={setSelectedInvestors}
+                />
+
+                {/* Borrower Filter - Multi-select */}
+                <PersonMultiSelectFilter
+                  label="Borrowers"
+                  noun="borrowers"
+                  allLabel="All Borrowers"
+                  emptyLabel="No borrowers found"
+                  icon={UserCheck}
+                  people={borrowers}
+                  selected={selectedBorrowers}
+                  onChange={setSelectedBorrowers}
+                />
               </div>
             </div>
           )}
@@ -939,10 +1104,7 @@ export default function LoansPage() {
             <>
               <LoanCalendarView
                 loans={filteredLoans}
-                onLoanClick={(loan) => {
-                  setSelectedLoan(loan);
-                  setIsModalOpen(true);
-                }}
+                onLoanClick={handleQuickView}
               />
               <LoanDetailModal
                 loan={selectedLoan}
@@ -1148,8 +1310,7 @@ export default function LoansPage() {
                           onQuickView={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setSelectedLoan(loan);
-                            setIsModalOpen(true);
+                            handleQuickView(loan);
                           }}
                           showView={false}
                           size="md"
@@ -1166,13 +1327,19 @@ export default function LoansPage() {
             <LoansTable
               loans={sortedLoans}
               itemsPerPage={itemsPerPage}
-              onQuickView={(loan) => {
-                setSelectedLoan(loan);
-                setIsModalOpen(true);
-              }}
+              onQuickView={handleQuickView}
               enableRowSelection
               selectedRowIds={selectedRowIds}
               onSelectedRowIdsChange={setSelectedRowIds}
+              onEdit={handleRowEdit}
+              onAddPayment={(loan) => handleQuickPayment(loan, 'payment')}
+              onAddReceivedPayment={(loan) =>
+                handleQuickPayment(loan, 'received')
+              }
+              onDuplicate={handleRowDuplicate}
+              onDownloadContract={handleRowDownloadContract}
+              downloadingContractLoanId={downloadingContractLoanId}
+              onDelete={setLoanPendingDeletion}
             />
           )}
         </>
@@ -1185,8 +1352,36 @@ export default function LoansPage() {
           open={isModalOpen}
           onOpenChange={setIsModalOpen}
           onUpdate={fetchLoans}
+          startInEditMode={openModalInEditMode}
         />
       )}
+
+      <LoanQuickPaymentDialog
+        loan={quickPaymentLoan}
+        kind={quickPaymentKind}
+        open={quickPaymentKind !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setQuickPaymentKind(null);
+            setQuickPaymentLoan(null);
+          }
+        }}
+        onSuccess={fetchLoans}
+      />
+
+      <ConfirmDeleteDialog
+        open={loanPendingDeletion !== null}
+        onOpenChange={(open) => {
+          if (!open) setLoanPendingDeletion(null);
+        }}
+        title="Delete Loan"
+        description="Are you sure you want to delete this loan? This action cannot be undone and will remove all associated investor allocations."
+        onConfirm={async () => {
+          if (loanPendingDeletion) {
+            await handleRowDelete(loanPendingDeletion);
+          }
+        }}
+      />
 
       {/* Create/Duplicate Loan Modal */}
       <LoanCreateModal

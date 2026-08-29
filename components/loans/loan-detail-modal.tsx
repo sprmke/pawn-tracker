@@ -15,7 +15,7 @@ import { LoanForm } from './loan-form';
 import { LoanSigningSection } from './loan-signing-section';
 import { DetailModalHeader } from '@/components/common';
 import { formatText } from '@/lib/format';
-import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
+import { useSensitiveDataHidden } from '@/hooks';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,15 +30,19 @@ import {
   useLoanDuplicateStore,
   createDuplicateDataFromLoan,
 } from '@/stores/loan-duplicate-store';
-import { renderLoanContractPDF } from '@/components/pdf/loan-contract-pdf-document';
-import type { ContractCustomization } from '@/lib/loan-contract-customization';
-import type { LoanContractData } from '@/lib/loan-contract-data';
+import { downloadLoanContract } from './download-loan-contract';
+import {
+  LoanQuickPaymentDialog,
+  type LoanQuickPaymentKind,
+} from './loan-quick-payment-dialog';
 
 interface LoanDetailModalProps {
   loan: LoanWithInvestors | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate?: () => void;
+  /** Opens the modal directly in edit mode */
+  startInEditMode?: boolean;
 }
 
 export function LoanDetailModal({
@@ -46,8 +50,9 @@ export function LoanDetailModal({
   open,
   onOpenChange,
   onUpdate,
+  startInEditMode = false,
 }: LoanDetailModalProps) {
-  usePriceVisibilityStore((state) => state.pricesHidden);
+  useSensitiveDataHidden();
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
@@ -56,6 +61,8 @@ export function LoanDetailModal({
   const [isDownloadingContract, setIsDownloadingContract] = useState(false);
   const [loan, setLoan] = useState<LoanWithInvestors | null>(initialLoan);
   const [loanFetchKey, setLoanFetchKey] = useState(0);
+  const [quickPaymentKind, setQuickPaymentKind] =
+    useState<LoanQuickPaymentKind | null>(null);
 
   // Store for duplicate functionality
   const openCreateModal = useLoanDuplicateStore(
@@ -90,10 +97,8 @@ export function LoanDetailModal({
   }, [fetchLoanData, onUpdate]);
 
   useEffect(() => {
-    if (!open) {
-      setIsEditing(false);
-    }
-  }, [open]);
+    setIsEditing(open ? startInEditMode : false);
+  }, [open, startInEditMode]);
 
   if (!loan) return null;
 
@@ -150,9 +155,17 @@ export function LoanDetailModal({
     }
   };
 
-  const handleDuplicate = () => {
-    // Create duplicate data and store it
-    const duplicateData = createDuplicateDataFromLoan(loan);
+  const handleDuplicate = async () => {
+    let sourceLoan = loan;
+    try {
+      const response = await fetch(`/api/loans/${loan.id}`);
+      if (response.ok) {
+        sourceLoan = (await response.json()) as LoanWithInvestors;
+      }
+    } catch {
+      // Fall back to the already loaded loan.
+    }
+    const duplicateData = createDuplicateDataFromLoan(sourceLoan);
 
     // Close this modal first
     onOpenChange(false);
@@ -166,24 +179,7 @@ export function LoanDetailModal({
   const handleDownloadContract = async () => {
     setIsDownloadingContract(true);
     try {
-      const response = await fetch(`/api/loans/${loan.id}/contract`);
-      if (response.ok) {
-        const payload = (await response.json()) as {
-          contractData: LoanContractData;
-          customization: ContractCustomization;
-        };
-        await renderLoanContractPDF(
-          loan,
-          payload.customization,
-          payload.contractData,
-        );
-      } else {
-        await renderLoanContractPDF(loan);
-      }
-      toast.success('Contract PDF downloaded.');
-    } catch (error) {
-      console.error('Error generating loan contract PDF:', error);
-      toast.error('Failed to generate contract PDF.');
+      await downloadLoanContract(loan);
     } finally {
       setIsDownloadingContract(false);
     }
@@ -224,6 +220,10 @@ export function LoanDetailModal({
                   onDownloadContract={handleDownloadContract}
                   showDownloadContract={true}
                   isDownloadingContract={isDownloadingContract}
+                  onAddPayment={() => setQuickPaymentKind('payment')}
+                  onAddReceivedPayment={() =>
+                    setQuickPaymentKind('received')
+                  }
                 />
               </div>
             </DialogHeader>
@@ -253,6 +253,16 @@ export function LoanDetailModal({
           </div>
         </DialogContent>
       </Dialog>
+
+      <LoanQuickPaymentDialog
+        loan={loan}
+        kind={quickPaymentKind}
+        open={quickPaymentKind !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setQuickPaymentKind(null);
+        }}
+        onSuccess={fetchLoan}
+      />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent showClose>

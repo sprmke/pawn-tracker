@@ -36,6 +36,7 @@ import {
   formatRateLabel,
   formatCount,
 } from '@/lib/format';
+import { useSensitiveDataHidden } from '@/hooks';
 import { calculateInterest } from '@/lib/calculations';
 import { getInterestPeriodStatusBadge } from '@/lib/badge-config';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -171,6 +172,7 @@ export function InvestorTransactionsDisplay({
   onRefresh,
   showPeriodStatus = true,
 }: InvestorTransactionsDisplayProps) {
+  useSensitiveDataHidden();
   const [payingTransactions, setPayingTransactions] = useState<
     Set<number | string>
   >(new Set());

@@ -14,7 +14,7 @@ import { TransactionWithInvestor, Investor } from '@/lib/types';
 import { TransactionDetailContent } from './transaction-detail-content';
 import { DetailModalHeader } from '@/components/common';
 import { formatText } from '@/lib/format';
-import { usePriceVisibilityStore } from '@/stores/price-visibility-store';
+import { useSensitiveDataHidden } from '@/hooks';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +44,8 @@ interface TransactionDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate?: () => void;
+  /** Opens the modal directly in edit mode */
+  startInEditMode?: boolean;
 }
 
 export function TransactionDetailModal({
@@ -51,8 +53,9 @@ export function TransactionDetailModal({
   open,
   onOpenChange,
   onUpdate,
+  startInEditMode = false,
 }: TransactionDetailModalProps) {
-  usePriceVisibilityStore((state) => state.pricesHidden);
+  useSensitiveDataHidden();
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -96,12 +99,12 @@ export function TransactionDetailModal({
   useRegisterDialogFormState(isEditing, isSubmitting);
 
   useEffect(() => {
+    setIsEditing(open ? startInEditMode : false);
+  }, [open, startInEditMode]);
+
+  useEffect(() => {
     if (open && isEditing) {
       fetchInvestors();
-    }
-    // Reset editing state when modal closes
-    if (!open) {
-      setIsEditing(false);
     }
     // Initialize form data when transaction changes
     if (transaction) {

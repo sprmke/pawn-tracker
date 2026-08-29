@@ -3,7 +3,10 @@
 import React from 'react';
 import { DataTable, ColumnDef } from '@/components/common/data-table';
 import { Badge } from '@/components/ui/badge';
-import { ActionButtonsGroup } from '@/components/common';
+import {
+  ActionButtonsGroup,
+  createRowActionItems,
+} from '@/components/common';
 import {
   formatCurrencyCompact,
   formatDateVeryShort,
@@ -22,6 +25,8 @@ interface TransactionsTableProps {
   enableRowSelection?: boolean;
   selectedRowIds?: Set<string | number>;
   onSelectedRowIdsChange?: (ids: Set<string | number>) => void;
+  onEdit?: (transaction: TransactionWithInvestor) => void;
+  onDelete?: (transaction: TransactionWithInvestor) => void;
 }
 
 export function TransactionsTable({
@@ -31,6 +36,8 @@ export function TransactionsTable({
   enableRowSelection,
   selectedRowIds,
   onSelectedRowIdsChange,
+  onEdit,
+  onDelete,
 }: TransactionsTableProps) {
   const columns: ColumnDef<TransactionWithInvestor>[] = [
     {
@@ -146,6 +153,10 @@ export function TransactionsTable({
           }
           viewHref={`/transactions/${transaction.id}`}
           showView={false}
+          actionItems={createRowActionItems({
+            onEdit: onEdit ? () => onEdit(transaction) : undefined,
+            onDelete: onDelete ? () => onDelete(transaction) : undefined,
+          })}
           size="sm"
         />
       ),

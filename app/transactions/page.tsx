@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useResponsiveViewMode } from '@/hooks';
+import { useResponsiveViewMode, useSensitiveDataHidden } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,9 @@ import {
   PageHeader,
   ExportButton,
   toggleSelectedId,
+  ConfirmDeleteDialog,
 } from '@/components/common';
+import { toast } from '@/lib/toast';
 import { DollarSign, Users } from 'lucide-react';
 import { transactionPDFSections } from '@/lib/pdf-sections';
 import { renderTransactionsPDF } from '@/components/pdf/transactions-pdf-document';
@@ -47,6 +49,7 @@ export default function TransactionsPage() {
     [],
   );
   const [loading, setLoading] = useState(true);
+  useSensitiveDataHidden();
 
   // Use responsive view mode hook for SSR-safe view mode detection
   const {
@@ -71,6 +74,9 @@ export default function TransactionsPage() {
   const [selectedTransaction, setSelectedTransaction] =
     useState<TransactionWithInvestor | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [openModalInEditMode, setOpenModalInEditMode] = useState(false);
+  const [transactionPendingDeletion, setTransactionPendingDeletion] =
+    useState<TransactionWithInvestor | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Amount range filters
@@ -139,7 +145,28 @@ export default function TransactionsPage() {
 
   const handleQuickView = (transaction: TransactionWithInvestor) => {
     setSelectedTransaction(transaction);
+    setOpenModalInEditMode(false);
     setShowTransactionModal(true);
+  };
+
+  const handleRowEdit = (transaction: TransactionWithInvestor) => {
+    setSelectedTransaction(transaction);
+    setOpenModalInEditMode(true);
+    setShowTransactionModal(true);
+  };
+
+  const handleRowDelete = async (transaction: TransactionWithInvestor) => {
+    const response = await fetch(`/api/transactions/${transaction.id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      toast.error('Failed to delete transaction');
+      throw new Error('Failed to delete transaction');
+    }
+
+    toast.success('Transaction deleted successfully');
+    await fetchTransactions();
   };
 
   const clearFilters = () => {
@@ -594,10 +621,7 @@ export default function TransactionsPage() {
           {viewMode === 'calendar' && (
             <TransactionCalendarView
               transactions={filteredTransactions}
-              onTransactionClick={(transaction) => {
-                setSelectedTransaction(transaction);
-                setShowTransactionModal(true);
-              }}
+              onTransactionClick={handleQuickView}
             />
           )}
 
@@ -636,6 +660,8 @@ export default function TransactionsPage() {
               enableRowSelection
               selectedRowIds={selectedRowIds}
               onSelectedRowIdsChange={setSelectedRowIds}
+              onEdit={handleRowEdit}
+              onDelete={setTransactionPendingDeletion}
             />
           )}
         </>
@@ -647,6 +673,21 @@ export default function TransactionsPage() {
         open={showTransactionModal}
         onOpenChange={setShowTransactionModal}
         onUpdate={fetchTransactions}
+        startInEditMode={openModalInEditMode}
+      />
+
+      <ConfirmDeleteDialog
+        open={transactionPendingDeletion !== null}
+        onOpenChange={(open) => {
+          if (!open) setTransactionPendingDeletion(null);
+        }}
+        title="Delete Transaction"
+        description="Are you sure you want to delete this transaction? This action cannot be undone."
+        onConfirm={async () => {
+          if (transactionPendingDeletion) {
+            await handleRowDelete(transactionPendingDeletion);
+          }
+        }}
       />
     </div>
   );

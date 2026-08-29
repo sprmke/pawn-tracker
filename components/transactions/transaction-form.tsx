@@ -19,6 +19,7 @@ import { useRegisterDialogFormState } from '@/components/ui/dialog';
 import { FormHeader } from '@/components/common';
 import { toLocalDateString } from '@/lib/date-utils';
 import { formatCurrency } from '@/lib/format';
+import { useSensitiveDataHidden } from '@/hooks';
 import { Plus, Trash2, UserPlus, Calendar, X } from 'lucide-react';
 import type { Investor } from '@/lib/types';
 import { InvestorFormModal } from '@/components/investors/investor-form-modal';
@@ -349,6 +350,7 @@ export function TransactionForm({
   onCancel,
 }: TransactionFormProps) {
   const router = useRouter();
+  useSensitiveDataHidden();
   const baseId = useId();
   const entryCounterRef = useRef(1);
 

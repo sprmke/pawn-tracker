@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { DetailHeader } from '@/components/common';
 import { DebtForm, DebtSummaryPreview } from '@/components/debts';
 import { formatCurrency, formatDateShort } from '@/lib/format';
+import { useSensitiveDataHidden } from '@/hooks';
 import type { DebtWithInvestorAndPeriods, Investor } from '@/lib/types';
 import { ArrowLeft } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -26,6 +27,7 @@ export function DebtDetailClient({
   const router = useRouter();
   const [debt, setDebt] = useState(initialDebt);
   const [isEditing, setIsEditing] = useState(initialEditMode);
+  useSensitiveDataHidden();
 
   const fees = debt.additionalFees ?? [];
   const debtDate =

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useResponsiveViewMode } from '@/hooks';
+import { useResponsiveViewMode, useSensitiveDataHidden } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,9 @@ import {
   ViewModeToggle,
   PageHeader,
   toggleSelectedId,
+  ConfirmDeleteDialog,
 } from '@/components/common';
+import { toast } from '@/lib/toast';
 import { DollarSign, Users } from 'lucide-react';
 import { isCompletedDebt } from '@/lib/debt-calculations';
 import { formatText } from '@/lib/format';
@@ -44,6 +46,7 @@ export default function DebtsPage() {
     [],
   );
   const [loading, setLoading] = useState(true);
+  useSensitiveDataHidden();
 
   const { viewMode, setViewMode, isReady: isViewModeReady } =
     useResponsiveViewMode<'cards' | 'table'>({
@@ -60,6 +63,8 @@ export default function DebtsPage() {
     null,
   );
   const [showDebtModal, setShowDebtModal] = useState(false);
+  const [debtPendingDeletion, setDebtPendingDeletion] =
+    useState<DebtWithInvestor | null>(null);
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
@@ -111,6 +116,24 @@ export default function DebtsPage() {
   const handleQuickView = (debt: DebtWithInvestor) => {
     setSelectedDebt(debt);
     setShowDebtModal(true);
+  };
+
+  const handleRowEdit = (debt: DebtWithInvestor) => {
+    router.push(`/debts/${debt.id}?edit=1`);
+  };
+
+  const handleRowDelete = async (debt: DebtWithInvestor) => {
+    const response = await fetch(`/api/debts/${debt.id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      toast.error('Failed to delete borrowing');
+      throw new Error('Failed to delete borrowing');
+    }
+
+    toast.success('Borrowing deleted successfully');
+    await fetchDebts();
   };
 
   const clearFilters = () => {
@@ -463,6 +486,8 @@ export default function DebtsPage() {
               enableRowSelection
               selectedRowIds={selectedRowIds}
               onSelectedRowIdsChange={setSelectedRowIds}
+              onEdit={handleRowEdit}
+              onDelete={setDebtPendingDeletion}
             />
           )}
         </>
@@ -473,6 +498,26 @@ export default function DebtsPage() {
         open={showDebtModal}
         onOpenChange={setShowDebtModal}
         onUpdate={fetchDebts}
+      />
+
+      <ConfirmDeleteDialog
+        open={debtPendingDeletion !== null}
+        onOpenChange={(open) => {
+          if (!open) setDebtPendingDeletion(null);
+        }}
+        title="Delete borrowing?"
+        description={
+          debtPendingDeletion
+            ? `This will permanently delete "${formatText(
+                debtPendingDeletion.name,
+              )}". This action cannot be undone.`
+            : ''
+        }
+        onConfirm={async () => {
+          if (debtPendingDeletion) {
+            await handleRowDelete(debtPendingDeletion);
+          }
+        }}
       />
     </div>
   );
