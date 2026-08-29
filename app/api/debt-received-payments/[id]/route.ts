@@ -6,6 +6,7 @@ import {
 } from '@/db/schema';
 import { eq, and, ne } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateDebtData } from '@/lib/cache-invalidation';
 import { hasDebtAccess } from '@/lib/access-control';
 import {
   DEBT_AMOUNT_TOLERANCE,
@@ -107,6 +108,7 @@ export async function PATCH(
 
     await recalculateDebtInterestPeriodStatus(period.id);
 
+    invalidateDebtData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating debt received payment:', error);
@@ -161,6 +163,7 @@ export async function DELETE(
 
     await recalculateDebtInterestPeriodStatus(period.id);
 
+    invalidateDebtData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting debt received payment:', error);

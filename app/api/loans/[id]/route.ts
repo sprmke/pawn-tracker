@@ -9,6 +9,7 @@ import {
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { hasLoanAccess } from '@/lib/access-control';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 import {
   syncSigningInvitationsForLoan,
   upsertLoanContractCustomization,
@@ -316,6 +317,7 @@ export async function PUT(
       await syncSigningInvitationsForLoan(updatedLoan);
     }
 
+    invalidateLoanData();
     return NextResponse.json(updatedLoan);
   } catch (error) {
     console.error('Error updating loan:', error);
@@ -357,6 +359,7 @@ export async function DELETE(
       .delete(loans)
       .where(and(eq(loans.id, loanId), eq(loans.userId, session.user.id)));
 
+    invalidateLoanData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting loan:', error);

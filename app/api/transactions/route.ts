@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { transactions } from '@/db/schema';
 import { auth } from '@/auth';
+import { getCachedTransactions } from '@/lib/cached-data';
+import { invalidateTransactionData } from '@/lib/cache-invalidation';
 
 export async function GET(request: Request) {
   try {
@@ -14,53 +16,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const investorIdParam = searchParams.get('investorId');
 
-    // Find if this user is an investor
-    const investorRecord = await db.query.investors.findFirst({
-      where: (investors, { eq }) => eq(investors.investorUserId, userId),
-    });
-
-    let allTransactions;
-    if (investorIdParam) {
-      // Filter by specific investor
-      allTransactions = await db.query.transactions.findMany({
-        where: (transactions, { eq, and }) =>
-          and(
-            eq(transactions.userId, userId),
-            eq(transactions.investorId, parseInt(investorIdParam)),
-          ),
-        orderBy: (transactions, { desc }) => [desc(transactions.date)],
-        with: {
-          investor: true,
-        },
-      });
-    } else {
-      // Get all transactions (owned + shared)
-      if (investorRecord) {
-        // User is an investor, get transactions they created OR transactions for them
-        allTransactions = await db.query.transactions.findMany({
-          where: (transactions, { eq, or }) =>
-            or(
-              eq(transactions.userId, userId),
-              eq(transactions.investorId, investorRecord.id),
-            ),
-          orderBy: (transactions, { desc }) => [desc(transactions.date)],
-          with: {
-            investor: true,
-          },
-        });
-      } else {
-        // User is not an investor, just get their own transactions
-        allTransactions = await db.query.transactions.findMany({
-          where: (transactions, { eq }) => eq(transactions.userId, userId),
-          orderBy: (transactions, { desc }) => [desc(transactions.date)],
-          with: {
-            investor: true,
-          },
-        });
-      }
-    }
-
-    return NextResponse.json(allTransactions);
+    const investorId = investorIdParam ? parseInt(investorIdParam, 10) : null;
+    return NextResponse.json(await getCachedTransactions(userId, investorId));
   } catch (error) {
     console.error('Error fetching transactions:', error);
     return NextResponse.json(
@@ -92,6 +49,7 @@ export async function POST(request: Request) {
       .values(transactionData)
       .returning();
 
+    invalidateTransactionData();
     return NextResponse.json(newTransaction[0], { status: 201 });
   } catch (error) {
     console.error('Error creating transaction:', error);

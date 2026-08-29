@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { loanInvestors, receivedPayments, loans } from '@/db/schema';
 import { eq, isNull, inArray } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 
 /**
  * This endpoint fixes data inconsistencies in received_payments:
@@ -131,6 +132,7 @@ export async function POST() {
       }
     }
 
+    invalidateLoanData();
     return NextResponse.json({
       success: true,
       createdPayments: createdPaymentsCount,

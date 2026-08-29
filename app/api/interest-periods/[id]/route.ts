@@ -8,6 +8,7 @@ import {
 } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 import { calculateInterest } from '@/lib/calculations';
 
 const AMOUNT_TOLERANCE = 0.02;
@@ -282,6 +283,7 @@ export async function PATCH(
       }
     }
 
+    invalidateLoanData();
     return NextResponse.json({ success: true, status: responseStatus });
   } catch (error) {
     console.error('Error updating interest period status:', error);

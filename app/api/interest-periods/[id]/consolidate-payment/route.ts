@@ -7,6 +7,7 @@ import { db } from '@/db';
 import { interestPeriods, loanInvestors, receivedPayments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 import { calculateInterest } from '@/lib/calculations';
 import {
   recalculateInterestPeriodStatusFromLinkedPayments,
@@ -126,6 +127,7 @@ export async function POST(
     await recalculateInterestPeriodStatusFromLinkedPayments(periodId);
     await syncLoanStatusFromInterestPeriods(loanId);
 
+    invalidateLoanData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error consolidating period payments:', error);

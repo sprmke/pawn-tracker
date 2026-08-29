@@ -3,7 +3,6 @@ import { db } from '@/db';
 import {
   loans,
   loanInvestors,
-  investors,
   interestPeriods,
   receivedPayments,
 } from '@/db/schema';
@@ -11,6 +10,8 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { saveLoanContractAndInvitations } from '@/lib/loan-contract-persistence';
 import { toSigningInvitationSummary } from '@/lib/loan-signing';
+import { getCachedLoans } from '@/lib/cached-data';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 
 export async function GET() {
   try {
@@ -19,66 +20,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get loans created by this user
-    const ownedLoans = await db.query.loans.findMany({
-      where: eq(loans.userId, session.user.id),
-      with: {
-        borrower: true,
-        loanInvestors: {
-          with: {
-            investor: true,
-            interestPeriods: true,
-            receivedPayments: true,
-          },
-        },
-        transactions: {
-          orderBy: (transactions, { asc }) => [asc(transactions.date)],
-        },
-      },
-    });
-
-    // Get loans where this user is an investor
-    const investorRecord = await db.query.investors.findFirst({
-      where: eq(investors.investorUserId, session.user.id),
-    });
-
-    let sharedLoans: any[] = [];
-    if (investorRecord) {
-      const loanInvestments = await db.query.loanInvestors.findMany({
-        where: eq(loanInvestors.investorId, investorRecord.id),
-        with: {
-          loan: {
-            with: {
-              borrower: true,
-              loanInvestors: {
-                with: {
-                  investor: true,
-                  interestPeriods: true,
-                  receivedPayments: true,
-                },
-              },
-              transactions: {
-                orderBy: (transactions, { asc }) => [asc(transactions.date)],
-              },
-            },
-          },
-        },
-      });
-      sharedLoans = loanInvestments.map((li) => li.loan);
-    }
-
-    // Combine and deduplicate loans
-    const allLoansMap = new Map();
-    [...ownedLoans, ...sharedLoans].forEach((loan) => {
-      allLoansMap.set(loan.id, loan);
-    });
-
-    const allLoans = Array.from(allLoansMap.values()).sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-
-    return NextResponse.json(allLoans);
+    return NextResponse.json(await getCachedLoans(session.user.id));
   } catch (error) {
     console.error('Error fetching loans:', error);
     return NextResponse.json(
@@ -255,6 +197,7 @@ export async function POST(request: Request) {
       );
     }
 
+    invalidateLoanData();
     return NextResponse.json(
       { ...completeLoan, signingInvitations },
       { status: 201 },

@@ -7,6 +7,7 @@ import {
 } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateDebtData } from '@/lib/cache-invalidation';
 import { hasDebtAccess } from '@/lib/access-control';
 import {
   DEBT_AMOUNT_TOLERANCE,
@@ -140,6 +141,7 @@ export async function PATCH(
         .where(eq(debtInterestPeriods.id, periodId));
     }
 
+    invalidateDebtData();
     return NextResponse.json({ success: true, status: responseStatus });
   } catch (error) {
     console.error('Error updating debt interest period:', error);

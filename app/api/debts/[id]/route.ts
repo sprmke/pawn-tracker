@@ -9,6 +9,7 @@ import {
   markOverdueDebtInterestPeriods,
   syncDebtInterestPeriods,
 } from '@/lib/debt-interest-period-sync';
+import { invalidateDebtData } from '@/lib/cache-invalidation';
 
 export async function GET(
   request: Request,
@@ -125,6 +126,7 @@ export async function PUT(
       },
     });
 
+    invalidateDebtData();
     return NextResponse.json(debtWithPeriods);
   } catch (error) {
     console.error('Error updating debt:', error);
@@ -162,6 +164,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Borrowing not found' }, { status: 404 });
     }
 
+    invalidateDebtData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting debt:', error);

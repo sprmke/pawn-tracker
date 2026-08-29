@@ -4,6 +4,7 @@ import { transactions } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { hasTransactionAccess } from '@/lib/access-control';
+import { invalidateTransactionData } from '@/lib/cache-invalidation';
 
 export async function GET(
   request: Request,
@@ -111,6 +112,7 @@ export async function PUT(
       );
     }
 
+    invalidateTransactionData();
     return NextResponse.json(updatedTransaction[0]);
   } catch (error) {
     console.error('Error updating transaction:', error);
@@ -167,6 +169,7 @@ export async function DELETE(
       );
     }
 
+    invalidateTransactionData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting transaction:', error);

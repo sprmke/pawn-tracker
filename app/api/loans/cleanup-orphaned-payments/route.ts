@@ -16,6 +16,7 @@ import { db } from '@/db';
 import { loans, loanInvestors, receivedPayments, interestPeriods } from '@/db/schema';
 import { eq, isNull, inArray } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 import { calculateInterest } from '@/lib/calculations';
 
 export async function POST() {
@@ -133,6 +134,7 @@ export async function POST() {
     if (restoredCount > 0) parts.push(`Restored ${restoredCount} missing payment(s)`);
     if (deletedCount > 0) parts.push(`Removed ${deletedCount} orphaned payment(s)`);
 
+    invalidateLoanData();
     return NextResponse.json({
       success: true,
       restoredCount,

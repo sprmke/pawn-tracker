@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { loanInvestors, loans } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 
 export async function POST(
   request: NextRequest,
@@ -64,6 +65,7 @@ export async function POST(
         .where(eq(loans.id, loanId));
     }
 
+    invalidateLoanData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error paying transaction:', error);

@@ -4,6 +4,7 @@ import { loans } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { hasLoanAccess } from '@/lib/access-control';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 
 export async function PATCH(
   request: Request,
@@ -49,6 +50,7 @@ export async function PATCH(
       },
     });
 
+    invalidateLoanData();
     return NextResponse.json(updatedLoan);
   } catch (error) {
     console.error('Error updating loan status:', error);

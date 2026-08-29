@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { debtInterestPeriods, debtReceivedPayments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateDebtData } from '@/lib/cache-invalidation';
 import { hasDebtAccess } from '@/lib/access-control';
 import {
   DEBT_AMOUNT_TOLERANCE,
@@ -85,6 +86,7 @@ export async function POST(
 
     await recalculateDebtInterestPeriodStatus(periodId);
 
+    invalidateDebtData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error consolidating debt payment:', error);

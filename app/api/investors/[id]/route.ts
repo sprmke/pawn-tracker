@@ -4,6 +4,7 @@ import { investors, users } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { normalizeValidIdUrl, normalizeSignatureImageUrl } from '@/lib/valid-id-document';
+import { invalidateInvestorData } from '@/lib/cache-invalidation';
 
 export async function GET(
   request: Request,
@@ -136,6 +137,7 @@ export async function PUT(
       )
       .returning();
 
+    invalidateInvestorData();
     return NextResponse.json(updatedInvestor[0]);
   } catch (error) {
     console.error('Error updating investor:', error);
@@ -201,6 +203,7 @@ export async function DELETE(
         and(eq(investors.id, investorId), eq(investors.userId, session.user.id))
       );
 
+    invalidateInvestorData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting investor:', error);

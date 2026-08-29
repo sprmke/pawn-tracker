@@ -7,6 +7,7 @@ import {
 } from '@/db/schema';
 import { eq, and, ne } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 import { calculateInterest } from '@/lib/calculations';
 import {
   recalculateInterestPeriodStatusFromLinkedPayments,
@@ -159,6 +160,7 @@ export async function PATCH(
 
     await syncLoanStatusFromInterestPeriods(loanId);
 
+    invalidateLoanData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating received payment:', error);
@@ -218,6 +220,7 @@ export async function DELETE(
 
     await syncLoanStatusFromInterestPeriods(loanId);
 
+    invalidateLoanData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting received payment:', error);

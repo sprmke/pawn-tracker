@@ -1,105 +1,81 @@
 import { db } from '@/db';
 import { loans, loanInvestors, investors, transactions, debts } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or, isNotNull } from 'drizzle-orm';
 
 /**
  * Check if a user has access to a loan (either owns it or is an investor in it)
  */
 export async function hasLoanAccess(loanId: number, userId: string): Promise<boolean> {
-  // Check if user owns the loan
-  const ownedLoan = await db.query.loans.findFirst({
-    where: and(eq(loans.id, loanId), eq(loans.userId, userId)),
-  });
-
-  if (ownedLoan) {
-    return true;
-  }
-
-  // Check if user is an investor in this loan
-  const investorRecord = await db.query.investors.findFirst({
-    where: eq(investors.investorUserId, userId),
-  });
-
-  if (investorRecord) {
-    const loanInvestment = await db.query.loanInvestors.findFirst({
-      where: and(
-        eq(loanInvestors.loanId, loanId),
-        eq(loanInvestors.investorId, investorRecord.id)
+  const rows = await db
+    .select({ id: loans.id })
+    .from(loans)
+    .leftJoin(investors, eq(investors.investorUserId, userId))
+    .leftJoin(
+      loanInvestors,
+      and(
+        eq(loanInvestors.loanId, loans.id),
+        eq(loanInvestors.investorId, investors.id),
       ),
-    });
+    )
+    .where(
+      and(
+        eq(loans.id, loanId),
+        or(eq(loans.userId, userId), isNotNull(loanInvestors.id)),
+      ),
+    )
+    .limit(1);
 
-    if (loanInvestment) {
-      return true;
-    }
-  }
-
-  return false;
+  return rows.length > 0;
 }
 
 /**
  * Check if a user has access to a transaction (either owns it or is the investor)
  */
 export async function hasTransactionAccess(transactionId: number, userId: string): Promise<boolean> {
-  // Check if user owns the transaction
-  const ownedTransaction = await db.query.transactions.findFirst({
-    where: and(eq(transactions.id, transactionId), eq(transactions.userId, userId)),
-  });
-
-  if (ownedTransaction) {
-    return true;
-  }
-
-  // Check if user is the investor for this transaction
-  const investorRecord = await db.query.investors.findFirst({
-    where: eq(investors.investorUserId, userId),
-  });
-
-  if (investorRecord) {
-    const investorTransaction = await db.query.transactions.findFirst({
-      where: and(
-        eq(transactions.id, transactionId),
-        eq(transactions.investorId, investorRecord.id)
+  const rows = await db
+    .select({ id: transactions.id })
+    .from(transactions)
+    .leftJoin(
+      investors,
+      and(
+        eq(investors.id, transactions.investorId),
+        eq(investors.investorUserId, userId),
       ),
-    });
+    )
+    .where(
+      and(
+        eq(transactions.id, transactionId),
+        or(eq(transactions.userId, userId), isNotNull(investors.id)),
+      ),
+    )
+    .limit(1);
 
-    if (investorTransaction) {
-      return true;
-    }
-  }
-
-  return false;
+  return rows.length > 0;
 }
 
 /**
  * Check if a user has access to a debt (either owns it or is the investor)
  */
 export async function hasDebtAccess(debtId: number, userId: string): Promise<boolean> {
-  const ownedDebt = await db.query.debts.findFirst({
-    where: and(eq(debts.id, debtId), eq(debts.userId, userId)),
-  });
-
-  if (ownedDebt) {
-    return true;
-  }
-
-  const investorRecord = await db.query.investors.findFirst({
-    where: eq(investors.investorUserId, userId),
-  });
-
-  if (investorRecord) {
-    const investorDebt = await db.query.debts.findFirst({
-      where: and(
-        eq(debts.id, debtId),
-        eq(debts.investorId, investorRecord.id),
+  const rows = await db
+    .select({ id: debts.id })
+    .from(debts)
+    .leftJoin(
+      investors,
+      and(
+        eq(investors.id, debts.investorId),
+        eq(investors.investorUserId, userId),
       ),
-    });
+    )
+    .where(
+      and(
+        eq(debts.id, debtId),
+        or(eq(debts.userId, userId), isNotNull(investors.id)),
+      ),
+    )
+    .limit(1);
 
-    if (investorDebt) {
-      return true;
-    }
-  }
-
-  return false;
+  return rows.length > 0;
 }
 
 

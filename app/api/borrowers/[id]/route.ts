@@ -7,6 +7,7 @@ import {
   normalizeValidIdUrl,
   normalizeSignatureImageUrl,
 } from '@/lib/valid-id-document';
+import { invalidateBorrowerData } from '@/lib/cache-invalidation';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -104,6 +105,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
       )
       .returning();
 
+    invalidateBorrowerData();
     return NextResponse.json(updatedBorrower[0]);
   } catch (error) {
     console.error('Error updating borrower:', error);
@@ -162,6 +164,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
         ),
       );
 
+    invalidateBorrowerData();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting borrower:', error);

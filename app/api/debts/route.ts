@@ -4,6 +4,8 @@ import { debts } from '@/db/schema';
 import { auth } from '@/auth';
 import { parseDebtBody } from '@/lib/debt-api';
 import { syncDebtInterestPeriods } from '@/lib/debt-interest-period-sync';
+import { getCachedDebts } from '@/lib/cached-data';
+import { invalidateDebtData } from '@/lib/cache-invalidation';
 
 export async function GET(request: Request) {
   try {
@@ -16,40 +18,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const investorIdParam = searchParams.get('investorId');
 
-    const investorRecord = await db.query.investors.findFirst({
-      where: (investors, { eq }) => eq(investors.investorUserId, userId),
-    });
-
-    let allDebts;
-    if (investorIdParam) {
-      allDebts = await db.query.debts.findMany({
-        where: (debts, { eq, and }) =>
-          and(
-            eq(debts.userId, userId),
-            eq(debts.investorId, parseInt(investorIdParam)),
-          ),
-        orderBy: (debts, { desc }) => [desc(debts.date)],
-        with: { investor: true },
-      });
-    } else if (investorRecord) {
-      allDebts = await db.query.debts.findMany({
-        where: (debts, { eq, or }) =>
-          or(
-            eq(debts.userId, userId),
-            eq(debts.investorId, investorRecord.id),
-          ),
-        orderBy: (debts, { desc }) => [desc(debts.date)],
-        with: { investor: true },
-      });
-    } else {
-      allDebts = await db.query.debts.findMany({
-        where: (debts, { eq }) => eq(debts.userId, userId),
-        orderBy: (debts, { desc }) => [desc(debts.date)],
-        with: { investor: true },
-      });
-    }
-
-    return NextResponse.json(allDebts);
+    const investorId = investorIdParam ? parseInt(investorIdParam, 10) : null;
+    return NextResponse.json(await getCachedDebts(userId, investorId));
   } catch (error) {
     console.error('Error fetching debts:', error);
     return NextResponse.json(
@@ -77,6 +47,7 @@ export async function POST(request: Request) {
     const newDebt = await db.insert(debts).values(debtData).returning();
     await syncDebtInterestPeriods(newDebt[0].id);
 
+    invalidateDebtData();
     return NextResponse.json(newDebt[0], { status: 201 });
   } catch (error) {
     console.error('Error creating debt:', error);

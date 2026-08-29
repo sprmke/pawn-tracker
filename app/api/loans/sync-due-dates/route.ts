@@ -10,6 +10,7 @@ import { db } from '@/db';
 import { loans, loanInvestors, interestPeriods } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 
 export async function POST() {
   try {
@@ -81,6 +82,7 @@ export async function POST() {
         ? 'All loan due dates are already up to date.'
         : `Updated ${updatedLoans.length} loan(s): ${updatedLoans.join(', ')}`;
 
+    invalidateLoanData();
     return NextResponse.json({
       success: true,
       updatedCount: updatedLoans.length,

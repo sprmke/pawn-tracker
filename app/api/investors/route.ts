@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { investors, users, loanInvestors } from '@/db/schema';
+import { investors, users } from '@/db/schema';
 import { auth } from '@/auth';
 import { eq } from 'drizzle-orm';
 import { normalizeValidIdUrl, normalizeSignatureImageUrl } from '@/lib/valid-id-document';
+import { getCachedInvestors } from '@/lib/cached-data';
+import { invalidateInvestorData } from '@/lib/cache-invalidation';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,116 +16,9 @@ export async function GET(request: NextRequest) {
 
     const simple = request.nextUrl.searchParams.get('simple') === 'true';
 
-    if (simple) {
-      const ownedInvestors = await db.query.investors.findMany({
-        where: eq(investors.userId, session.user.id),
-        columns: { id: true, name: true, email: true, contactNumber: true, address: true, validIdUrl: true, eSignatureUrl: true },
-      });
-
-      const userAsInvestor = await db.query.investors.findFirst({
-        where: eq(investors.investorUserId, session.user.id),
-        columns: { id: true },
-      });
-
-      if (!userAsInvestor) {
-        return NextResponse.json(ownedInvestors);
-      }
-
-      const loanInvestments = await db.query.loanInvestors.findMany({
-        where: eq(loanInvestors.investorId, userAsInvestor.id),
-        columns: {},
-        with: {
-          loan: {
-            columns: {},
-            with: {
-              loanInvestors: {
-                columns: {},
-                with: {
-                  investor: {
-                    columns: { id: true, name: true, email: true, contactNumber: true, address: true, validIdUrl: true, eSignatureUrl: true },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-
-      const allInvestorsMap = new Map<number, typeof ownedInvestors[number]>();
-      ownedInvestors.forEach((inv) => allInvestorsMap.set(inv.id, inv));
-      loanInvestments.forEach((li) => {
-        li.loan.loanInvestors.forEach((loanInv) => {
-          if (!allInvestorsMap.has(loanInv.investor.id)) {
-            allInvestorsMap.set(loanInv.investor.id, loanInv.investor);
-          }
-        });
-      });
-
-      return NextResponse.json(Array.from(allInvestorsMap.values()));
-    }
-
-    // Full query with nested relations (for investors page, etc.)
-    const ownedInvestors = await db.query.investors.findMany({
-      where: eq(investors.userId, session.user.id),
-      with: {
-        loanInvestors: {
-          with: {
-            loan: true,
-          },
-        },
-        transactions: true,
-      },
-    });
-
-    const userAsInvestor = await db.query.investors.findFirst({
-      where: eq(investors.investorUserId, session.user.id),
-    });
-
-    let sharedInvestors: any[] = [];
-    if (userAsInvestor) {
-      const loanInvestments = await db.query.loanInvestors.findMany({
-        where: eq(loanInvestors.investorId, userAsInvestor.id),
-        with: {
-          loan: {
-            with: {
-              loanInvestors: {
-                with: {
-                  investor: {
-                    with: {
-                      loanInvestors: {
-                        with: {
-                          loan: true,
-                        },
-                      },
-                      transactions: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-
-      const investorSet = new Set();
-      loanInvestments.forEach(li => {
-        li.loan.loanInvestors.forEach(loanInv => {
-          if (!investorSet.has(loanInv.investor.id)) {
-            investorSet.add(loanInv.investor.id);
-            sharedInvestors.push(loanInv.investor);
-          }
-        });
-      });
-    }
-
-    const allInvestorsMap = new Map();
-    [...ownedInvestors, ...sharedInvestors].forEach(investor => {
-      allInvestorsMap.set(investor.id, investor);
-    });
-
-    const allInvestors = Array.from(allInvestorsMap.values());
-
-    return NextResponse.json(allInvestors);
+    return NextResponse.json(
+      await getCachedInvestors(session.user.id, simple),
+    );
   } catch (error) {
     console.error('Error fetching investors:', error);
     return NextResponse.json(
@@ -174,6 +69,7 @@ export async function POST(request: Request) {
         investorUserId: investorUser.id,
       })
       .returning();
+    invalidateInvestorData();
     return NextResponse.json(newInvestor[0], { status: 201 });
   } catch (error) {
     console.error('Error creating investor:', error);

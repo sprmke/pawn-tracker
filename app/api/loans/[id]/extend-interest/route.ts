@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { loans, loanInvestors, interestPeriods } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 import { hasLoanAccess } from '@/lib/access-control';
 
 function safeParseFloat(value: string | number | null | undefined): number {
@@ -209,6 +210,7 @@ export async function POST(
       },
     });
 
+    invalidateLoanData();
     return NextResponse.json(updatedLoan);
   } catch (error) {
     console.error('Error extending interest:', error);

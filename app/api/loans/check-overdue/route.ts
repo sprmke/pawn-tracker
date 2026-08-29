@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { loans, interestPeriods, loanInvestors } from '@/db/schema';
 import { eq, and, or, lt } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { invalidateLoanData } from '@/lib/cache-invalidation';
 
 /**
  * This endpoint checks all loans and interest periods for the current user
@@ -123,6 +124,9 @@ export async function POST(request: Request) {
       }
     }
 
+    if (updatedLoansCount > 0 || updatedPeriodsCount > 0) {
+      invalidateLoanData();
+    }
     return NextResponse.json({
       success: true,
       updatedLoans: updatedLoansCount,
