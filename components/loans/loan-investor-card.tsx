@@ -393,7 +393,7 @@ export function LoanInvestorCard({
                   className="w-full"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Add more payments
+                  Fund Transfer
                 </Button>
               </div>
 

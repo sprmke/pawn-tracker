@@ -65,7 +65,7 @@ export function DetailModalHeader({
     ...(onAddPayment
       ? [
           {
-            label: 'Add Payment',
+            label: 'Fund Transfer',
             onClick: onAddPayment,
             icon: <ArrowUpFromLine className="h-4 w-4" />,
           },

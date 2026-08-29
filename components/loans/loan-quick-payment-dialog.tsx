@@ -105,7 +105,7 @@ export function LoanQuickPaymentDialog({
   if (!loan || !kind) return null;
 
   const isReceived = kind === 'received';
-  const title = isReceived ? 'Add Received Payment' : 'Add Payment';
+  const title = isReceived ? 'Add Received Payment' : 'Fund Transfer';
   const getEntryContext = (entry: PaymentEntry) => {
     const selectedInvestorId = Number.parseInt(entry.investorId, 10);
     const selectedPayments = loan.loanInvestors.filter(
@@ -474,47 +474,47 @@ export function LoanQuickPaymentDialog({
               );
             })}
 
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() =>
-                  setEntries((current) => [
-                    ...current,
-                    createPaymentEntry(
-                      lenders.length === 1 ? String(lenders[0].id) : '',
-                    ),
-                  ])
-                }
-                disabled={isSubmitting}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add another
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() =>
-                  setEntries((current) => {
-                    const newEntries = unusedLenders.map((lender) =>
-                      createPaymentEntry(String(lender.id)),
-                    );
-                    const hasOnlyBlankEntry =
-                      current.length === 1 &&
-                      !current[0].investorId &&
-                      !current[0].amount;
-                    return hasOnlyBlankEntry
-                      ? newEntries
-                      : [...current, ...newEntries];
-                  })
-                }
-                disabled={isSubmitting || unusedLenders.length === 0}
-              >
-                Add all remaining lenders
-              </Button>
-            </div>
+            {lenders.length > 1 ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() =>
+                    setEntries((current) => [
+                      ...current,
+                      createPaymentEntry(),
+                    ])
+                  }
+                  disabled={isSubmitting}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add another
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() =>
+                    setEntries((current) => {
+                      const newEntries = unusedLenders.map((lender) =>
+                        createPaymentEntry(String(lender.id)),
+                      );
+                      const hasOnlyBlankEntry =
+                        current.length === 1 &&
+                        !current[0].investorId &&
+                        !current[0].amount;
+                      return hasOnlyBlankEntry
+                        ? newEntries
+                        : [...current, ...newEntries];
+                    })
+                  }
+                  disabled={isSubmitting || unusedLenders.length === 0}
+                >
+                  Add all remaining lenders
+                </Button>
+              </div>
+            ) : null}
           </div>
 
           <DialogFooter>

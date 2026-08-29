@@ -14,7 +14,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowUpDown } from 'lucide-react';
 import { Pagination } from './pagination';
 
-/** Just wide enough for the 16px checkbox; the table wrapper supplies the outer gutter. */
+/**
+ * Just wide enough for the 16px checkbox; the table wrapper supplies the outer gutter.
+ * The table uses `table-fixed`, which hands any width left over by the sized columns to
+ * columns measured in pixels, so every table must leave at least one column without a
+ * width class for that slack to land in.
+ */
 const SELECTION_COLUMN_WIDTH = '1.5rem';
 
 export interface ColumnDef<TData> {

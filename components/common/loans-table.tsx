@@ -10,7 +10,7 @@ import {
   formatDateVeryShort,
   formatText,
   formatPercentage,
-  formatSqm,
+  formatCount,
 } from '@/lib/format';
 import { calculateTransactionStats } from '@/lib/calculations';
 import { getLoanStatusBadge, getLoanTypeBadge } from '@/lib/badge-config';
@@ -74,8 +74,6 @@ export function LoansTable({
       hidden: hideFields.includes('loanName'),
       accessorKey: 'loanName',
       sortable: true,
-      headerClassName: 'w-[28%] 2xl:w-[12%]',
-      className: 'w-[28%] 2xl:w-[12%]',
       cell: (loan) => (
         <span
           className="block truncate font-medium"
@@ -323,7 +321,7 @@ export function LoansTable({
       },
       cell: (loan) => (
         <span>
-          {loan.freeLotSqm ? formatSqm(loan.freeLotSqm) : '—'}
+          {loan.freeLotSqm ? formatCount(loan.freeLotSqm) : '—'}
         </span>
       ),
     },
