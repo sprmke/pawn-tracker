@@ -29,7 +29,7 @@ export function ActivityPanelSkeleton({
   variant?: 'empty' | 'list';
 }) {
   return (
-    <Card className="relative overflow-hidden border-border/40">
+    <Card className="relative flex h-full flex-col overflow-hidden border-border/40">
       <Skeleton className="absolute inset-x-0 top-0 h-1 rounded-t-3xl" />
       <CardHeader className="pb-2 pt-6">
         <div className="flex items-start justify-between gap-2">
@@ -37,7 +37,7 @@ export function ActivityPanelSkeleton({
           <Skeleton className="h-10 w-10 shrink-0 rounded-2xl" />
         </div>
       </CardHeader>
-      <CardContent className="min-w-0 px-5 pb-5 pt-0">
+      <CardContent className="min-w-0 flex-1 px-5 pb-5 pt-0">
         {variant === 'empty' ? (
           <Skeleton className="h-[88px] w-full rounded-2xl" />
         ) : (
